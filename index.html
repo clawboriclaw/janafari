@@ -8,6 +8,21 @@
   <meta name="theme-color" content="#102a43">
   <title>Janafari — Madden 27 Ratings</title>
   <link rel="stylesheet" href="styles.css">
+  <script>
+    // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
+    (function () {
+      try {
+        var saved = localStorage.getItem('janafari-theme');
+        if (saved !== 'dark' && saved !== 'light') {
+          saved = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', saved);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+
 </head>
 <body>
   <div class="field-lines" aria-hidden="true"></div>
@@ -22,6 +37,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="button theme-toggle" id="themeToggle" type="button" aria-pressed="false"
+                title="Switch between light and dark">
+          <span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span>
+        </button>
         <button class="button button-light" id="backupButton" type="button">Backup</button>
         <button class="button button-red" id="updateButton" type="button">Update week</button>
       </div>
@@ -153,5 +172,40 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!btn) return;
+      function paint() {
+        var dark = root.getAttribute('data-theme') === 'dark';
+        btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        btn.querySelector('.theme-label').textContent = dark ? 'Light' : 'Dark';
+        btn.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
+        if (meta) meta.setAttribute('content', dark ? '#05101f' : '#102a43');
+      }
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('janafari-theme', next); } catch (e) {}
+        paint();
+      });
+      // follow the device only while the visitor has not chosen for themselves
+      if (window.matchMedia) {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var onChange = function (e) {
+          var saved = null;
+          try { saved = localStorage.getItem('janafari-theme'); } catch (err) {}
+          if (saved === 'dark' || saved === 'light') return;
+          root.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+          paint();
+        };
+        if (mq.addEventListener) mq.addEventListener('change', onChange);
+        else if (mq.addListener) mq.addListener(onChange);
+      }
+      paint();
+    })();
+  </script>
 </body>
 </html>

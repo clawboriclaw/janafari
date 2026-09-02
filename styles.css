@@ -405,3 +405,93 @@ body.modal-open { overflow: hidden; }
   .snapshot-fields > * + * { margin-left: 0; }
   .snapshot-fields label { display: block; margin-bottom: 10px; }
 }
+
+/* ============================================================
+   DARK THEME
+   Toggled by data-theme on <html>. Defaults to the device
+   setting, then remembers the choice in localStorage.
+   Colts navy/blue/gold stay put -- they are the brand and they
+   already read well on a dark ground; only the light surfaces
+   (page, cards, table, modals) get re-grounded.
+   ============================================================ */
+
+.theme-toggle { color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); }
+.theme-toggle .theme-icon { font-size: 15px; line-height: 1; }
+.theme-toggle .theme-label { margin-left: 7px; }
+
+html[data-theme="dark"] { background: #0b1220; }
+html[data-theme="dark"] body { color: #e6edf5; background: #0b1220; }
+
+html[data-theme="dark"] .field-lines { background: #05101f; }
+
+html[data-theme="dark"] .board-card,
+html[data-theme="dark"] .note-card {
+  background: #131c2b;
+  border-color: #24334a;
+  box-shadow: 0 7px 22px rgba(0,0,0,.36);
+}
+
+html[data-theme="dark"] .toolbar { background: #16202f; border-top-color: #24334a; border-bottom-color: #24334a; }
+html[data-theme="dark"] .week-control select { color: #e6edf5; background: #16202f; border-color: #2c3c55; }
+html[data-theme="dark"] .week-control label,
+html[data-theme="dark"] .section-kicker { color: #93a4b8; }
+html[data-theme="dark"] h2 { color: #f2f6fa; }
+
+html[data-theme="dark"] .search-box { color: #93a4b8; }
+html[data-theme="dark"] .search-box input { color: #e6edf5; }
+html[data-theme="dark"] .search-box input::placeholder { color: #6c7f96; }
+html[data-theme="dark"] .filter-group { background: #1b2636; }
+html[data-theme="dark"] .filter { color: #a3b3c6; }
+html[data-theme="dark"] .filter.active { color: #fff; background: #24334a; box-shadow: inset 0 -3px 0 #fdbb30, 0 1px 4px rgba(0,0,0,.4); }
+
+html[data-theme="dark"] th { color: #8a9cb2; }
+html[data-theme="dark"] td { border-top-color: #212d40; }
+html[data-theme="dark"] tbody tr:first-child td { border-top-color: #26344a; }
+html[data-theme="dark"] tbody tr:hover { background: #182231; }
+html[data-theme="dark"] td.rank-col { color: #7c8ea4; }
+
+html[data-theme="dark"] .player-name { color: #eef3f9; }
+html[data-theme="dark"] .player-side { color: #8195aa; }
+html[data-theme="dark"] .player-avatar { border-color: rgba(255,255,255,.22); box-shadow: 0 2px 7px rgba(0,0,0,.45); }
+html[data-theme="dark"] .position-pill { color: #cfe0f5; background: #1e2f47; }
+html[data-theme="dark"] .team-code { color: #9bacc0; }
+html[data-theme="dark"] .ovr-badge { border-color: #2b3a52; }
+html[data-theme="dark"] .ovr-99 { border-color: #5d2233; }
+
+html[data-theme="dark"] .change-up { color: #7ee0b0; background: #12352a; }
+html[data-theme="dark"] .change-down { color: #ff9ea3; background: #3a1d21; }
+html[data-theme="dark"] .change-flat { color: #97a8b6; background: #1e2836; }
+html[data-theme="dark"] .change-new { color: #ffd98a; background: #3a2f14; }
+
+html[data-theme="dark"] .sparkline line { stroke: #2a3a52; }
+html[data-theme="dark"] .empty-state { color: #8a9cb2; }
+
+html[data-theme="dark"] .note-icon { color: #cfe0f5; background: #1e2f47; }
+html[data-theme="dark"] .note-card p { color: #93a4b8; }
+html[data-theme="dark"] footer { color: #78899c; }
+
+html[data-theme="dark"] .button-quiet { color: #c3d2e2; background: #1e2836; }
+
+html[data-theme="dark"] .modal-backdrop { background: rgba(0,0,0,.72); }
+html[data-theme="dark"] .modal-sheet { color: #e6edf5; background: #131c2b; box-shadow: 0 -8px 35px rgba(0,0,0,.55); }
+html[data-theme="dark"] .close-button { color: #c3d2e2; background: #1e2836; }
+html[data-theme="dark"] .modal-copy { color: #93a4b8; }
+html[data-theme="dark"] .snapshot-fields label { color: #8a9cb2; }
+html[data-theme="dark"] .snapshot-fields input { color: #e6edf5; background: #0f1826; border-color: #2c3c55; }
+html[data-theme="dark"] .rating-editor-head { color: #8a9cb2; background: #16202f; }
+html[data-theme="dark"] .rating-edit-row { border-bottom-color: #212d40; }
+html[data-theme="dark"] .rating-edit-row small { color: #8a9cb2; }
+html[data-theme="dark"] .rating-edit-row input { color: #e6edf5; background: #0f1826; border-color: #2c3c55; }
+html[data-theme="dark"] .rating-edit-row.changed { background: #2a2413; }
+html[data-theme="dark"] .stepper { background: #1b2636; }
+html[data-theme="dark"] .modal-actions { background: #131c2b; border-top-color: #24334a; }
+html[data-theme="dark"] .backup-action { color: #e6edf5; background: #16202f; border-color: #2c3c55; }
+html[data-theme="dark"] .backup-action span { color: #93a4b8; }
+html[data-theme="dark"] .danger-zone { border-top-color: #24334a; }
+html[data-theme="dark"] .toast { background: #1e2c42; }
+
+/* the plain-light button is hidden on very small screens; the theme
+   toggle must stay reachable there, so it opts out of that rule */
+@media (max-width: 560px) {
+  .theme-toggle { display: -webkit-inline-box; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; width: auto; }
+}
