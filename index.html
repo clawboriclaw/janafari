@@ -90,9 +90,15 @@
           <button class="filter" type="button" data-filter="defense">Defense</button>
           <button class="filter" type="button" data-filter="movers">Movers</button>
         </div>
+        <div class="view-group" role="group" aria-label="Choose layout">
+          <button class="view-btn active" type="button" data-view="cards" aria-pressed="true">▦ Cards</button>
+          <button class="view-btn" type="button" data-view="list" aria-pressed="false">☰ List</button>
+        </div>
       </div>
 
-      <div class="table-wrap">
+      <div class="card-grid" id="playerCards"></div>
+
+      <div class="table-wrap" id="tableWrap" hidden>
         <table>
           <thead>
             <tr>
@@ -107,8 +113,8 @@
           </thead>
           <tbody id="playerRows"></tbody>
         </table>
-        <div class="empty-state" id="emptyState" hidden>No players match this view.</div>
       </div>
+      <div class="empty-state" id="emptyState" hidden>No players match this view.</div>
     </section>
 
     <section class="note-card">

@@ -32,6 +32,49 @@
     "fred-warner": 97, "joe-burrow": 97, "lane-johnson": 97, "maxx-crosby": 97,
     "patrick-surtain": 97, "derrick-brown": 96, "garett-bolles": 96, "george-kittle": 96
   };
+  // ESPN headshot ids, resolved from the live NFL team rosters 2026-09-02.
+  // Kept in a separate map (not on the player objects) on purpose: a returning
+  // visitor already has players saved in localStorage from before photos existed,
+  // and that saved copy would otherwise win and show no pictures.
+  var playerPhotos = {
+    "jamarr-chase": "4362628", "jaxon-smith-njigba": "4430878", "josh-allen": "3918298",
+    "matthew-stafford": "12483", "myles-garrett": "3122132", "trey-mcbride": "4361307",
+    "christian-gonzalez": "4686772", "jahmyr-gibbs": "4429795", "micah-parsons": "4361423",
+    "penei-sewell": "4373825", "puka-nacua": "4426515", "christian-mccaffrey": "3117251",
+    "fred-warner": "3138826", "joe-burrow": "3915511", "lane-johnson": "15797",
+    "maxx-crosby": "3916655", "patrick-surtain": "4372012", "derrick-brown": "4035495",
+    "garett-bolles": "4035662", "george-kittle": "3040151"
+  };
+
+  function photoUrl(playerId) {
+    var espnId = playerPhotos[playerId];
+    return espnId ? "https://a.espncdn.com/i/headshots/nfl/players/full/" + espnId + ".png" : null;
+  }
+
+  // Build the portrait. Always render the monogram underneath, then lay the photo
+  // over it -- if the image 404s or the device is offline the monogram is already
+  // there, so a card never shows a broken-image icon.
+  function buildPortrait(player, className) {
+    var wrap = document.createElement("div");
+    var mono = textNode("span", "portrait-mono", initials(player.name));
+    var url = photoUrl(player.id);
+    wrap.className = className;
+    wrap.style.backgroundColor = teamColors[player.team] || "#174a6e";
+    wrap.appendChild(mono);
+    if (url) {
+      var img = document.createElement("img");
+      img.className = "portrait-img";
+      img.src = url;
+      img.alt = player.name;
+      img.loading = "lazy";
+      img.addEventListener("error", function () {
+        if (img.parentNode) { img.parentNode.removeChild(img); }
+      });
+      wrap.appendChild(img);
+    }
+    return wrap;
+  }
+
   var teamColors = {
     CIN: "#fb4f14", SEA: "#002244", BUF: "#00338d", LAR: "#003594", ARI: "#97233f",
     NE: "#002244", DET: "#0076b6", GB: "#203731", SF: "#aa0000", PHI: "#004c54",
@@ -41,6 +84,7 @@
   var state;
   var selectedSnapshot = 0;
   var activeFilter = "all";
+  var viewMode = "cards";   // cards is the default: far easier to read at a glance
   var searchTerm = "";
   var toastTimer;
 
@@ -182,12 +226,11 @@
     var changeClass;
 
     var playerWrap = document.createElement("div");
-    var avatar = textNode("span", "player-avatar", initials(player.name));
+    var avatar = buildPortrait(player, "player-avatar");
     var playerInfo = document.createElement("span");
     playerCell.className = "player-cell";
     playerWrap.className = "player-wrap";
     playerInfo.className = "player-info";
-    avatar.style.backgroundColor = teamColors[player.team] || "#174a6e";
     playerInfo.appendChild(textNode("span", "player-name", player.name));
     playerInfo.appendChild(textNode("span", "player-side", player.side));
     playerWrap.appendChild(avatar);
@@ -207,6 +250,66 @@
     row.appendChild(rankCell); row.appendChild(playerCell); row.appendChild(posCell); row.appendChild(teamCell);
     row.appendChild(ovrCell); row.appendChild(changeCell); row.appendChild(trendCell);
     return row;
+  }
+
+  function changeParts(change) {
+    if (change === null) { return { text: "NEW", cls: "change-new" }; }
+    if (change > 0) { return { text: "▲ " + change, cls: "change-up" }; }
+    if (change < 0) { return { text: "▼ " + Math.abs(change), cls: "change-down" }; }
+    return { text: "—", cls: "change-flat" };
+  }
+
+  function buildCard(player, rank) {
+    var rating = state.snapshots[selectedSnapshot].ratings[player.id];
+    var change = getChange(player.id, selectedSnapshot);
+    var parts = changeParts(change);
+    var card = document.createElement("article");
+    var top = document.createElement("div");
+    var ovr = document.createElement("div");
+    var body = document.createElement("div");
+    var meta = document.createElement("div");
+
+    card.className = "pcard" + (rating === 99 ? " is-99" : "");
+    top.className = "pcard-top";
+    top.style.setProperty("--team", teamColors[player.team] || "#174a6e");
+    top.appendChild(textNode("span", "pcard-rank", "#" + rank));
+    top.appendChild(textNode("span", "pcard-change " + parts.cls, parts.text));
+    top.appendChild(buildPortrait(player, "pcard-portrait"));
+
+    ovr.className = "pcard-ovr";
+    ovr.appendChild(document.createTextNode(String(rating)));
+    ovr.appendChild(textNode("small", "", "OVR"));
+    top.appendChild(ovr);
+
+    body.className = "pcard-body";
+    body.appendChild(textNode("h3", "pcard-name", player.name));
+    meta.className = "pcard-meta";
+    meta.appendChild(textNode("span", "position-pill", player.pos));
+    meta.appendChild(textNode("span", "pcard-team", player.team + " · " + player.teamName));
+    body.appendChild(meta);
+
+    card.appendChild(top);
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderCards() {
+    var grid = el("playerCards");
+    var visible = filteredPlayers();
+    var allSorted = sortedPlayers();
+    clear(grid);
+    visible.forEach(function (player) { grid.appendChild(buildCard(player, allSorted.indexOf(player) + 1)); });
+  }
+
+  function applyView() {
+    var cards = viewMode === "cards";
+    el("playerCards").hidden = !cards;
+    el("tableWrap").hidden = cards;
+    Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
+      var on = btn.getAttribute("data-view") === viewMode;
+      btn.className = "view-btn" + (on ? " active" : "");
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
   }
 
   function renderWeekSelect() {
@@ -253,6 +356,9 @@
     renderWeekSelect();
     renderSummary();
     renderRows();
+    renderCards();
+    applyView();
+    el("emptyState").hidden = filteredPlayers().length > 0;
   }
 
   function localDateValue() {
@@ -371,6 +477,18 @@
   }
 
   function bindEvents() {
+    Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
+      btn.addEventListener("click", function () {
+        viewMode = btn.getAttribute("data-view") === "list" ? "list" : "cards";
+        try { localStorage.setItem("janafari-view", viewMode); } catch (e) {}
+        render();
+      });
+    });
+    try {
+      var savedView = localStorage.getItem("janafari-view");
+      if (savedView === "list" || savedView === "cards") { viewMode = savedView; }
+    } catch (e) {}
+
     el("weekSelect").addEventListener("change", function () { selectedSnapshot = parseInt(this.value, 10); renderSummary(); renderRows(); });
     el("searchInput").addEventListener("input", function () { searchTerm = this.value; renderRows(); });
     Array.prototype.forEach.call(document.querySelectorAll(".filter"), function (button) {

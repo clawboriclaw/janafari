@@ -495,3 +495,153 @@ html[data-theme="dark"] .toast { background: #1e2c42; }
 @media (max-width: 560px) {
   .theme-toggle { display: -webkit-inline-box; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; width: auto; }
 }
+
+/* ============================================================
+   PLAYER CARDS
+   Default view. A 10-year-old should be able to read a player's
+   standing in one glance: big portrait, big OVR, big arrow.
+   The team colour comes in per-card via --team (set inline in JS),
+   so every card is the player's actual club colour.
+   No external images: headshots would need a licensed source and
+   would break offline. The portrait is a jersey-style monogram.
+   ============================================================ */
+
+.view-group { display: -webkit-box; display: -webkit-flex; display: flex; padding: 3px; margin-left: 10px; background: #e8edf1; border-radius: 8px; }
+.view-btn { min-height: 34px; padding: 0 13px; color: #627585; background: transparent; border: 0; border-radius: 6px; font-size: 12px; font-weight: 800; }
+.view-btn.active { color: #081f3d; background: #fff; box-shadow: inset 0 -3px 0 #0057b8, 0 1px 4px rgba(16,42,67,.12); }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  gap: 16px;
+  padding: 20px 24px 24px;
+}
+.card-grid[hidden] { display: none; }
+
+.pcard {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dce4ea;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(16,42,67,.08);
+  -webkit-transition: -webkit-transform .12s, box-shadow .12s;
+  transition: transform .12s, box-shadow .12s;
+}
+.pcard:hover { -webkit-transform: translateY(-3px); transform: translateY(-3px); box-shadow: 0 12px 26px rgba(16,42,67,.16); }
+
+.pcard-top {
+  position: relative;
+  height: 132px;
+  background: linear-gradient(150deg, var(--team, #174a6e) 0%, rgba(0,0,0,.55) 130%);
+}
+.pcard-top:after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: #fdbb30;
+}
+
+.pcard-rank {
+  position: absolute; top: 10px; left: 12px;
+  padding: 3px 9px;
+  color: #fff;
+  background: rgba(0,0,0,.32);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 900; letter-spacing: .5px;
+}
+.pcard-change {
+  position: absolute; top: 10px; right: 12px;
+  min-width: 42px; padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 900; text-align: center;
+}
+
+.pcard-portrait {
+  position: absolute; left: 16px; bottom: 14px;
+  width: 66px; height: 66px;
+  background: rgba(255,255,255,.14);
+  border: 3px solid rgba(255,255,255,.85);
+  border-radius: 16px;
+  box-shadow: 0 5px 14px rgba(0,0,0,.3);
+}
+.pcard-portrait span {
+  display: block;
+  color: #fff;
+  font-family: "AvenirNextCondensed-Heavy", "Avenir Next Condensed", "Arial Narrow", "Arial Black", sans-serif;
+  font-size: 27px; font-style: italic; font-weight: 900; line-height: 60px; text-align: center;
+}
+
+.pcard-ovr {
+  position: absolute; right: 14px; bottom: 12px;
+  color: #fff;
+  font-family: "AvenirNextCondensed-Heavy", "Avenir Next Condensed", "Arial Narrow", "Arial Black", sans-serif;
+  font-size: 46px; font-style: italic; font-weight: 900; line-height: 1;
+  text-shadow: 0 3px 10px rgba(0,0,0,.45);
+}
+.pcard-ovr small { display: block; font-size: 10px; font-style: normal; letter-spacing: 1.4px; opacity: .85; text-align: right; }
+.pcard.is-99 .pcard-ovr { color: #fdbb30; }
+
+.pcard-body { padding: 13px 15px 15px; }
+.pcard-name {
+  margin: 0 0 8px;
+  color: #081f3d;
+  font-size: 17px; font-weight: 800; line-height: 1.2;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.pcard-meta { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }
+.pcard-meta > * + * { margin-left: 8px; }
+.pcard-team { color: #6a7d8c; font-size: 12px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pcard-spark { margin-top: 11px; }
+
+html[data-theme="dark"] .view-group { background: #1b2636; }
+html[data-theme="dark"] .view-btn { color: #a3b3c6; }
+html[data-theme="dark"] .view-btn.active { color: #fff; background: #24334a; box-shadow: inset 0 -3px 0 #0057b8, 0 1px 4px rgba(0,0,0,.4); }
+html[data-theme="dark"] .pcard { background: #131c2b; border-color: #24334a; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+html[data-theme="dark"] .pcard:hover { box-shadow: 0 12px 26px rgba(0,0,0,.55); }
+html[data-theme="dark"] .pcard-name { color: #eef3f9; }
+html[data-theme="dark"] .pcard-team { color: #93a4b8; }
+
+@media (max-width: 720px) {
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 11px; padding: 14px; }
+  .pcard-top { height: 116px; }
+  .pcard-portrait { width: 54px; height: 54px; left: 12px; bottom: 12px; }
+  .pcard-portrait span { font-size: 22px; line-height: 48px; }
+  .pcard-ovr { font-size: 38px; right: 11px; }
+  .pcard-name { font-size: 15px; }
+  .view-group { margin-left: 0; margin-top: 7px; width: 100%; }
+  .view-btn { -webkit-box-flex: 1; -webkit-flex: 1; flex: 1; }
+}
+
+/* ---------- PHOTO PORTRAITS ----------
+   ESPN headshots are transparent PNGs, so the team colour behind them
+   is what makes each card look like the player's actual club. The
+   monogram sits underneath and is only ever seen if the image fails,
+   which keeps a broken-image icon off a 10-year-old's screen. */
+
+.pcard-portrait, .player-avatar { position: relative; overflow: hidden; }
+.portrait-mono {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  display: block;
+  color: #fff;
+  font-family: "AvenirNextCondensed-Heavy", "Avenir Next Condensed", "Arial Narrow", "Arial Black", sans-serif;
+  font-style: italic; font-weight: 900; text-align: center;
+}
+.portrait-img {
+  position: absolute; left: 50%; bottom: 0;
+  width: 116%; height: auto;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+}
+
+/* card portrait: bigger, it is the point of the card */
+.pcard-portrait { width: 92px; height: 92px; left: 14px; bottom: 12px; border-radius: 18px; }
+.pcard-portrait .portrait-mono { font-size: 34px; line-height: 86px; }
+
+/* table portrait */
+.player-avatar .portrait-mono { font-size: 11px; line-height: 30px; }
+
+@media (max-width: 720px) {
+  .pcard-portrait { width: 74px; height: 74px; }
+  .pcard-portrait .portrait-mono { font-size: 26px; line-height: 68px; }
+}
