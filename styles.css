@@ -391,15 +391,34 @@ body.modal-open { overflow: hidden; }
   .modal-actions { bottom: -19px; margin: 16px -14px -19px; padding: 12px 14px; }
 }
 
-@media (max-width: 460px) {
+@media (max-width: 560px) {
+  .field-lines { height: 410px; }
+  .topbar { padding-bottom: 48px; }
+  .brand-row { display: block; }
+  .header-actions { display: block; margin-top: 15px; }
+  .header-actions .button-red { display: block; width: 100%; }
+  .subtitle { max-width: none; margin-top: 13px; }
   .eyebrow { font-size: 9px; }
   h1 { font-size: 23px; }
   .subtitle { font-size: 13px; }
   .button-light { display: none; }
   .scorecards { -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-  .scorecard { -webkit-flex-basis: 30%; flex-basis: 30%; }
-  .scorecard-gold { -webkit-flex-basis: 60%; flex-basis: 60%; }
+  .scorecard { -webkit-flex: 1 1 44%; flex: 1 1 44%; }
+  .scorecard-gold { -webkit-flex-basis: 44%; flex-basis: 44%; }
+  .scorecard-navy { -webkit-flex-basis: 100%; flex-basis: 100%; min-height: 78px; margin-top: 7px; margin-left: 0; }
   .board-header { -webkit-box-align: end; -webkit-align-items: flex-end; align-items: flex-end; }
+  .board-header h2 { font-size: 19px; }
+  .week-control select { min-width: 120px; max-width: 128px; padding-left: 8px; font-size: 12px; }
+  table { min-width: 0; }
+  th:nth-child(4), td:nth-child(4), th:nth-child(7), td:nth-child(7) { display: none; }
+  .rank-col { width: 37px; padding-left: 10px; }
+  .player-cell { width: auto; }
+  th, td { padding-left: 5px; padding-right: 5px; }
+  .player-wrap > * + * { margin-left: 7px; }
+  .player-avatar { width: 31px; height: 31px; line-height: 27px; }
+  .player-name { font-size: 13px; }
+  .position-pill { min-width: 34px; padding-left: 4px; padding-right: 4px; }
+  .ovr-badge { width: 40px; height: 40px; line-height: 32px; }
   .snapshot-fields { display: block; }
   .snapshot-fields > * + * { margin-left: 0; }
   .snapshot-fields label { display: block; margin-bottom: 10px; }
