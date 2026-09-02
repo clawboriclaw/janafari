@@ -344,7 +344,7 @@
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
     link.href = url;
-    link.download = "madden-27-family-board-backup.json";
+    link.download = "janafari-ratings-backup.json";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

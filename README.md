@@ -1,9 +1,9 @@
-# Our Madden 27 Board
+# Janafari
 
 A private, no-account weekly ratings tracker built for an older iPad. It is a static site: no build
 step, framework, analytics, ads, or external font/image requests.
 
-Live site: <https://clawboriclaw.github.io/madden-27-family-board/>
+Live site: <https://clawboriclaw.github.io/janafari/>
 
 ## Open it on an iPad
 
