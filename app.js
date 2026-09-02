@@ -295,6 +295,9 @@
 
   function renderCards() {
     var grid = el("playerCards");
+    // A cached older index.html will not have this container. Skip rather than
+    // throw: one missing optional element must never take the table down too.
+    if (!grid) { return; }
     var visible = filteredPlayers();
     var allSorted = sortedPlayers();
     clear(grid);
@@ -302,9 +305,12 @@
   }
 
   function applyView() {
+    var grid = el("playerCards");
+    var wrap = el("tableWrap");
     var cards = viewMode === "cards";
-    el("playerCards").hidden = !cards;
-    el("tableWrap").hidden = cards;
+    if (!grid || !wrap) { return; }   // older cached markup: leave the table as-is
+    grid.hidden = !cards;
+    wrap.hidden = cards;
     Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
       var on = btn.getAttribute("data-view") === viewMode;
       btn.className = "view-btn" + (on ? " active" : "");
@@ -358,7 +364,8 @@
     renderRows();
     renderCards();
     applyView();
-    el("emptyState").hidden = filteredPlayers().length > 0;
+    var empty = el("emptyState");
+    if (empty) { empty.hidden = filteredPlayers().length > 0; }
   }
 
   function localDateValue() {
