@@ -645,3 +645,26 @@ html[data-theme="dark"] .pcard-team { color: #93a4b8; }
   .pcard-portrait { width: 74px; height: 74px; }
   .pcard-portrait .portrait-mono { font-size: 26px; line-height: 68px; }
 }
+
+/* ---------- TEAM LOGO BACKDROP ----------
+   The club badge sits behind the player, big and faded, so a card reads
+   as that team at a glance before you read a single word. It is decorative
+   only (aria-hidden) -- the team is already stated in text underneath. */
+.pcard-logo {
+  position: absolute;
+  top: 46%;
+  left: 58%;
+  width: 132px;
+  height: auto;
+  opacity: .30;
+  pointer-events: none;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  -webkit-filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+}
+html[data-theme="dark"] .pcard-logo { opacity: .34; }
+
+@media (max-width: 720px) {
+  .pcard-logo { width: 104px; }
+}

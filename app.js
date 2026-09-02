@@ -46,6 +46,10 @@
     "garett-bolles": "4035662", "george-kittle": "3040151"
   };
 
+  function logoUrl(teamAbbr) {
+    return teamAbbr ? "https://a.espncdn.com/i/teamlogos/nfl/500/" + teamAbbr.toLowerCase() + ".png" : null;
+  }
+
   function photoUrl(playerId) {
     var espnId = playerPhotos[playerId];
     return espnId ? "https://a.espncdn.com/i/headshots/nfl/players/full/" + espnId + ".png" : null;
@@ -272,6 +276,24 @@
     card.className = "pcard" + (rating === 99 ? " is-99" : "");
     top.className = "pcard-top";
     top.style.setProperty("--team", teamColors[player.team] || "#174a6e");
+
+    // Team logo as the card's backdrop. Appended first so the photo, rank,
+    // change chip and OVR all paint over it; dropped on error so a missing
+    // logo just leaves the plain team colour.
+    var logoSrc = logoUrl(player.team);
+    if (logoSrc) {
+      var logo = document.createElement("img");
+      logo.className = "pcard-logo";
+      logo.src = logoSrc;
+      logo.alt = "";
+      logo.setAttribute("aria-hidden", "true");
+      logo.loading = "lazy";
+      logo.addEventListener("error", function () {
+        if (logo.parentNode) { logo.parentNode.removeChild(logo); }
+      });
+      top.appendChild(logo);
+    }
+
     top.appendChild(textNode("span", "pcard-rank", "#" + rank));
     top.appendChild(textNode("span", "pcard-change " + parts.cls, parts.text));
     top.appendChild(buildPortrait(player, "pcard-portrait"));
@@ -356,6 +378,18 @@
     clear(body);
     visible.forEach(function (player) { body.appendChild(buildRow(player, allSorted.indexOf(player) + 1)); });
     el("emptyState").hidden = visible.length > 0;
+  }
+
+  // Redraw everything the current filters affect. Deliberately does NOT rebuild
+  // the week <select>: that is only needed when the snapshot list itself changes,
+  // and rebuilding it mid-interaction would fight the user's own selection.
+  function redraw() {
+    renderSummary();
+    renderRows();
+    renderCards();
+    applyView();
+    var empty = el("emptyState");
+    if (empty) { empty.hidden = filteredPlayers().length > 0; }
   }
 
   function render() {
@@ -488,7 +522,7 @@
       btn.addEventListener("click", function () {
         viewMode = btn.getAttribute("data-view") === "list" ? "list" : "cards";
         try { localStorage.setItem("janafari-view", viewMode); } catch (e) {}
-        render();
+        redraw();
       });
     });
     try {
@@ -496,12 +530,12 @@
       if (savedView === "list" || savedView === "cards") { viewMode = savedView; }
     } catch (e) {}
 
-    el("weekSelect").addEventListener("change", function () { selectedSnapshot = parseInt(this.value, 10); renderSummary(); renderRows(); });
-    el("searchInput").addEventListener("input", function () { searchTerm = this.value; renderRows(); });
+    el("weekSelect").addEventListener("change", function () { selectedSnapshot = parseInt(this.value, 10); redraw(); });
+    el("searchInput").addEventListener("input", function () { searchTerm = this.value; redraw(); });
     Array.prototype.forEach.call(document.querySelectorAll(".filter"), function (button) {
       button.addEventListener("click", function () {
         Array.prototype.forEach.call(document.querySelectorAll(".filter"), function (item) { item.className = "filter"; });
-        this.className = "filter active"; activeFilter = this.getAttribute("data-filter"); renderRows();
+        this.className = "filter active"; activeFilter = this.getAttribute("data-filter"); redraw();
       });
     });
     el("updateButton").addEventListener("click", openUpdate);
