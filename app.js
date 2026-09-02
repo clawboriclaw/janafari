@@ -327,9 +327,10 @@
     // throw: one missing optional element must never take the table down too.
     if (!grid) { return; }
     var visible = filteredPlayers();
-    var allSorted = sortedPlayers();
     clear(grid);
-    visible.forEach(function (player) { grid.appendChild(buildCard(player, allSorted.indexOf(player) + 1)); });
+    // Rank within the SECTION being viewed, so Defense reads 1..7 rather than
+    // the overall 5, 9, 12 -- which looks broken to anyone reading a filter.
+    visible.forEach(function (player, index) { grid.appendChild(buildCard(player, index + 1)); });
   }
 
   function applyView() {
@@ -380,17 +381,43 @@
   function renderRows() {
     var body = el("playerRows");
     var visible = filteredPlayers();
-    var allSorted = sortedPlayers();
     clear(body);
-    visible.forEach(function (player) { body.appendChild(buildRow(player, allSorted.indexOf(player) + 1)); });
+    visible.forEach(function (player, index) { body.appendChild(buildRow(player, index + 1)); });
     el("emptyState").hidden = visible.length > 0;
   }
 
   // Redraw everything the current filters affect. Deliberately does NOT rebuild
   // the week <select>: that is only needed when the snapshot list itself changes,
   // and rebuilding it mid-interaction would fight the user's own selection.
+  // Show how many players sit in each section, on the buttons themselves.
+  function renderFilterCounts() {
+    var players = sortedPlayers();
+    var query = searchTerm.toLowerCase();
+    function matches(player) {
+      return !query || (player.name + " " + player.team + " " + player.teamName + " " + player.pos).toLowerCase().indexOf(query) !== -1;
+    }
+    var counts = { all: 0, offense: 0, defense: 0, movers: 0 };
+    players.forEach(function (player) {
+      if (!matches(player)) { return; }
+      var change = getChange(player.id, selectedSnapshot);
+      counts.all += 1;
+      if (player.side === "offense") { counts.offense += 1; }
+      if (player.side === "defense") { counts.defense += 1; }
+      if (change !== null && change !== 0) { counts.movers += 1; }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".filter"), function (btn) {
+      var key = btn.getAttribute("data-filter");
+      var label = btn.getAttribute("data-label");
+      if (!label) { label = btn.textContent.trim(); btn.setAttribute("data-label", label); }
+      clear(btn);
+      btn.appendChild(document.createTextNode(label));
+      btn.appendChild(textNode("span", "filter-count", String(counts[key] || 0)));
+    });
+  }
+
   function redraw() {
     renderSummary();
+    renderFilterCounts();
     renderRows();
     renderCards();
     applyView();
@@ -401,6 +428,7 @@
   function render() {
     renderWeekSelect();
     renderSummary();
+    renderFilterCounts();
     renderRows();
     renderCards();
     applyView();
