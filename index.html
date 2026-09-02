@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#102a43">
+  <title>Our Madden 27 Board</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="field-lines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand-row">
+      <div class="brand-lockup">
+        <span class="football-mark" aria-hidden="true"><span></span></span>
+        <div>
+          <div class="eyebrow">YOU + DAD &nbsp;•&nbsp; FAMILY BOARD</div>
+          <h1>Our Madden 27 Board</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="button button-light" id="backupButton" type="button">Backup</button>
+        <button class="button button-red" id="updateButton" type="button">Update week</button>
+      </div>
+    </div>
+    <p class="subtitle">Top-player ratings, without the clutter. See who moved every week.</p>
+  </header>
+
+  <main>
+    <section class="scorecards" aria-label="Rating summary">
+      <article class="scorecard scorecard-red">
+        <span class="score-label">99 CLUB</span>
+        <strong id="clubCount">0</strong>
+        <span id="clubNames">—</span>
+      </article>
+      <article class="scorecard scorecard-gold">
+        <span class="score-label">BIGGEST MOVER</span>
+        <strong id="moverValue">—</strong>
+        <span id="moverName">Add the next week to compare</span>
+      </article>
+      <article class="scorecard scorecard-navy">
+        <span class="score-label">PLAYERS TRACKED</span>
+        <strong id="trackedCount">20</strong>
+        <span>Top-player watchlist</span>
+      </article>
+    </section>
+
+    <section class="board-card">
+      <div class="board-header">
+        <div>
+          <div class="section-kicker">RATINGS WATCH</div>
+          <h2>League leaders</h2>
+        </div>
+        <div class="week-control">
+          <label for="weekSelect">Viewing</label>
+          <select id="weekSelect" aria-label="Choose rating week"></select>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="Search player or team" autocomplete="off">
+        </label>
+        <div class="filter-group" role="group" aria-label="Filter players">
+          <button class="filter active" type="button" data-filter="all">All</button>
+          <button class="filter" type="button" data-filter="offense">Offense</button>
+          <button class="filter" type="button" data-filter="defense">Defense</button>
+          <button class="filter" type="button" data-filter="movers">Movers</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="rank-col">RK</th>
+              <th>PLAYER</th>
+              <th>POS</th>
+              <th>TEAM</th>
+              <th class="center">OVR</th>
+              <th class="center">WEEK</th>
+              <th>TREND</th>
+            </tr>
+          </thead>
+          <tbody id="playerRows"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" hidden>No players match this view.</div>
+      </div>
+    </section>
+
+    <section class="note-card">
+      <div class="note-icon" aria-hidden="true">i</div>
+      <div>
+        <strong>How your family board works</strong>
+        <p>When EA posts new ratings, tap <b>Update week</b>, change the numbers that moved, and save. This iPad remembers every snapshot so the arrows and trend lines build over time.</p>
+      </div>
+      <a href="https://www.ea.com/games/madden-nfl/ratings" target="_blank" rel="noopener">Check EA ratings <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+
+  <footer>
+    <span>Made for game day at home.</span>
+    <span id="sourceStamp">Seeded Sep 2, 2026</span>
+  </footer>
+
+  <div class="modal" id="updateModal" role="dialog" aria-modal="true" aria-labelledby="updateTitle" hidden>
+    <div class="modal-backdrop" data-close="update"></div>
+    <div class="modal-sheet update-sheet">
+      <div class="modal-head">
+        <div>
+          <div class="section-kicker">NEW SNAPSHOT</div>
+          <h2 id="updateTitle">Update this week</h2>
+        </div>
+        <button class="close-button" type="button" data-close="update" aria-label="Close">×</button>
+      </div>
+      <p class="modal-copy">Start with last week’s ratings. Tap <b>−</b> or <b>+</b> for anyone EA changed—everything else can stay put.</p>
+      <div class="snapshot-fields">
+        <label>Week name<input id="snapshotLabel" type="text" maxlength="24" placeholder="Week 1"></label>
+        <label>Date<input id="snapshotDate" type="date"></label>
+      </div>
+      <div class="rating-editor-head"><span>Player</span><span>New OVR</span></div>
+      <div class="rating-editor" id="ratingEditor"></div>
+      <div class="modal-actions">
+        <button class="button button-quiet" type="button" data-close="update">Cancel</button>
+        <button class="button button-red" id="saveSnapshot" type="button">Save this week</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle" hidden>
+    <div class="modal-backdrop" data-close="backup"></div>
+    <div class="modal-sheet small-sheet">
+      <div class="modal-head">
+        <div>
+          <div class="section-kicker">KEEP IT SAFE</div>
+          <h2 id="backupTitle">Backup &amp; restore</h2>
+        </div>
+        <button class="close-button" type="button" data-close="backup" aria-label="Close">×</button>
+      </div>
+      <p class="modal-copy">Safari keeps the history on this iPad. Save a backup occasionally in case its website data is cleared.</p>
+      <button class="backup-action" id="exportButton" type="button"><b>Save a backup file</b><span>Downloads your complete ratings history</span></button>
+      <label class="backup-action file-action"><b>Restore a backup file</b><span>Choose a previously saved .json file</span><input id="importInput" type="file" accept="application/json,.json"></label>
+      <div class="danger-zone">
+        <button id="resetButton" type="button">Reset to the original board</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
