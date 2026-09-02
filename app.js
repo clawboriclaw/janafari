@@ -383,13 +383,47 @@
     var visible = filteredPlayers();
     clear(body);
     visible.forEach(function (player, index) { body.appendChild(buildRow(player, index + 1)); });
-    el("emptyState").hidden = visible.length > 0;
+    renderEmptyState(visible.length);
   }
 
   // Redraw everything the current filters affect. Deliberately does NOT rebuild
   // the week <select>: that is only needed when the snapshot list itself changes,
   // and rebuilding it mid-interaction would fight the user's own selection.
   // Show how many players sit in each section, on the buttons themselves.
+  // An empty grid saying "no players match" tells a 10-year-old nothing about
+  // what to do next. Movers in particular is empty for a perfectly normal
+  // reason -- only one week is saved -- so say that, and name the button.
+  function renderEmptyState(visibleCount) {
+    var box = el("emptyState");
+    if (!box) { return; }
+    box.hidden = visibleCount > 0;
+    if (visibleCount > 0) { return; }
+
+    var onlyOneWeek = state.snapshots.length < 2;
+    var icon = "🏈";
+    var title = "No players here";
+    var hint = "Try a different button up top.";
+
+    if (activeFilter === "movers" && onlyOneWeek) {
+      icon = "📅";
+      title = "No moves yet";
+      hint = "Tap “Update week” to save this week’s ratings. Once two weeks are saved, everyone who went up or down shows up right here.";
+    } else if (activeFilter === "movers") {
+      icon = "😴";
+      title = "Nobody moved this week";
+      hint = "Every rating stayed the same. Check again after the next update.";
+    } else if (searchTerm) {
+      icon = "🔍";
+      title = "No player called “" + searchTerm + "”";
+      hint = "Check the spelling, or clear the search box.";
+    }
+
+    clear(box);
+    box.appendChild(textNode("div", "empty-icon", icon));
+    box.appendChild(textNode("strong", "empty-title", title));
+    box.appendChild(textNode("p", "empty-hint", hint));
+  }
+
   function renderFilterCounts() {
     var players = sortedPlayers();
     var query = searchTerm.toLowerCase();
@@ -421,8 +455,7 @@
     renderRows();
     renderCards();
     applyView();
-    var empty = el("emptyState");
-    if (empty) { empty.hidden = filteredPlayers().length > 0; }
+    renderEmptyState(filteredPlayers().length);
   }
 
   function render() {
@@ -432,8 +465,7 @@
     renderRows();
     renderCards();
     applyView();
-    var empty = el("emptyState");
-    if (empty) { empty.hidden = filteredPlayers().length > 0; }
+    renderEmptyState(filteredPlayers().length);
   }
 
   function localDateValue() {
