@@ -68,12 +68,18 @@
     if (url) {
       var img = document.createElement("img");
       img.className = "portrait-img";
-      img.src = url;
       img.alt = player.name;
       img.loading = "lazy";
+      // Headshots are transparent PNGs, so the monogram would show THROUGH the
+      // photo. Hide it the moment the image actually loads; if the image fails
+      // the class is never added and the monogram is still there to fall back on.
+      img.addEventListener("load", function () { wrap.className += " has-photo"; });
       img.addEventListener("error", function () {
         if (img.parentNode) { img.parentNode.removeChild(img); }
       });
+      img.src = url;
+      // A cached image can finish before the listener is attached.
+      if (img.complete && img.naturalWidth > 0) { wrap.className += " has-photo"; }
       wrap.appendChild(img);
     }
     return wrap;

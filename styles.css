@@ -668,3 +668,7 @@ html[data-theme="dark"] .pcard-logo { opacity: .34; }
 @media (max-width: 720px) {
   .pcard-logo { width: 104px; }
 }
+
+/* The monogram is a fallback only: transparent headshot PNGs would otherwise
+   let the initials show through the player's face. */
+.has-photo .portrait-mono { display: none; }
