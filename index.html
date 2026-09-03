@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#102a43">
   <title>Janafari — Madden 27 Ratings</title>
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -156,6 +156,21 @@
     </div>
   </div>
 
+  <div class="modal" id="playerModal" role="dialog" aria-modal="true" aria-labelledby="playerTitle" hidden>
+    <div class="modal-backdrop" data-close="player"></div>
+    <div class="modal-sheet small-sheet">
+      <div class="modal-head">
+        <div>
+          <div class="section-kicker" id="playerKicker">PLAYER CARD</div>
+          <h2 id="playerTitle">Player</h2>
+        </div>
+        <button class="close-button" type="button" data-close="player" aria-label="Close">&times;</button>
+      </div>
+      <div class="bio-hero" id="bioHero"></div>
+      <dl class="bio-list" id="bioList"></dl>
+    </div>
+  </div>
+
   <div class="modal" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle" hidden>
     <div class="modal-backdrop" data-close="backup"></div>
     <div class="modal-sheet small-sheet">
@@ -177,7 +192,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
   <script>
     (function () {
       var root = document.documentElement;

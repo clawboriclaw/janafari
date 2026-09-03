@@ -688,3 +688,44 @@ html[data-theme="dark"] .pcard-logo { opacity: .34; }
 .filter.active .filter-count { color: #013369; background: rgba(0,87,184,.16); }
 html[data-theme="dark"] .filter-count { color: #a3b3c6; background: rgba(255,255,255,.10); }
 html[data-theme="dark"] .filter.active .filter-count { color: #cfe0f5; background: rgba(0,87,184,.34); }
+
+/* ---------- PLAYER DETAIL SHEET ---------- */
+.pcard { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pcard:active { -webkit-transform: scale(.985); transform: scale(.985); }
+
+.bio-hero {
+  display: -webkit-box; display: -webkit-flex; display: flex;
+  -webkit-box-align: center; -webkit-align-items: center; align-items: center;
+  margin: 4px 0 6px;
+  padding: 14px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+.bio-hero > * + * { margin-left: 14px; }
+.bio-portrait { position: relative; overflow: hidden; width: 82px; height: 82px; border-radius: 16px; border: 3px solid rgba(255,255,255,.85); -webkit-flex: 0 0 auto; flex: 0 0 auto; }
+.bio-portrait .portrait-mono { font-size: 30px; line-height: 76px; }
+.bio-headline { min-width: 0; color: #fff; }
+.bio-headline b { display: block; font-size: 19px; line-height: 1.15; }
+.bio-headline span { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; opacity: .9; }
+.bio-ovr {
+  margin-left: auto;
+  color: #fff;
+  font-family: "AvenirNextCondensed-Heavy", "Avenir Next Condensed", "Arial Narrow", "Arial Black", sans-serif;
+  font-size: 40px; font-style: italic; font-weight: 900; line-height: 1;
+  text-shadow: 0 3px 10px rgba(0,0,0,.45);
+}
+
+.bio-list { margin: 8px 0 0; }
+.bio-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: baseline; -webkit-align-items: baseline; align-items: baseline; padding: 11px 2px; border-top: 1px solid #e9eef1; }
+.bio-row dt { -webkit-flex: 0 0 108px; flex: 0 0 108px; color: #81919d; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.bio-row dd { margin: 0; color: #102a43; font-size: 14px; font-weight: 700; }
+.bio-row dd small { display: block; margin-top: 2px; color: #7b8c98; font-size: 11px; font-weight: 600; }
+.bio-ring { display: inline-block; margin: 0 5px 4px 0; padding: 3px 9px; color: #071d38; background: #fdbb30; border-radius: 20px; font-size: 12px; font-weight: 900; }
+.bio-year { display: inline-block; margin: 0 5px 4px 0; padding: 3px 9px; color: #013369; background: #e5eef7; border-radius: 20px; font-size: 12px; font-weight: 800; }
+.bio-none { color: #7b8c98; font-weight: 600; }
+
+html[data-theme="dark"] .bio-row { border-top-color: #212d40; }
+html[data-theme="dark"] .bio-row dd { color: #eef3f9; }
+html[data-theme="dark"] .bio-row dt, html[data-theme="dark"] .bio-row dd small, html[data-theme="dark"] .bio-none { color: #93a4b8; }
+html[data-theme="dark"] .bio-year { color: #cfe0f5; background: #1e2f47; }

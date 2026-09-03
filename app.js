@@ -50,6 +50,34 @@
     return teamAbbr ? "https://a.espncdn.com/i/teamlogos/nfl/500/" + teamAbbr.toLowerCase() + ".png" : null;
   }
 
+  // Career facts pulled from ESPN 2026-09-03 and baked in, so the page still
+  // makes zero network calls of its own. Playoff years and rings are DERIVED:
+  // a player's team that season, then that team's postseason schedule -- and a
+  // team won the title iff its last postseason game was a win, since every other
+  // playoff team ends on a loss. Years are NFL SEASONS (2021 = the Feb 2022 game).
+  var playerBio = {
+    "christian-gonzalez": { college: "Oregon", draftYear: 2023, draftRound: 1, draftPick: 17, playoffs: [2025], superBowls: [] },
+    "christian-mccaffrey": { college: "Stanford", draftYear: 2017, draftRound: 1, draftPick: 8, playoffs: [2017, 2022, 2023, 2025], superBowls: [] },
+    "derrick-brown": { college: "Auburn", draftYear: 2020, draftRound: 1, draftPick: 7, playoffs: [2025], superBowls: [] },
+    "fred-warner": { college: "BYU", draftYear: 2018, draftRound: 3, draftPick: 70, playoffs: [2019, 2021, 2022, 2023, 2025], superBowls: [] },
+    "garett-bolles": { college: "Utah", draftYear: 2017, draftRound: 1, draftPick: 20, playoffs: [2024, 2025], superBowls: [] },
+    "george-kittle": { college: "Iowa", draftYear: 2017, draftRound: 5, draftPick: 146, playoffs: [2019, 2021, 2022, 2023, 2025], superBowls: [] },
+    "jahmyr-gibbs": { college: "Alabama", draftYear: 2023, draftRound: 1, draftPick: 12, playoffs: [2023, 2024], superBowls: [] },
+    "jamarr-chase": { college: "LSU", draftYear: 2021, draftRound: 1, draftPick: 5, playoffs: [2021, 2022], superBowls: [] },
+    "jaxon-smith-njigba": { college: "Ohio State", draftYear: 2023, draftRound: 1, draftPick: 20, playoffs: [2025], superBowls: [2025] },
+    "joe-burrow": { college: "LSU", draftYear: 2020, draftRound: 1, draftPick: 1, playoffs: [2021, 2022], superBowls: [] },
+    "josh-allen": { college: "Wyoming", draftYear: 2018, draftRound: 1, draftPick: 7, playoffs: [2019, 2020, 2021, 2022, 2023, 2024, 2025], superBowls: [] },
+    "lane-johnson": { college: "Oklahoma", draftYear: 2013, draftRound: 1, draftPick: 4, playoffs: [2013, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025], superBowls: [2017, 2024] },
+    "matthew-stafford": { college: "Georgia", draftYear: 2009, draftRound: 1, draftPick: 1, playoffs: [2011, 2014, 2016, 2021, 2023, 2024, 2025], superBowls: [2021] },
+    "maxx-crosby": { college: "Eastern Michigan", draftYear: 2019, draftRound: 4, draftPick: 106, playoffs: [2021], superBowls: [] },
+    "micah-parsons": { college: "Penn State", draftYear: 2021, draftRound: 1, draftPick: 12, playoffs: [2021, 2022, 2023, 2025], superBowls: [] },
+    "myles-garrett": { college: "Texas A&M", draftYear: 2017, draftRound: 1, draftPick: 1, playoffs: [2020, 2023], superBowls: [] },
+    "patrick-surtain": { college: "Alabama", draftYear: 2021, draftRound: 1, draftPick: 9, playoffs: [2024, 2025], superBowls: [] },
+    "penei-sewell": { college: "Oregon", draftYear: 2021, draftRound: 1, draftPick: 7, playoffs: [2023, 2024], superBowls: [] },
+    "puka-nacua": { college: "BYU", draftYear: 2023, draftRound: 5, draftPick: 177, playoffs: [2023, 2024, 2025], superBowls: [] },
+    "trey-mcbride": { college: "Colorado State", draftYear: 2022, draftRound: 2, draftPick: 55, playoffs: [], superBowls: [] }
+  };
+
   function photoUrl(playerId) {
     var espnId = playerPhotos[playerId];
     return espnId ? "https://a.espncdn.com/i/headshots/nfl/players/full/" + espnId + ".png" : null;
@@ -257,6 +285,8 @@
     changeCell.appendChild(textNode("span", "change-pill " + changeClass, changeText));
     trendCell.appendChild(makeSparkline(player.id));
 
+    row.addEventListener("click", function () { openPlayer(player); });
+    row.style.cursor = "pointer";
     row.appendChild(rankCell); row.appendChild(playerCell); row.appendChild(posCell); row.appendChild(teamCell);
     row.appendChild(ovrCell); row.appendChild(changeCell); row.appendChild(trendCell);
     return row;
@@ -318,6 +348,12 @@
 
     card.appendChild(top);
     card.appendChild(body);
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.addEventListener("click", function () { openPlayer(player); });
+    card.addEventListener("keydown", function (event) {
+      if (event.keyCode === 13 || event.keyCode === 32) { event.preventDefault(); openPlayer(player); }
+    });
     return card;
   }
 
@@ -345,6 +381,71 @@
       btn.className = "view-btn" + (on ? " active" : "");
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
+  }
+
+  function yearChips(list, className, emptyText) {
+    var dd = document.createElement("dd");
+    if (!list || !list.length) {
+      dd.appendChild(textNode("span", "bio-none", emptyText));
+      return dd;
+    }
+    list.slice().sort(function (a, b) { return b - a; }).forEach(function (year) {
+      dd.appendChild(textNode("span", className, String(year)));
+    });
+    return dd;
+  }
+
+  function bioRow(label, ddNode) {
+    var row = document.createElement("div");
+    row.className = "bio-row";
+    row.appendChild(textNode("dt", "", label));
+    row.appendChild(ddNode);
+    return row;
+  }
+
+  function openPlayer(player) {
+    var facts = playerBio[player.id] || {};
+    var rating = state.snapshots[selectedSnapshot].ratings[player.id];
+    var hero = el("bioHero");
+    var list = el("bioList");
+    if (!hero || !list) { return; }
+
+    el("playerTitle").textContent = player.name;
+    el("playerKicker").textContent = player.pos + "  ·  " + player.teamName.toUpperCase();
+
+    clear(hero);
+    hero.style.background = "linear-gradient(150deg, " + (teamColors[player.team] || "#174a6e") + " 0%, rgba(0,0,0,.55) 140%)";
+    hero.appendChild(buildPortrait(player, "bio-portrait"));
+    var head = document.createElement("div");
+    head.className = "bio-headline";
+    head.appendChild(textNode("b", "", player.name));
+    head.appendChild(textNode("span", "", player.team + " · " + player.teamName + " · " + player.pos));
+    hero.appendChild(head);
+    hero.appendChild(textNode("div", "bio-ovr", String(rating)));
+
+    clear(list);
+    var college = document.createElement("dd");
+    college.appendChild(document.createTextNode(facts.college || "—"));
+    list.appendChild(bioRow("College", college));
+
+    var draft = document.createElement("dd");
+    if (facts.draftYear) {
+      draft.appendChild(document.createTextNode(String(facts.draftYear)));
+      var detail2 = "Round " + facts.draftRound + ", pick " + facts.draftPick;
+      draft.appendChild(textNode("small", "", detail2));
+    } else {
+      draft.appendChild(textNode("span", "bio-none", "Undrafted"));
+    }
+    list.appendChild(bioRow("Drafted", draft));
+
+    list.appendChild(bioRow("Super Bowls", yearChips(facts.superBowls, "bio-ring", "No rings yet")));
+    list.appendChild(bioRow("Playoffs", yearChips(facts.playoffs, "bio-year", "Has not made it yet")));
+
+    var note = document.createElement("dd");
+    note.appendChild(textNode("small", "", "Years are NFL seasons — the 2021 season’s Super Bowl was played in February 2022."));
+    list.appendChild(bioRow("", note));
+
+    showModal("playerModal");
   }
 
   function renderWeekSelect() {
@@ -618,7 +719,7 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { closeModal("updateModal"); closeModal("backupModal"); }
+      if (event.keyCode === 27) { closeModal("updateModal"); closeModal("backupModal"); closeModal("playerModal"); }
     });
   }
 
