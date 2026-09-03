@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#102a43">
   <title>Janafari — Madden 27 Ratings</title>
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -41,6 +41,7 @@
                 title="Switch between light and dark">
           <span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span>
         </button>
+        <button class="button button-light" id="addButton" type="button">+ Add player</button>
         <button class="button button-light" id="backupButton" type="button">Backup</button>
         <button class="button button-red" id="updateButton" type="button">Update week</button>
       </div>
@@ -156,6 +157,23 @@
     </div>
   </div>
 
+  <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle" hidden>
+    <div class="modal-backdrop" data-close="add"></div>
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <div>
+          <div class="section-kicker">BUILD THE BOARD</div>
+          <h2 id="addTitle">Add a player</h2>
+        </div>
+        <button class="close-button" type="button" data-close="add" aria-label="Close">&times;</button>
+      </div>
+      <p class="modal-copy" id="addStatus">Pick a team</p>
+      <div class="team-grid" id="addTeams"></div>
+      <div class="roster-list" id="addRoster" hidden></div>
+      <div id="addConfirm" hidden></div>
+    </div>
+  </div>
+
   <div class="modal" id="playerModal" role="dialog" aria-modal="true" aria-labelledby="playerTitle" hidden>
     <div class="modal-backdrop" data-close="player"></div>
     <div class="modal-sheet small-sheet">
@@ -192,7 +210,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
   <script>
     (function () {
       var root = document.documentElement;

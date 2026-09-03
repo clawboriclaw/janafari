@@ -23,14 +23,17 @@
     { id: "patrick-surtain", name: "Patrick Surtain II", team: "DEN", teamName: "Broncos", pos: "CB", side: "defense" },
     { id: "derrick-brown", name: "Derrick Brown", team: "CAR", teamName: "Panthers", pos: "DT", side: "defense" },
     { id: "garett-bolles", name: "Garett Bolles", team: "DEN", teamName: "Broncos", pos: "LT", side: "offense" },
-    { id: "george-kittle", name: "George Kittle", team: "SF", teamName: "49ers", pos: "TE", side: "offense" }
+    { id: "george-kittle", name: "George Kittle", team: "SF", teamName: "49ers", pos: "TE", side: "offense" },
+    { id: "justin-jefferson", name: "Justin Jefferson", team: "MIN", teamName: "Vikings", pos: "WR", side: "offense", espn: "4262921" },
+    { id: "jonathan-taylor", name: "Jonathan Taylor", team: "IND", teamName: "Colts", pos: "RB", side: "offense", espn: "4242335" }
   ];
   var initialRatings = {
     "jamarr-chase": 99, "jaxon-smith-njigba": 99, "josh-allen": 99, "matthew-stafford": 99,
     "myles-garrett": 99, "trey-mcbride": 99, "christian-gonzalez": 98, "jahmyr-gibbs": 98,
     "micah-parsons": 98, "penei-sewell": 98, "puka-nacua": 98, "christian-mccaffrey": 97,
     "fred-warner": 97, "joe-burrow": 97, "lane-johnson": 97, "maxx-crosby": 97,
-    "patrick-surtain": 97, "derrick-brown": 96, "garett-bolles": 96, "george-kittle": 96
+    "patrick-surtain": 97, "derrick-brown": 96, "garett-bolles": 96, "george-kittle": 96,
+    "justin-jefferson": 90, "jonathan-taylor": 90
   };
   // ESPN headshot ids, resolved from the live NFL team rosters 2026-09-02.
   // Kept in a separate map (not on the player objects) on purpose: a returning
@@ -56,6 +59,8 @@
   // team won the title iff its last postseason game was a win, since every other
   // playoff team ends on a loss. Years are NFL SEASONS (2021 = the Feb 2022 game).
   var playerBio = {
+    "jonathan-taylor": { college: "Wisconsin", draftYear: 2020, draftRound: 2, draftPick: 41, playoffs: [2020], superBowls: [] },
+    "justin-jefferson": { college: "LSU", draftYear: 2020, draftRound: 1, draftPick: 22, playoffs: [2022, 2024], superBowls: [] },
     "christian-gonzalez": { college: "Oregon", draftYear: 2023, draftRound: 1, draftPick: 17, playoffs: [2025], superBowls: [] },
     "christian-mccaffrey": { college: "Stanford", draftYear: 2017, draftRound: 1, draftPick: 8, playoffs: [2017, 2022, 2023, 2025], superBowls: [] },
     "derrick-brown": { college: "Auburn", draftYear: 2020, draftRound: 1, draftPick: 7, playoffs: [2025], superBowls: [] },
@@ -78,8 +83,9 @@
     "trey-mcbride": { college: "Colorado State", draftYear: 2022, draftRound: 2, draftPick: 55, playoffs: [], superBowls: [] }
   };
 
-  function photoUrl(playerId) {
-    var espnId = playerPhotos[playerId];
+  function photoUrl(player) {
+    // Players the user adds carry their own espn id; the built-in twenty use the map.
+    var espnId = (player && player.espn) || playerPhotos[(player && player.id) || player];
     return espnId ? "https://a.espncdn.com/i/headshots/nfl/players/full/" + espnId + ".png" : null;
   }
 
@@ -89,7 +95,7 @@
   function buildPortrait(player, className) {
     var wrap = document.createElement("div");
     var mono = textNode("span", "portrait-mono", initials(player.name));
-    var url = photoUrl(player.id);
+    var url = photoUrl(player);
     wrap.className = className;
     wrap.style.backgroundColor = teamColors[player.team] || "#174a6e";
     wrap.appendChild(mono);
@@ -116,7 +122,8 @@
   var teamColors = {
     CIN: "#fb4f14", SEA: "#002244", BUF: "#00338d", LAR: "#003594", ARI: "#97233f",
     NE: "#002244", DET: "#0076b6", GB: "#203731", SF: "#aa0000", PHI: "#004c54",
-    LV: "#111111", DEN: "#fb4f14", CAR: "#0085ca"
+    LV: "#111111", DEN: "#fb4f14", CAR: "#0085ca",
+    MIN: "#4f2683", IND: "#002c5f"
   };
 
   var state;
@@ -148,6 +155,27 @@
       state = makeDefaultState();
     }
     selectedSnapshot = state.snapshots.length - 1;
+  }
+
+  // A board saved before a built-in player existed would never show him, because
+  // the saved copy of `players` wins over defaultPlayers. Fold in anyone missing
+  // and give him a rating in every snapshot so sorting and week-change stay sane.
+  function mergeNewDefaults() {
+    var changed = false;
+    defaultPlayers.forEach(function (dp) {
+      var known = state.players.some(function (p) { return p.id === dp.id; });
+      if (!known) {
+        state.players.push(JSON.parse(JSON.stringify(dp)));
+        changed = true;
+      }
+      var seed = initialRatings[dp.id];
+      if (typeof seed === "number") {
+        state.snapshots.forEach(function (snap) {
+          if (typeof snap.ratings[dp.id] !== "number") { snap.ratings[dp.id] = seed; changed = true; }
+        });
+      }
+    });
+    return changed;
   }
 
   function saveState() {
@@ -448,6 +476,216 @@
     showModal("playerModal");
   }
 
+  var nflTeams = [
+    { abbr: "ARI", name: "Cardinals", color: "#a40227" },
+    { abbr: "ATL", name: "Falcons", color: "#a71930" },
+    { abbr: "BAL", name: "Ravens", color: "#29126f" },
+    { abbr: "BUF", name: "Bills", color: "#00338d" },
+    { abbr: "CAR", name: "Panthers", color: "#0085ca" },
+    { abbr: "CHI", name: "Bears", color: "#0b1c3a" },
+    { abbr: "CIN", name: "Bengals", color: "#fb4f14" },
+    { abbr: "CLE", name: "Browns", color: "#472a08" },
+    { abbr: "DAL", name: "Cowboys", color: "#002a5c" },
+    { abbr: "DEN", name: "Broncos", color: "#0a2343" },
+    { abbr: "DET", name: "Lions", color: "#0076b6" },
+    { abbr: "GB", name: "Packers", color: "#204e32" },
+    { abbr: "HOU", name: "Texans", color: "#021018" },
+    { abbr: "IND", name: "Colts", color: "#003b75" },
+    { abbr: "JAX", name: "Jaguars", color: "#007487" },
+    { abbr: "KC", name: "Chiefs", color: "#e31837" },
+    { abbr: "LAC", name: "Chargers", color: "#0080c6" },
+    { abbr: "LAR", name: "Rams", color: "#003594" },
+    { abbr: "LV", name: "Raiders", color: "#000000" },
+    { abbr: "MIA", name: "Dolphins", color: "#008e97" },
+    { abbr: "MIN", name: "Vikings", color: "#4f2683" },
+    { abbr: "NE", name: "Patriots", color: "#002a5c" },
+    { abbr: "NO", name: "Saints", color: "#d3bc8d" },
+    { abbr: "NYG", name: "Giants", color: "#003c7f" },
+    { abbr: "NYJ", name: "Jets", color: "#115740" },
+    { abbr: "PHI", name: "Eagles", color: "#06424d" },
+    { abbr: "PIT", name: "Steelers", color: "#000000" },
+    { abbr: "SEA", name: "Seahawks", color: "#002a5c" },
+    { abbr: "SF", name: "49ers", color: "#aa0000" },
+    { abbr: "TB", name: "Buccaneers", color: "#bd1c36" },
+    { abbr: "TEN", name: "Titans", color: "#4495d2" },
+    { abbr: "WSH", name: "Commanders", color: "#5a1414" }
+  ];
+
+  var OFFENSE_POS = { QB:1, RB:1, HB:1, FB:1, WR:1, TE:1, LT:1, LG:1, C:1, RG:1, RT:1, OL:1, OT:1, OG:1, G:1, T:1 };
+
+  function sideForPosition(pos) {
+    return OFFENSE_POS[(pos || "").toUpperCase()] ? "offense" : "defense";
+  }
+
+  function slugify(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function addPane(which) {
+    ["addTeams", "addRoster", "addConfirm"].forEach(function (id) {
+      var node = el(id);
+      if (node) { node.hidden = id !== which; }
+    });
+  }
+
+  function openAdd() {
+    var grid = el("addTeams");
+    if (!grid) { return; }
+    el("addStatus").textContent = "Pick a team";
+    clear(grid);
+    nflTeams.forEach(function (team) {
+      var button = document.createElement("button");
+      var img = document.createElement("img");
+      button.type = "button";
+      button.className = "team-chip";
+      img.src = "https://a.espncdn.com/i/teamlogos/nfl/500/" + team.abbr.toLowerCase() + ".png";
+      img.alt = "";
+      img.loading = "lazy";
+      button.appendChild(img);
+      button.appendChild(textNode("span", "", team.name));
+      button.addEventListener("click", function () { loadRoster(team); });
+      grid.appendChild(button);
+    });
+    addPane("addTeams");
+    showModal("addModal");
+  }
+
+  function loadRoster(team) {
+    var list = el("addRoster");
+    var status = el("addStatus");
+    clear(list);
+    addPane("addRoster");
+    status.textContent = "Loading the " + team.name + "...";
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/" + team.abbr.toLowerCase() + "/roster", true);
+    xhr.timeout = 20000;
+    xhr.onload = function () {
+      var data = null;
+      try { data = JSON.parse(xhr.responseText); } catch (e) { data = null; }
+      var players = [];
+      if (data && data.athletes) {
+        data.athletes.forEach(function (group) {
+          (group.items || []).forEach(function (a) { players.push(a); });
+        });
+      }
+      if (!players.length) {
+        status.textContent = "Could not load that roster. Check the internet and try again.";
+        return;
+      }
+      status.textContent = "Tap a player to add";
+      players.sort(function (a, b) { return (a.fullName || "").localeCompare(b.fullName || ""); });
+      players.forEach(function (a) {
+        var pos = (a.position && a.position.abbreviation) || "";
+        var row = document.createElement("button");
+        var pic = document.createElement("span");
+        var info = document.createElement("span");
+        row.type = "button";
+        row.className = "roster-row";
+        pic.className = "roster-pic";
+        pic.style.backgroundColor = team.color;
+        var hs = (a.headshot && a.headshot.href) || null;
+        if (hs) {
+          var img = document.createElement("img");
+          img.src = hs; img.alt = ""; img.loading = "lazy";
+          img.addEventListener("error", function () { if (img.parentNode) { img.parentNode.removeChild(img); } });
+          pic.appendChild(img);
+        }
+        info.className = "roster-info";
+        info.appendChild(textNode("b", "", a.fullName || "Unknown"));
+        info.appendChild(textNode("small", "", pos + " - " + team.name));
+        row.appendChild(pic);
+        row.appendChild(info);
+        row.addEventListener("click", function () { confirmAdd(team, a, pos); });
+        list.appendChild(row);
+      });
+    };
+    xhr.onerror = function () { status.textContent = "Could not reach the roster list. Check the internet and try again."; };
+    xhr.ontimeout = xhr.onerror;
+    xhr.send();
+  }
+
+  function confirmAdd(team, athlete, pos) {
+    var box = el("addConfirm");
+    var name = athlete.fullName || "Unknown";
+    var id = slugify(name);
+    clear(box);
+    addPane("addConfirm");
+    el("addStatus").textContent = "";
+
+    if (state.players.some(function (p) { return p.id === id; })) {
+      box.appendChild(textNode("p", "modal-copy", name + " is already on the board."));
+      var back0 = document.createElement("button");
+      back0.type = "button";
+      back0.className = "button button-quiet";
+      back0.textContent = "Pick someone else";
+      back0.addEventListener("click", function () { loadRoster(team); });
+      box.appendChild(back0);
+      return;
+    }
+
+    box.appendChild(textNode("h3", "add-name", name));
+    box.appendChild(textNode("p", "modal-copy", pos + " - " + team.name + ". What is his Madden rating?"));
+
+    var stepper = document.createElement("div");
+    var minus = document.createElement("button");
+    var input = document.createElement("input");
+    var plus = document.createElement("button");
+    stepper.className = "stepper add-stepper";
+    minus.type = "button";
+    minus.textContent = "-";
+    minus.setAttribute("aria-label", "Lower rating");
+    plus.type = "button";
+    plus.textContent = "+";
+    plus.setAttribute("aria-label", "Raise rating");
+    input.type = "number";
+    input.min = "0";
+    input.max = "99";
+    input.step = "1";
+    input.setAttribute("inputmode", "numeric");
+    input.value = "80";
+    minus.addEventListener("click", function () { input.value = Math.max(0, (parseInt(input.value, 10) || 0) - 1); });
+    plus.addEventListener("click", function () { input.value = Math.min(99, (parseInt(input.value, 10) || 0) + 1); });
+    stepper.appendChild(minus);
+    stepper.appendChild(input);
+    stepper.appendChild(plus);
+    box.appendChild(stepper);
+
+    var actions = document.createElement("div");
+    var back = document.createElement("button");
+    var save = document.createElement("button");
+    actions.className = "modal-actions";
+    back.type = "button";
+    back.className = "button button-quiet";
+    back.textContent = "Back";
+    back.addEventListener("click", function () { loadRoster(team); });
+    save.type = "button";
+    save.className = "button button-red";
+    save.textContent = "Add to board";
+    save.addEventListener("click", function () {
+      var rating = Math.max(0, Math.min(99, parseInt(input.value, 10) || 0));
+      state.players.push({
+        id: id,
+        name: name,
+        team: team.abbr,
+        teamName: team.name,
+        pos: pos || "ATH",
+        side: sideForPosition(pos),
+        espn: String(athlete.id || "")
+      });
+      // Give him a rating in EVERY snapshot. Without it the sort and the
+      // week-over-week change read undefined for weeks before he was added.
+      state.snapshots.forEach(function (snap) { snap.ratings[id] = rating; });
+      if (!teamColors[team.abbr]) { teamColors[team.abbr] = team.color; }
+      saveState();
+      closeModal("addModal");
+      render();
+      showToast(name + " added");
+    });
+    actions.appendChild(back);
+    actions.appendChild(save);
+    box.appendChild(actions);
+  }
+
   function renderWeekSelect() {
     var select = el("weekSelect");
     clear(select);
@@ -707,6 +945,8 @@
     });
     el("updateButton").addEventListener("click", openUpdate);
     el("backupButton").addEventListener("click", function () { showModal("backupModal"); });
+    var addBtn = el("addButton");
+    if (addBtn) { addBtn.addEventListener("click", openAdd); }
     el("saveSnapshot").addEventListener("click", saveSnapshot);
     el("exportButton").addEventListener("click", exportBackup);
     el("importInput").addEventListener("change", function () { importBackup(this.files[0]); });
@@ -719,11 +959,12 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { closeModal("updateModal"); closeModal("backupModal"); closeModal("playerModal"); }
+      if (event.keyCode === 27) { closeModal("updateModal"); closeModal("backupModal"); closeModal("playerModal"); closeModal("addModal"); }
     });
   }
 
   loadState();
+  if (mergeNewDefaults()) { saveState(); }
   bindEvents();
   render();
 }());
