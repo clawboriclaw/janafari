@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#102a43">
   <title>Janafari — Madden 27 Ratings</title>
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -28,15 +28,15 @@
   <div class="field-lines" aria-hidden="true"></div>
 
   <header class="topbar">
-    <div class="brand-row">
-      <div class="brand-lockup">
-        <span class="j-mark" aria-hidden="true"><span>J</span></span>
-        <div>
-          <div class="eyebrow">INDY ROOTS &nbsp;•&nbsp; GAME DAY BUILT</div>
-          <h1>Janafari</h1>
-        </div>
-      </div>
-      <div class="header-actions">
+    <div class="masthead">
+      <a class="brand" href="./" aria-label="Janafari — home">
+        <span class="j-mark" aria-hidden="true">J</span>
+        <span class="brand-text">
+          <h1 class="brand-name">Janafari</h1>
+          <span class="brand-desc">Madden 27 ratings tracker</span>
+        </span>
+      </a>
+      <nav class="header-actions" aria-label="Board actions">
         <button class="button theme-toggle" id="themeToggle" type="button" aria-pressed="false"
                 title="Switch between light and dark">
           <span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span>
@@ -44,9 +44,8 @@
         <button class="button button-light" id="addButton" type="button">+ Add player</button>
         <button class="button button-light" id="backupButton" type="button">Backup</button>
         <button class="button button-red" id="updateButton" type="button">Update week</button>
-      </div>
+      </nav>
     </div>
-    <p class="subtitle">Your Madden 27 power board. Track the stars. Catch every move.</p>
   </header>
 
   <main>
