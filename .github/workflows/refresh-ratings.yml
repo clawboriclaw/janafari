@@ -1,0 +1,37 @@
+name: Refresh Madden ratings
+
+# EA posts roster updates on Thursdays. Fetch the official feed, commit the snapshot if it
+# changed, and GitHub Pages redeploys the site from the commit. Run by hand from the Actions tab.
+on:
+  schedule:
+    - cron: "17 15 * * 4"      # Thursdays 15:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch the feed
+        id: fetch
+        run: |
+          set +e
+          python3 tools/fetch_ratings.py
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+      - name: Commit the snapshot
+        if: steps.fetch.outputs.rc == '0'
+        run: |
+          git config user.name "ratings-bot"
+          git config user.email "ratings-bot@users.noreply.github.com"
+          git add data/ratings.json data/stats
+          git commit -m "Ratings snapshot: $(python3 -c "import json;d=json.load(open('data/ratings.json'));print(d['iteration']['label'],'·',d['count'],'players')")"
+          git push
+      - name: Fail loudly if the fetch broke
+        if: steps.fetch.outputs.rc == '2'
+        run: exit 1
