@@ -10,6 +10,8 @@ Live site: <https://clawboriclaw.github.io/janafari/>
 
 - **League** — everyone EA rates (3,111 players at Launch Ratings, free agents included), top 100 by
   overall, search finds anyone. **My players** — the players this device's owner chose to follow.
+- **Team** chip → tap a logo (32 clubs + free agents) to see that whole roster, sorted by overall; the pick
+  sticks between visits. Works together with Offense / Defense / Special teams.
 - **Add** (＋) searches the whole league and opens a real player card: age, size, college, years pro,
   abilities, the top attributes with EA's week-over-week diffs, and a one-tap "Add to my players".
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen

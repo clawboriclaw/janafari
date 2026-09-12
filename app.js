@@ -32,6 +32,7 @@
   var selectedSnapshot = 0;
   var tab = "watch";        // "watch" | "league"
   var activeFilter = "all";
+  var activeTeam = "";      // "" = every team; "FA" = free agents; else a club abbreviation
   var viewMode = "cards";
   var searchTerm = "";
   var shownLimit = PAGE;    // grows with "Show more"; resets on any filter/search/tab change
@@ -288,6 +289,7 @@
   function matchesSearch(p, query) {
     return !query || (p.name + " " + p.team + " " + p.teamName + " " + p.teamFull + " " + p.pos).toLowerCase().indexOf(query) !== -1;
   }
+  function matchesTeam(p) { return !activeTeam || p.team === activeTeam; }
   function matchesFilter(p) {
     if (activeFilter === "all") { return true; }
     if (activeFilter === "movers") { var c = getChange(p.id); return c !== null && c !== 0; }
@@ -296,10 +298,10 @@
   // Returns {list, total}: `list` is what may be drawn, `total` how many matched before any cap.
   function filteredPlayers() {
     var query = searchTerm.toLowerCase().replace(/^\s+|\s+$/g, "");
-    var all = sortByRating(poolForTab()).filter(function (p) { return matchesSearch(p, query) && matchesFilter(p); });
+    var all = sortByRating(poolForTab()).filter(function (p) { return matchesTeam(p) && matchesSearch(p, query) && matchesFilter(p); });
     var list = all;
-    if (tab === "league" && !query && activeFilter !== "movers") { list = all.slice(0, LEAGUE_LIMIT); }
-    else if (query) { list = all.slice(0, SEARCH_LIMIT); }
+    if (tab === "league" && !query && !activeTeam && activeFilter !== "movers") { list = all.slice(0, LEAGUE_LIMIT); }   // a whole team fits; the whole league does not
+    else if (query || activeTeam === "FA") { list = all.slice(0, SEARCH_LIMIT); }
     return { list: list, total: all.length, query: query };
   }
 
@@ -458,7 +460,7 @@
     var query = searchTerm.toLowerCase().replace(/^\s+|\s+$/g, "");
     var counts = { all: 0, offense: 0, defense: 0, special: 0, movers: 0 };
     poolForTab().forEach(function (p) {
-      if (!matchesSearch(p, query)) { return; }
+      if (!matchesTeam(p) || !matchesSearch(p, query)) { return; }
       var c = getChange(p.id);
       counts.all += 1;
       if (counts.hasOwnProperty(p.side)) { counts[p.side] += 1; }
@@ -482,6 +484,7 @@
       action = { label: "Find players", run: openAdd };
     }
     else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = "Every rating stayed the same."; }
+    else if (activeTeam && tab === "watch") { icon = "🏈"; title = "None of your players are on the " + teamLabel(activeTeam); hint = "Try the League tab to see the whole roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
     else if (searchTerm) { icon = "🔍"; title = "No player called “" + searchTerm + "”"; hint = tab === "watch" ? "He may not be on your list yet — try the League tab." : "Check the spelling."; }
     clear(box);
     box.appendChild(textNode("div", "empty-icon", icon));
@@ -517,12 +520,52 @@
     renderEmptyState(visible.length);
     el("moreRow").hidden = drawn.length >= visible.length;
     el("moreButtonList").textContent = "Show " + Math.min(PAGE, visible.length - drawn.length) + " more";
-    if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
+    if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
+    else if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
     else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
     el("boardNote").textContent = note; el("boardNote").hidden = !note;
     el("searchClear").hidden = !searchTerm;
   }
-  function render() { renderWeekSelect(); redraw(); }
+  /* ---------- team picker ---------- */
+  function teamLabel(abbr) {
+    if (abbr === "FA") { return "Free agents"; }
+    var i; for (i = 0; i < nflTeams.length; i += 1) { if (nflTeams[i].abbr === abbr) { return nflTeams[i].name; } }
+    return abbr || "All teams";
+  }
+  function renderTeamChip() {
+    var chip = el("teamChip"), label = chip.querySelector(".team-chip-label");
+    clear(label);
+    var src = logoUrl(activeTeam);
+    if (src) { var img = document.createElement("img"); img.src = src; img.alt = ""; label.appendChild(img); }
+    label.appendChild(document.createTextNode(teamLabel(activeTeam)));
+    chip.className = "chip chip-team" + (activeTeam ? " active" : "");
+    chip.setAttribute("aria-label", "Team: " + teamLabel(activeTeam) + ". Tap to pick a team");
+  }
+  function setTeam(abbr) {
+    activeTeam = abbr || "";
+    try { if (activeTeam) { localStorage.setItem("janafari-team", activeTeam); } else { localStorage.removeItem("janafari-team"); } } catch (e) {}
+    renderTeamChip(); resetAndRedraw();
+  }
+  function buildTeamGrid() {
+    var grid = el("teamGrid"); clear(grid);
+    function cell(abbr, name, extraClass) {
+      var b = document.createElement("button"); b.type = "button";
+      b.className = "team-cell" + (extraClass ? " " + extraClass : "") + (abbr === activeTeam ? " active" : "");
+      var src = logoUrl(abbr);
+      if (src) { var img = document.createElement("img"); img.src = src; img.alt = ""; b.appendChild(img); }
+      else if (abbr) { b.appendChild(textNode("span", "team-mono", abbr)); }
+      b.appendChild(textNode("span", "", name));
+      b.setAttribute("aria-label", name + (abbr === activeTeam ? " (selected)" : ""));
+      b.addEventListener("click", function () { closeModal("teamModal"); setTeam(abbr); window.scrollTo(0, 0); });
+      return b;
+    }
+    grid.appendChild(cell("", "All teams", "team-all"));
+    nflTeams.forEach(function (t) { grid.appendChild(cell(t.abbr, t.name)); });
+    grid.appendChild(cell("FA", "Free agents"));
+  }
+  function openTeams(evt) { buildTeamGrid(); showModal("teamModal", evt && evt.currentTarget ? evt.currentTarget : null); }
+
+  function render() { renderWeekSelect(); renderTeamChip(); redraw(); }
   function resetAndRedraw() { shownLimit = PAGE; redraw(); }
 
   var STAT_LABELS = {
@@ -788,6 +831,7 @@
       button.addEventListener("click", function () { activeFilter = this.getAttribute("data-filter"); resetAndRedraw(); });
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
+    el("teamChip").addEventListener("click", openTeams);
     el("addSearch").addEventListener("input", function () { renderAddResults(this.value); });
     el("updateButton").addEventListener("click", checkRatings);
     el("addButton").addEventListener("click", openAdd);
@@ -804,7 +848,7 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { ["moreModal", "playerModal", "addModal"].forEach(closeModal); }
+      if (event.keyCode === 27) { ["moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
       trapFocus(event);
     });
     var lastPhone = window.innerWidth <= 600, resizeTimer;
@@ -828,6 +872,7 @@
     loadState();
     try { var t = localStorage.getItem("janafari-tab"); if (t === "league" || t === "watch") { tab = t; } } catch (e) {}
     try { var v = localStorage.getItem("janafari-view"); if (v === "list" || v === "cards") { viewMode = v; } } catch (e) {}
+    try { var tm = localStorage.getItem("janafari-team"); if (tm && (knownTeam[tm] || tm === "FA")) { activeTeam = tm; } } catch (e) {}
     fetchJson(DATA_URL, function (doc) {
       if (!validFeed(doc)) { failBoot("The ratings file looks wrong", "The page loaded, but EA's ratings file could not be read. Try again in a minute."); return; }
       useData(doc);

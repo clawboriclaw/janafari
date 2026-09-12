@@ -180,6 +180,28 @@ button { -webkit-tap-highlight-color: transparent; }
 .chip .chip-count { margin-left: 6px; color: #5b6b7c; color: var(--muted); font-weight: 600; }
 .chip.active { background: #041c38; background: var(--navy); border-color: #041c38; border-color: var(--navy); color: #fff; }
 .chip.active .chip-count { color: #fdbb30; color: var(--gold); }
+.chip-team { padding-left: 10px; }
+.chip-team img { width: 22px; height: 22px; margin-right: 7px; vertical-align: middle; }
+.chip-team .chip-caret { margin-left: 6px; font-size: 11px; opacity: .7; }
+.chip-team.active { background: #0057b8; border-color: #0057b8; color: #fff; }
+
+/* team picker: a grid of logos a kid can tap */
+.team-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-gap: 8px; gap: 8px; }
+.team-cell {
+  display: block; width: 100%; min-height: 84px; padding: 10px 4px 8px;
+  border: 1px solid #d9e0e8; border-color: var(--line); border-radius: 12px;
+  background: #fff; background: var(--surface); color: #0b1f3a; color: var(--text);
+  text-align: center; font-weight: 700; font-size: 12px;
+}
+.team-cell img, .team-cell .team-mono { display: block; width: 40px; height: 40px; margin: 0 auto 6px; }
+.team-cell .team-mono { border-radius: 50%; line-height: 40px; color: #fff; font-size: 14px; background: #5b6b7c; }
+.team-cell span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-cell.active { border-color: #0057b8; box-shadow: 0 0 0 2px #0057b8 inset; }
+.team-cell.team-all { grid-column: 1 / -1; min-height: 52px; padding: 12px; font-size: 15px; }
+.team-cell.team-all.active { background: #041c38; background: var(--navy); color: #fff; }
+@media (min-width: 601px) { .team-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (min-width: 1025px) { .team-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+
 .view-group { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex: 0 0 auto; flex: 0 0 auto; margin-left: 10px; }
 .view-btn { min-width: 44px; min-height: 44px; padding: 0 12px; border: 1px solid #d9e0e8; border-color: var(--line); background: #fff; background: var(--surface); color: #5b6b7c; color: var(--muted); font-size: 18px; }
 .view-btn:first-child { border-radius: 12px 0 0 12px; }
@@ -381,7 +403,8 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
   .tab { position: relative; }
   .tab-add { display: -webkit-box; display: -webkit-flex; display: flex; }
   .view-group { display: none; }
-  .chip .chip-count { display: none; }   /* the counts are what pushed the rail past the screen; labels alone fit */
+  .chip .chip-count { display: none; }
+  .chip-team .team-chip-label { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }   /* the counts are what pushed the rail past the screen; labels alone fit */
   .chips { padding-right: 4px; }
   .modal-sheet { border-radius: 0; }
 }

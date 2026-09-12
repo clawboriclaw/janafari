@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#041c38">
   <title>Janafari — Madden 27 Ratings</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230057b8' stroke='%23fdbb30' stroke-width='5'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Arial Narrow,Arial,sans-serif' font-weight='900' font-size='40' fill='%23fff'%3EJ%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -69,6 +69,7 @@
           <button class="search-clear" id="searchClear" type="button" aria-label="Clear search" hidden>×</button>
         </label>
         <div class="chips" role="group" aria-label="Filter players" id="filterChips">
+          <button class="chip chip-team" type="button" id="teamChip" aria-haspopup="dialog" title="Pick a team"><span class="team-chip-label">All teams</span><span class="chip-caret" aria-hidden="true">▾</span></button>
           <button class="chip active" type="button" data-filter="all">All</button>
           <button class="chip" type="button" data-filter="offense">Offense</button>
           <button class="chip" type="button" data-filter="defense">Defense</button>
@@ -150,6 +151,19 @@
     </div>
   </div>
 
+  <div class="modal" id="teamModal" role="dialog" aria-modal="true" aria-labelledby="teamTitle" hidden>
+    <div class="modal-backdrop" data-close="team"></div>
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <div><div class="kicker">Tap a logo</div><h2 id="teamTitle">Pick a team</h2></div>
+        <button class="close-button" type="button" data-close="team" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="team-grid" id="teamGrid"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="moreModal" role="dialog" aria-modal="true" aria-labelledby="moreTitle" hidden>
     <div class="modal-backdrop" data-close="more"></div>
     <div class="modal-sheet">
@@ -175,7 +189,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
   <script>
     (function () {
       var root = document.documentElement;
