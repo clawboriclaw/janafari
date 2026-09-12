@@ -8,6 +8,11 @@ on:
   schedule:
     - cron: "17 15 * * *"      # every day 15:17 UTC (11:17 ET); a no-change run costs ~15 s
   workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "Skip EA and fail on purpose, to prove the Telegram alert fires"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,7 +34,7 @@ jobs:
         id: fetch
         run: |
           set +e
-          python3 tools/fetch_ratings.py
+          if [ "${{ inputs.test_alert }}" = "true" ]; then echo "test_alert: simulating a failed fetch"; false; else python3 tools/fetch_ratings.py; fi
           echo "rc=$?" >> "$GITHUB_OUTPUT"
       - name: Commit the snapshot
         if: steps.fetch.outputs.rc == '0'
@@ -44,3 +49,19 @@ jobs:
         run: |
           echo "fetch_ratings.py exited ${{ steps.fetch.outputs.rc }}"
           exit 1
+      # A silent failure is the one thing this workflow must never do: the page would keep saying
+      # "updated <old date>" in 13px grey. Any failed step (fetch, commit, push) sends one Telegram
+      # message to the owner. Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (repo settings).
+      - name: Tell the owner on Telegram if anything failed
+        if: failure()
+        env:
+          BOT: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RC: ${{ steps.fetch.outputs.rc }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$BOT" ] && [ -n "$CHAT" ] || { echo "no Telegram secrets; skipping alert"; exit 0; }
+          TEXT="🏈 Janafari ratings refresh FAILED (fetch rc=${RC:-?}). EA's feed or the commit step broke — the page keeps its last good numbers. ${RUN_URL}"
+          curl -fsS -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT}" --data-urlencode "text=${TEXT}" -o /dev/null \
+            || echo "Telegram alert could not be sent"
