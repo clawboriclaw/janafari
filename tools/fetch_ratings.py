@@ -152,9 +152,20 @@ def main(argv):
         history = [h for h in history if h.get("id") != entry["id"]] + [entry]
         with open(HISTORY, "w") as fh:
             json.dump(history, fh, separators=(",", ":"))
-    # "stats" is compared too (Ava, round 2): an attribute-only edit must rewrite the team sheets, not read as unchanged
-    core_keys_cmp = ("id", "name", "team", "pos", "ovr", "age", "college", "jersey", "yearsPro", "avatar", "abilities", "stats")
-    if old and old.get("iteration") == iteration and \
+    core_keys_cmp = ("id", "name", "team", "pos", "ovr", "age", "college", "jersey", "yearsPro", "avatar", "abilities")
+    # Attributes are compared against the committed team sheets (Ava, round 2): an attribute-only EA edit must
+    # rewrite data/stats, not read as unchanged. (ratings.json itself carries no stats, so they cannot be compared there.)
+    stats_dir = os.path.join(os.path.dirname(OUT), "stats")
+    old_stats = {}
+    try:
+        for name in os.listdir(stats_dir):
+            if name.endswith(".json"):
+                with open(os.path.join(stats_dir, name)) as fh:
+                    old_stats.update(json.load(fh))
+    except Exception:
+        old_stats = {}
+    new_stats = {str(p["id"]): {"stats": p["stats"], "diffs": p["diffs"]} for p in unique}
+    if old and old.get("iteration") == iteration and old_stats == new_stats and \
             [{k: p.get(k) for k in core_keys_cmp} for p in old.get("players", [])] == [{k: p.get(k) for k in core_keys_cmp} for p in unique]:
         if history_changed:
             print("ratings unchanged; wrote %s for %s" % (os.path.relpath(HISTORY), iteration.get("label")))
@@ -166,7 +177,6 @@ def main(argv):
     #   data/stats/<TEAM>.json   id -> {stats, diffs} for that team, fetched when a card is opened
     core_keys = ("id", "name", "team", "teamName", "teamFull", "pos", "posName", "side", "ovr", "age",
                  "college", "jersey", "yearsPro", "height", "weight", "avatar", "abilities")
-    stats_dir = os.path.join(os.path.dirname(OUT), "stats")
     os.makedirs(stats_dir, exist_ok=True)
     by_team = {}
     for p in unique:
