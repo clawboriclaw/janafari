@@ -389,7 +389,7 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 /* ---------- Playbook (help) ---------- */
 .help-body { padding-top: 10px; }
 .help-nav { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -4px 6px; }
-.help-nav .chip { margin: 4px; text-decoration: none; min-height: 40px; font-size: 13px; padding: 0 12px; display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }
+.help-nav .chip { margin: 4px; text-decoration: none; min-height: 44px; font-size: 13px; padding: 0 12px; display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }
 .help-intro { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: justify; -webkit-justify-content: space-between; justify-content: space-between; padding: 8px 0 4px; }
 .help-intro p { margin: 4px 12px 4px 0; font-weight: 700; }
 .help-section { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: start; -webkit-align-items: flex-start; align-items: flex-start; padding: 14px 0; border-top: 1px solid #d9e0e8; border-top-color: var(--line); }
@@ -398,9 +398,9 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 .help-section-wide { -webkit-flex-wrap: wrap; flex-wrap: wrap; }   /* no :has() — old Safari */
 .help-text { -webkit-box-flex: 1; -webkit-flex: 1 1 200px; flex: 1 1 200px; min-width: 0; }
 .help-text h3 { margin: 0 0 4px; font-size: 16px; }
-.help-text p { margin: 0 0 8px; font-size: 15px; line-height: 1.45; }
+.help-text p { margin: 0 0 8px; font-size: 15px; line-height: 1.45; max-width: 40em; }   /* tablet measure (Ava) */
 .help-note { font-size: 13px; color: #5b6b7c; color: var(--muted); }
-.help-go { min-height: 40px; font-size: 14px; }
+.help-go { min-height: 44px; font-size: 14px; }
 .help-btn { display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: #041c38; background: var(--navy); color: #fff; font-size: 20px; font-weight: 700; }
 .help-btn.gold { background: #fdbb30; background: var(--gold); color: #0b1f3a; }
 .help-chip { display: inline-block; padding: 10px 12px; border-radius: 999px; border: 1px solid #d9e0e8; border-color: var(--line); background: #fff; background: var(--surface); font-weight: 700; font-size: 13px; white-space: nowrap; }

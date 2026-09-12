@@ -766,6 +766,7 @@
     for (i = 0; i < nodes.length; i += 1) { if (nodes[i].offsetWidth || nodes[i].offsetHeight) { items.push(nodes[i]); } }
     if (!items.length) { return; }
     var first = items[0], last = items[items.length - 1];
+    if (!open.contains(document.activeElement)) { event.preventDefault(); first.focus(); return; }   // focus escaped (or never entered): pull it back in
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
@@ -851,12 +852,13 @@
     tourStep = 0; renderTour();
     ["helpModal", "moreModal"].forEach(closeModal);
     showModal("tourModal", opener || el("helpButton"));
+    window.setTimeout(function () { try { el("tourNext").focus(); } catch (e) {} }, 40);   // Back is hidden on step 1: focus must land on a VISIBLE control or the trap has nothing to hold
   }
   function endTour(how) { setTourState(how); closeModal("tourModal"); if (how === "done") { showToast("You're all set — go find a player"); } }
   function renderHelpState() {
     el("helpChangesCopy").textContent = hasHistory()
-      ? "The arrows show how a rating changed from the earlier rating week. Movers lists everyone whose rating moved."
-      : "The arrows show how a rating changed from the earlier rating week. There isn't an earlier week to compare yet — they appear once EA posts the next ratings week.";
+      ? "On a card, ▲ means his rating went up since last week; ▼ means down. Movers lists everyone who moved."
+      : "On a card, ▲ means his rating went up since last week; ▼ means down. We only have one week so far, so no arrows yet.";
     el("helpMoversGo").hidden = !hasHistory();
   }
   function openHelp(opener) {
@@ -872,7 +874,7 @@
     else if (what === "mine") { selectTab("watch", false); }
     else if (what === "team") { selectTab("league", false); openTeams(); }
     else if (what === "movers") { if (hasHistory()) { selectTab("league", false); activeFilter = "movers"; resetAndRedraw(); } }
-    else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Showing everyone"); }
+    else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Filters, team and search cleared"); }
     else if (what === "refresh") { checkRatings(); }
     else if (what === "backup") { showModal("moreModal", el("moreButton")); }
   }
