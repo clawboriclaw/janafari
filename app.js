@@ -742,7 +742,7 @@
     }
     modal.hidden = false;
     window.setTimeout(function () {
-      var f = id === "addModal" ? el("addSearch") : (id === "helpModal" ? modal.querySelector(".help-nav a") : (firstFocusable(modal) || modal.querySelector(".close-button")));
+      var f = id === "addModal" ? el("addSearch") : (id === "helpModal" ? modal.querySelector(".help-nav a") : (id === "gameModal" ? el("gameOverlayBtn") : (firstFocusable(modal) || modal.querySelector(".close-button"))));
       try { if (f) { f.focus(); } } catch (e) {}
     }, 30);
   }
@@ -750,6 +750,7 @@
     var modal = el(id);
     if (modal.hidden) { return; }
     modal.hidden = true;
+    if (id === "gameModal" && window.JanafariGame) { window.JanafariGame.stop(); }   // no loop, no sound after Exit/Escape/backdrop
     if (!document.querySelector(".modal:not([hidden])")) {
       document.body.className = "";
       document.body.style.top = "";
@@ -877,6 +878,20 @@
     else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Filters, team and search cleared"); }
     else if (what === "refresh") { checkRatings(); }
     else if (what === "backup") { showModal("moreModal", el("moreButton")); }
+    else if (what === "game") { openGame(el("helpButton").offsetWidth ? el("helpButton") : el("moreButton")); }
+  }
+
+  /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
+  var GAME_URL = "game.js?v=1", gameLoading = false;
+  var modalApi = { show: showModal, close: closeModal, toast: showToast };
+  function openGame(opener) {
+    if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); return; }
+    if (gameLoading) { return; }
+    gameLoading = true; showToast("Loading End Zone Run…");
+    var sc = document.createElement("script"); sc.src = GAME_URL;
+    sc.onload = function () { gameLoading = false; if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); } };
+    sc.onerror = function () { gameLoading = false; showToast("The game could not load. Check the internet and try again."); };
+    document.body.appendChild(sc);
   }
 
   function bindEvents() {
@@ -913,6 +928,8 @@
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
     el("teamChip").addEventListener("click", openTeams);
     el("helpButton").addEventListener("click", function (e) { openHelp(e.currentTarget); });
+    el("playEgg").addEventListener("click", function (e) { openGame(e.currentTarget); });
+    el("playMore").addEventListener("click", function () { closeModal("moreModal"); openGame(el("moreButton")); });
     el("helpMore").addEventListener("click", function () { openHelp(el("moreButton")); });
     el("inviteTour").addEventListener("click", function (e) { openTour(e.currentTarget); });
     el("tourStart").addEventListener("click", function () { openTour(el("helpButton")); });
@@ -951,7 +968,7 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { ["tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
+      if (event.keyCode === 27) { ["gameModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
       trapFocus(event);
     });
     var lastPhone = window.innerWidth <= 600, resizeTimer;

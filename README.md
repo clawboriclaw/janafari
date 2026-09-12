@@ -17,6 +17,12 @@ Live site: <https://clawboriclaw.github.io/janafari/>
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
   sheets. Tablet (601–1024 px): 2–3 columns, search on its own row. Desktop: 4 columns, one toolbar row.
 - Every control is at least 44 px tall; the search field uses 16 px text so iOS does not zoom.
+- **End Zone Run** — a one-button football mini-game (🏈 in the footer, More → Play, or the Playbook):
+  JUMP / tap the field / Space to hop defenders and cones, 100 yards = touchdown, three chances; Start,
+  Pause (P), Restart, Exit (Esc), sound off until switched on. `game.js` loads only when someone taps Play,
+  the loop runs only while the sheet is open and the game is running, backgrounding pauses, Exit stops loop
+  and sound, best distance lives in `janafari-ezr-best-v1`. Play-tested with a timing bot: a run is ~36 s
+  and winnable with a 0.25–0.5 s reaction lead; reduced-motion gets no confetti.
 - **⋯ More** holds backup & restore, "where the numbers come from" and the EA link — the things a kid
   should not press by accident.
 
