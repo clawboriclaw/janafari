@@ -143,7 +143,8 @@
     return true;
   }
   function validFeed(doc) {
-    return !!(doc && doc.iteration && typeof doc.iteration.id === "string" && isArray(doc.players) && doc.players.length > 100);
+    return !!(doc && doc.iteration && typeof doc.iteration.id === "string" && isArray(doc.players) && doc.players.length > 100
+      && doc.players[0] && typeof doc.players[0].ovr === "number" && typeof doc.players[0].name === "string");
   }
   function loadState() {
     var raw = null;
@@ -160,7 +161,7 @@
   // watchlist (matched by name against the real feed); its typed numbers are
   // dropped on purpose — the feed is the only source of ratings now.
   function migrateLegacy() {
-    if (state.watchlist.length || state.snapshots.length) { return; }
+    if (state.watchlist.length) { return; }   // only the list matters; snapshots may already exist from history.json
     var raw = null, legacy = null;
     try { raw = window.localStorage.getItem(LEGACY_KEY); } catch (e) {}
     if (!raw) { return; }
@@ -179,7 +180,7 @@
   // differ is replaced in place. Returns "new", "updated" or "same".
   function ensureSnapshot() {
     var i, k, ratings = {}, existing = null, differs = false;
-    DATA.players.forEach(function (p) { ratings[p.id] = p.ovr; });
+    DATA.players.forEach(function (p) { if (typeof p.ovr === "number") { ratings[p.id] = p.ovr; } });
     for (i = 0; i < state.snapshots.length; i += 1) {
       if (state.snapshots[i].id === DATA.iteration.id) { existing = state.snapshots[i]; break; }
     }
@@ -198,17 +199,21 @@
   // was not opened still shows up in trends. Same-id entries are replaced by the committed copy.
   function mergeHistory(history) {
     if (!isArray(history) || !history.length) { return false; }
-    var changed = false, merged = [];
+    var changed = false, merged = [], seen = {};
     history.forEach(function (h) {
-      if (!h || typeof h.id !== "string" || !h.ratings) { return; }
+      if (!h || typeof h.id !== "string" || !h.ratings || typeof h.ratings !== "object" || isArray(h.ratings)) { return; }
       var mine = null, i;
       for (i = 0; i < state.snapshots.length; i += 1) { if (state.snapshots[i].id === h.id) { mine = state.snapshots[i]; break; } }
-      if (!mine) { merged.push({ id: h.id, label: h.label, date: h.date, ratings: h.ratings }); changed = true; }
-      else { merged.push(mine); }
+      // The committed copy WINS on a same-id week (K3, round 2): EA has edited an iteration in place
+      // before, and only the current iteration is content-checked by ensureSnapshot().
+      if (!mine || mine.label !== h.label || mine.date !== h.date || JSON.stringify(mine.ratings) !== JSON.stringify(h.ratings)) { changed = true; }
+      merged.push({ id: h.id, label: h.label, date: h.date, ratings: h.ratings }); seen[h.id] = true;
     });
-    // keep any local-only snapshot (newer than the committed history) at the end, in its old order
-    state.snapshots.forEach(function (s) { var found = false, i; for (i = 0; i < merged.length; i += 1) { if (merged[i].id === s.id) { found = true; } } if (!found) { merged.push(s); } });
-    if (changed || merged.length !== state.snapshots.length) { state.snapshots = merged; changed = true; }
+    // a local-only snapshot (e.g. newer than the committed history) is kept, then everything is put in date order
+    state.snapshots.forEach(function (s) { if (!seen[s.id]) { merged.push(s); seen[s.id] = true; } });
+    merged.sort(function (a, b) { return String(a.date || "") < String(b.date || "") ? -1 : (String(a.date || "") > String(b.date || "") ? 1 : 0); });
+    for (var j = 0; j < merged.length; j += 1) { if (!state.snapshots[j] || state.snapshots[j].id !== merged[j].id) { changed = true; } }
+    if (changed) { state.snapshots = merged; }
     return changed;
   }
 
@@ -511,7 +516,7 @@
     renderEmptyState(visible.length);
     el("moreRow").hidden = drawn.length >= visible.length;
     el("moreButtonList").textContent = "Show " + Math.min(PAGE, visible.length - drawn.length) + " more";
-    if (res.query && res.total > visible.length) { note = "Showing the top " + visible.length + " of " + res.total + " matches — keep typing to narrow it down."; }
+    if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
     else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
     el("boardNote").textContent = note; el("boardNote").hidden = !note;
     el("searchClear").hidden = !searchTerm;

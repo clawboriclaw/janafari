@@ -353,6 +353,7 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 /* ---------- phone: bottom tab bar ---------- */
 @media (max-width: 600px) {
   :root { --tabbar: calc(64px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: 76px; padding-bottom: var(--tabbar); }   /* plain fallback first: an iPad without custom properties still clears the bar */
   .brand-desc { display: none; }
   .brand-name { font-size: 20px; letter-spacing: 1.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .header-actions .label { display: none; }
