@@ -742,7 +742,7 @@
     }
     modal.hidden = false;
     window.setTimeout(function () {
-      var f = id === "addModal" ? el("addSearch") : (firstFocusable(modal) || modal.querySelector(".close-button"));
+      var f = id === "addModal" ? el("addSearch") : (id === "helpModal" ? modal.querySelector(".help-nav a") : (firstFocusable(modal) || modal.querySelector(".close-button")));
       try { if (f) { f.focus(); } } catch (e) {}
     }, 30);
   }
@@ -813,15 +813,72 @@
   }
 
   /* ---------- events ---------- */
+  var tabButtons = [];
+  function selectTab(which, focus) {
+    tab = which === "league" ? "league" : "watch";
+    try { localStorage.setItem("janafari-tab", tab); } catch (e) {}
+    searchTerm = ""; el("searchInput").value = ""; activeFilter = "all"; resetAndRedraw();
+    if (!focus) { window.scrollTo(0, 0); }   // a tap starts at the top; an arrow-key switch keeps the reader's place (K3)
+    if (focus) { var i; for (i = 0; i < tabButtons.length; i += 1) { if (tabButtons[i].getAttribute("data-tab") === tab) { tabButtons[i].focus(); } } }
+  }
+
+  /* ---------- Janafari Playbook (help) + quick tour ----------
+     Help describes only what the page can do right now: the changes section and its action
+     follow hasHistory(). "Show me" closes the Playbook FIRST, then opens the destination, so
+     there is never a second sheet stacked under an invisible modal. */
+  var TOUR_KEY = "janafari-tour-v1";   // its own key: never the watchlist or history keys
+  var tourStep = 0;
+  var TOUR = [
+    { title: "Find a player", copy: "Tap ＋ Add — it's on the bottom bar on a phone, top-right on an iPad or PC — and type a name, a team or a position.",
+      art: '<div class="tour-tabbar"><span><i>★</i>My players</span><span><i>🏈</i>League</span><span class="hot"><i>＋</i>Add</span></div>' },
+    { title: "Add him to My players", copy: "Open his card and tap ☆ Add to my players. He shows up under ★ My players with his real EA rating.",
+      art: '<div class="tour-search"><span class="fake-input">⌕ Search the league…</span><div class="fake-row"><span class="portrait help-portrait" style="width:36px;height:36px"><span class="portrait-mono" style="line-height:32px;font-size:14px">J</span></span><b>Player name</b><span class="tour-pill">☆ Add to my players</span></div></div>' },
+    { title: "Read the rating", copy: "The big number is OVR — overall rating. 99 is the best. Tap any card for the player's position, age, college, abilities and top skills.",
+      art: '<div class="help-card"><span class="portrait help-portrait"><span class="portrait-mono">J</span></span><span class="help-card-body"><b>Player name</b><span><i class="pos-pill">QB</i> Team</span></span><span class="help-card-ovr"><b>OVR</b><small>overall</small></span></div>' }
+  ];
+  function tourState() { try { return localStorage.getItem(TOUR_KEY) || ""; } catch (e) { return ""; } }
+  function setTourState(v) { try { localStorage.setItem(TOUR_KEY, v); } catch (e) {} }
+  function renderTour() {
+    var step = TOUR[tourStep];
+    el("tourStep").textContent = "Step " + (tourStep + 1) + " of " + TOUR.length;
+    el("tourTitle").textContent = step.title;
+    el("tourCopy").textContent = step.copy;
+    el("tourArt").innerHTML = step.art;
+    el("tourBack").hidden = tourStep === 0;
+    el("tourNext").textContent = tourStep === TOUR.length - 1 ? "Finish" : "Next";
+  }
+  function openTour(opener) {
+    tourStep = 0; renderTour();
+    ["helpModal", "moreModal"].forEach(closeModal);
+    showModal("tourModal", opener || el("helpButton"));
+  }
+  function endTour(how) { setTourState(how); closeModal("tourModal"); if (how === "done") { showToast("You're all set — go find a player"); } }
+  function renderHelpState() {
+    el("helpChangesCopy").textContent = hasHistory()
+      ? "The arrows show how a rating changed from the earlier rating week. Movers lists everyone whose rating moved."
+      : "The arrows show how a rating changed from the earlier rating week. There isn't an earlier week to compare yet — they appear once EA posts the next ratings week.";
+    el("helpMoversGo").hidden = !hasHistory();
+  }
+  function openHelp(opener) {
+    renderHelpState();
+    closeModal("moreModal");
+    showModal("helpModal", opener || el("helpButton") || el("moreButton"));
+    var body = el("helpModal").querySelector(".modal-body"); if (body) { body.scrollTop = 0; }
+  }
+  // "Show me": close help, then do exactly what the label says — nothing else changes
+  function helpGo(what) {
+    closeModal("helpModal");
+    if (what === "add") { openAdd(); }
+    else if (what === "mine") { selectTab("watch", false); }
+    else if (what === "team") { selectTab("league", false); openTeams(); }
+    else if (what === "movers") { if (hasHistory()) { selectTab("league", false); activeFilter = "movers"; resetAndRedraw(); } }
+    else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Showing everyone"); }
+    else if (what === "refresh") { checkRatings(); }
+    else if (what === "backup") { showModal("moreModal", el("moreButton")); }
+  }
+
   function bindEvents() {
-    var tabButtons = Array.prototype.slice.call(document.querySelectorAll(".tab[data-tab]"));
-    function selectTab(which, focus) {
-      tab = which === "league" ? "league" : "watch";
-      try { localStorage.setItem("janafari-tab", tab); } catch (e) {}
-      searchTerm = ""; el("searchInput").value = ""; activeFilter = "all"; resetAndRedraw();
-      if (!focus) { window.scrollTo(0, 0); }   // a tap starts at the top; an arrow-key switch keeps the reader's place (K3)
-      if (focus) { var i; for (i = 0; i < tabButtons.length; i += 1) { if (tabButtons[i].getAttribute("data-tab") === tab) { tabButtons[i].focus(); } } }
-    }
+    tabButtons = Array.prototype.slice.call(document.querySelectorAll(".tab[data-tab]"));
     tabButtons.forEach(function (btn, idx) {
       btn.addEventListener("click", function () { selectTab(btn.getAttribute("data-tab"), false); });
       // W3C tabs pattern: Left/Right/Home/End move AND select (two tabs, automatic activation)
@@ -853,6 +910,17 @@
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
     el("teamChip").addEventListener("click", openTeams);
+    el("helpButton").addEventListener("click", function (e) { openHelp(e.currentTarget); });
+    el("helpMore").addEventListener("click", function () { openHelp(el("moreButton")); });
+    el("inviteTour").addEventListener("click", function (e) { openTour(e.currentTarget); });
+    el("tourStart").addEventListener("click", function () { openTour(el("helpButton")); });
+    el("tourNext").addEventListener("click", function () { if (tourStep < TOUR.length - 1) { tourStep += 1; renderTour(); el("tourNext").focus(); } else { endTour("done"); } });
+    el("tourBack").addEventListener("click", function () { if (tourStep > 0) { tourStep -= 1; renderTour(); el("tourBack").hidden ? el("tourNext").focus() : el("tourBack").focus(); } });
+    el("tourSkip").addEventListener("click", function () { endTour("skipped"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".help-go"), function (b) { b.addEventListener("click", function () { helpGo(b.getAttribute("data-go")); }); });
+    Array.prototype.forEach.call(document.querySelectorAll(".help-nav a"), function (a) {   // jump links scroll inside the sheet, never the page
+      a.addEventListener("click", function (e) { e.preventDefault(); var t = document.querySelector(a.getAttribute("href")); if (t) { t.scrollIntoView(); var h = t.querySelector("h3"); if (h) { h.setAttribute("tabindex", "-1"); h.focus(); } } });
+    });
     el("inviteButton").addEventListener("click", openAdd);
     el("inviteClose").addEventListener("click", function () { try { localStorage.setItem("janafari-invite", "seen"); } catch (e) {} renderInvite(); });
     el("refreshMore").addEventListener("click", function () { closeModal("moreModal"); checkRatings(); });
@@ -881,7 +949,7 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { ["moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
+      if (event.keyCode === 27) { ["tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
       trapFocus(event);
     });
     var lastPhone = window.innerWidth <= 600, resizeTimer;
