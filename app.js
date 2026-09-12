@@ -819,7 +819,7 @@
       tab = which === "league" ? "league" : "watch";
       try { localStorage.setItem("janafari-tab", tab); } catch (e) {}
       searchTerm = ""; el("searchInput").value = ""; activeFilter = "all"; resetAndRedraw();
-      window.scrollTo(0, 0);
+      if (!focus) { window.scrollTo(0, 0); }   // a tap starts at the top; an arrow-key switch keeps the reader's place (K3)
       if (focus) { var i; for (i = 0; i < tabButtons.length; i += 1) { if (tabButtons[i].getAttribute("data-tab") === tab) { tabButtons[i].focus(); } } }
     }
     tabButtons.forEach(function (btn, idx) {
@@ -831,7 +831,7 @@
         else if (k === 39 || k === 40) { next = tabButtons[(idx + 1) % tabButtons.length]; }
         else if (k === 36) { next = tabButtons[0]; }
         else if (k === 35) { next = tabButtons[tabButtons.length - 1]; }
-        if (next) { e.preventDefault(); selectTab(next.getAttribute("data-tab"), true); }
+        if (next && next !== btn) { e.preventDefault(); selectTab(next.getAttribute("data-tab"), true); }   // Home on the first tab is a no-op, not a redraw
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
