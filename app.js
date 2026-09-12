@@ -419,7 +419,7 @@
     movers.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
     el("clubCount").textContent = String(club.length);
     el("trackedCount").textContent = String(tab === "watch" ? state.watchlist.length : DATA.count);
-    el("trackedLabel").textContent = tab === "watch" ? "on my list" : "players rated";
+    el("trackedLabel").textContent = tab === "watch" ? (state.watchlist.length === 1 ? "player on my list" : "players on my list") : "players rated";
     el("moverStat").hidden = !movers.length;
     if (movers.length) {
       el("moverValue").textContent = (movers[0].c > 0 ? "+" : "") + movers[0].c;
@@ -451,7 +451,9 @@
       var on = btn.getAttribute("data-tab") === tab;
       btn.className = "tab" + (on ? " active" : "");
       btn.setAttribute("aria-selected", on ? "true" : "false");
+      btn.setAttribute("tabindex", on ? "0" : "-1");   // roving tabindex: one tab stop, arrows move inside
     });
+    var panel = el("boardPanel"); if (panel) { panel.setAttribute("aria-labelledby", "tab-" + tab); }
     el("watchTabCount").textContent = String(state.watchlist.length);
     el("searchInput").placeholder = tab === "watch" ? "Search my players" : "Search any player or team";
   }
@@ -508,7 +510,7 @@
   // Only the visible layout is built, and only `shownLimit` of it — the rest waits for "Show more".
   function redraw() {
     var res = filteredPlayers(), visible = res.list, drawn = visible.slice(0, shownLimit), note = "";
-    renderTabs(); renderSummary(); renderFilterCounts();
+    renderTabs(); renderSummary(); renderFilterCounts(); renderInvite();
     var grid = el("playerCards"), body = el("playerRows"), useCards = effectiveView() === "cards";
     clear(grid); clear(body);
     drawn.forEach(function (p, i) { if (useCards) { grid.appendChild(buildCard(p, i + 1)); } else { body.appendChild(buildRow(p, i + 1)); } });
@@ -525,6 +527,8 @@
     else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
     el("boardNote").textContent = note; el("boardNote").hidden = !note;
     el("searchClear").hidden = !searchTerm;
+    var wrap = el("chipsWrap"), chips = el("filterChips");
+    if (wrap && chips) { wrap.className = "chips-wrap" + (chips.scrollWidth - chips.clientWidth - chips.scrollLeft > 4 ? " has-more" : ""); }
   }
   /* ---------- team picker ---------- */
   function teamLabel(abbr) {
@@ -565,6 +569,11 @@
   }
   function openTeams(evt) { buildTeamGrid(); showModal("teamModal", evt && evt.currentTarget ? evt.currentTarget : null); }
 
+  // First use: an invitation to make the page personal — only while the list is empty, only until dismissed.
+  function renderInvite() {
+    var seen = false; try { seen = localStorage.getItem("janafari-invite") === "seen"; } catch (e) {}
+    el("invite").hidden = !!(state.watchlist.length || seen || tab === "watch");
+  }
   function render() { renderWeekSelect(); renderTeamChip(); redraw(); }
   function resetAndRedraw() { shownLimit = PAGE; redraw(); }
 
@@ -617,7 +626,7 @@
     head.appendChild(textNode("span", "", teamText(p) + " · " + (p.posName || p.pos) + (p.jersey ? " · #" + p.jersey : "")));
     if (change !== null) { head.appendChild(textNode("span", "change " + parts.cls, parts.text + " vs " + (state.snapshots[selectedSnapshot - 1] ? state.snapshots[selectedSnapshot - 1].label : "last week"))); }
     hero.appendChild(head);
-    var big = textNode("div", "bio-ovr", r === null ? "—" : String(r)); big.appendChild(textNode("small", "", "OVR")); hero.appendChild(big);
+    var big = textNode("div", "bio-ovr", r === null ? "—" : String(r)); big.appendChild(textNode("small", "", "Overall rating")); hero.appendChild(big);
 
     clear(list);
     list.appendChild(infoRow("Age", dd(p.age ? String(p.age) : "—")));
@@ -805,12 +814,24 @@
 
   /* ---------- events ---------- */
   function bindEvents() {
-    Array.prototype.forEach.call(document.querySelectorAll(".tab[data-tab]"), function (btn) {
-      btn.addEventListener("click", function () {
-        tab = btn.getAttribute("data-tab") === "league" ? "league" : "watch";
-        try { localStorage.setItem("janafari-tab", tab); } catch (e) {}
-        searchTerm = ""; el("searchInput").value = ""; activeFilter = "all"; resetAndRedraw();
-        window.scrollTo(0, 0);
+    var tabButtons = Array.prototype.slice.call(document.querySelectorAll(".tab[data-tab]"));
+    function selectTab(which, focus) {
+      tab = which === "league" ? "league" : "watch";
+      try { localStorage.setItem("janafari-tab", tab); } catch (e) {}
+      searchTerm = ""; el("searchInput").value = ""; activeFilter = "all"; resetAndRedraw();
+      window.scrollTo(0, 0);
+      if (focus) { var i; for (i = 0; i < tabButtons.length; i += 1) { if (tabButtons[i].getAttribute("data-tab") === tab) { tabButtons[i].focus(); } } }
+    }
+    tabButtons.forEach(function (btn, idx) {
+      btn.addEventListener("click", function () { selectTab(btn.getAttribute("data-tab"), false); });
+      // W3C tabs pattern: Left/Right/Home/End move AND select (two tabs, automatic activation)
+      btn.addEventListener("keydown", function (e) {
+        var k = e.keyCode, next = null;
+        if (k === 37 || k === 38) { next = tabButtons[(idx - 1 + tabButtons.length) % tabButtons.length]; }
+        else if (k === 39 || k === 40) { next = tabButtons[(idx + 1) % tabButtons.length]; }
+        else if (k === 36) { next = tabButtons[0]; }
+        else if (k === 35) { next = tabButtons[tabButtons.length - 1]; }
+        if (next) { e.preventDefault(); selectTab(next.getAttribute("data-tab"), true); }
       });
     });
     Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
@@ -832,6 +853,18 @@
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
     el("teamChip").addEventListener("click", openTeams);
+    el("inviteButton").addEventListener("click", openAdd);
+    el("inviteClose").addEventListener("click", function () { try { localStorage.setItem("janafari-invite", "seen"); } catch (e) {} renderInvite(); });
+    el("refreshMore").addEventListener("click", function () { closeModal("moreModal"); checkRatings(); });
+    var chips = el("filterChips"), wrap = el("chipsWrap");
+    function chipCue() { wrap.className = "chips-wrap" + (chips.scrollWidth - chips.clientWidth - chips.scrollLeft > 4 ? " has-more" : ""); }
+    chips.addEventListener("scroll", chipCue); window.addEventListener("resize", chipCue); chipCue();
+    Array.prototype.forEach.call(chips.querySelectorAll("button"), function (b) {
+      b.addEventListener("focus", function () {   // a focused chip must be visible (keyboard users cannot see an off-screen focus ring)
+        var r = b.getBoundingClientRect(), c = chips.getBoundingClientRect();
+        if (r.right > c.right) { chips.scrollLeft += r.right - c.right + 12; } else if (r.left < c.left) { chips.scrollLeft -= c.left - r.left + 12; }
+      });
+    });
     el("addSearch").addEventListener("input", function () { renderAddResults(this.value); });
     el("updateButton").addEventListener("click", checkRatings);
     el("addButton").addEventListener("click", openAdd);
