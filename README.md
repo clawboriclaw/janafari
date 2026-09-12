@@ -20,6 +20,13 @@ Live site: <https://clawboriclaw.github.io/janafari/>
 - **⋯ More** holds backup & restore, "where the numbers come from" and the EA link — the things a kid
   should not press by accident.
 
+## Identity
+
+`brand/make_brand.py` draws the wordmark and the jersey-patch J as SVG paths (no fonts, so it renders the
+same on every device). Chosen 2026-09-12: **B · Scoreboard**. Outputs: `brand/wordmark-B.svg`,
+`brand/mark-B.svg` (both inlined in `index.html`), `brand/apple-touch-icon.png` (rendered from the vector);
+the favicon is the same mark as a data URI. `brand/compare.html` shows the treatments at header size.
+
 ## Where the data comes from, and how it stays fresh
 
 - `tools/fetch_ratings.py` reads EA's feed (it needs EA's own `x-feature` header or it serves last

@@ -61,7 +61,8 @@ def mark_svg(variant, size=64):
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Janafari J">'
             '<rect x="2" y="2" width="60" height="60" rx="12" fill="#041c38" stroke="#fdbb30" stroke-width="4"/>'
             '<rect x="9" y="9" width="46" height="46" rx="8" fill="none" stroke="#fdbb30" stroke-width="1.5" stroke-dasharray="3 3" opacity=".7"/>'
-            '<path d="M27 16 H50 V23 H44 V42 Q44 54 31 54 Q17 54 17 42 V36 H25 V42 Q25 47 31 47 Q36 47 36 42 V23 H27 Z" fill="#fff"/>'
+            # the J is centred on the tile: x 16–48 (centre 32), y 13–51 (centre 32)
+            '<path d="M22 13 H48 V22 H43 V39 Q43 51 30 51 Q16 51 16 39 V33 H25 V39 Q25 44 30 44 Q34 44 34 39 V22 H22 Z" fill="#fff"/>'
             '</svg>')
 
 if __name__ == '__main__':
