@@ -278,7 +278,7 @@
         <section class="help-section" id="help-game">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">🏈</span></div>
           <div class="help-text"><h3>End Zone Run</h3><p>A little game: your player runs down the field — tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hop over defenders and cones. Reach <b>100 yards</b> for a touchdown. You get three chances.</p>
-            <p class="help-note">Start · Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
+            <p class="help-note">The big button starts a run and then jumps. Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
             <button class="button button-quiet help-go" type="button" data-go="game">Play End Zone Run</button></div>
         </section>
       </div>
@@ -321,22 +321,21 @@
             <button class="button button-gold" id="gameOverlayBtn" type="button">Start</button>
           </div>
         </div>
-        <button class="button button-gold game-jump" id="gameJump" type="button" disabled>JUMP</button>
+        <button class="button button-gold game-jump" id="gameJump" type="button">TAP TO START</button>
         <div class="game-actions">
-          <button class="button button-quiet" id="gameStart" type="button">Start</button>
           <button class="button button-quiet" id="gamePause" type="button" disabled>Pause</button>
           <button class="button button-quiet" id="gameRestart" type="button">Restart</button>
           <button class="button button-quiet" id="gameSound" type="button" aria-pressed="false">🔇 Sound off</button>
           <button class="button button-quiet" id="gameExit" type="button">Exit</button>
         </div>
-        <p class="help-note game-note">Jump: the big button, a tap on the field, or <b>Space</b>. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
+        <p class="help-note game-note">The big button starts a run, then jumps. A tap on the field or <b>Space</b> does the same. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
   <script>
     (function () {
       var root = document.documentElement;
