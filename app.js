@@ -363,8 +363,6 @@
     card.type = "button";
     card.className = "pcard" + (r === 99 ? " is-99" : "") + (watched ? " is-watched" : "");
     card.setAttribute("aria-label", p.name + ", " + p.pos + ", " + teamText(p) + ", overall " + (r === null ? "unknown" : r));
-    card.appendChild(textNode("span", "pcard-rank", "#" + rank));
-    if (watched) { card.appendChild(textNode("span", "watch-star", "★")); }
     card.appendChild(buildPortrait(p));
     body.className = "pcard-body";
     body.appendChild(textNode("h3", "pcard-name", p.name));
@@ -375,6 +373,9 @@
     body.appendChild(meta);
     card.appendChild(body);
     right.className = "pcard-right";
+    var rankLine = textNode("span", "pcard-rank", "#" + rank);
+    if (watched) { rankLine.appendChild(textNode("span", "watch-star", " ★")); }
+    right.appendChild(rankLine);
     ovr.className = "ovr";
     ovr.appendChild(document.createTextNode(r === null ? "—" : String(r)));
     ovr.appendChild(textNode("small", "", "OVR"));

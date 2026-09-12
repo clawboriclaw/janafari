@@ -152,7 +152,8 @@ def main(argv):
         history = [h for h in history if h.get("id") != entry["id"]] + [entry]
         with open(HISTORY, "w") as fh:
             json.dump(history, fh, separators=(",", ":"))
-    core_keys_cmp = ("id", "name", "team", "pos", "ovr", "age", "college", "jersey", "yearsPro", "avatar", "abilities")
+    # "stats" is compared too (Ava, round 2): an attribute-only edit must rewrite the team sheets, not read as unchanged
+    core_keys_cmp = ("id", "name", "team", "pos", "ovr", "age", "college", "jersey", "yearsPro", "avatar", "abilities", "stats")
     if old and old.get("iteration") == iteration and \
             [{k: p.get(k) for k in core_keys_cmp} for p in old.get("players", [])] == [{k: p.get(k) for k in core_keys_cmp} for p in unique]:
         if history_changed:

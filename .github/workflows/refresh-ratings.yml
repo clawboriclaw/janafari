@@ -12,6 +12,11 @@ on:
 permissions:
   contents: write
 
+# One run at a time: a scheduled and a manual run must never race each other's git push.
+concurrency:
+  group: refresh-ratings
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest

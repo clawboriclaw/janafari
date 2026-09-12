@@ -57,8 +57,11 @@ body {
 button, input, select { font: inherit; color: inherit; }
 button, select { cursor: pointer; }
 button { -webkit-tap-highlight-color: transparent; }
-:focus { outline: none; }
-:focus-visible, .focus-ring:focus { outline: 3px solid #fdbb30; outline: 3px solid var(--gold); outline-offset: 2px; }
+/* Focus: always visible by default; only browsers that know :focus-visible hide it for mouse clicks
+   (an unknown pseudo-class voids a rule, so old Safari simply keeps the ring — the safe direction). */
+:focus { outline: 3px solid #fdbb30; outline: 3px solid var(--gold); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 3px solid #fdbb30; outline: 3px solid var(--gold); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -73,7 +76,7 @@ button { -webkit-tap-highlight-color: transparent; }
   min-height: 60px;
   padding: 8px 0;
 }
-.brand { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; color: #fff; text-decoration: none; min-width: 0; }
+.brand { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; min-height: 44px; color: #fff; text-decoration: none; min-width: 0; }
 .j-mark {
   -webkit-flex: 0 0 auto; flex: 0 0 auto;
   width: 40px; height: 40px; margin-right: 10px;
@@ -183,6 +186,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .view-btn:last-child { border-radius: 0 12px 12px 0; margin-left: -1px; }
 .view-btn.active { background: #041c38; background: var(--navy); border-color: #041c38; border-color: var(--navy); color: #fff; }
 
+.week-row .chip { -webkit-box-flex: 1; -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; width: 100%; max-width: 360px; }   /* a select must shrink on a 320px phone */
 .board-note { margin: 8px 0 0; color: #5b6b7c; color: var(--muted); font-size: 13px; }
 
 /* ---------- cards ---------- */
@@ -225,7 +229,7 @@ html[data-theme="dark"] .portrait { border-color: #14243b; }
 .pos-pill { -webkit-flex: 0 0 auto; flex: 0 0 auto; padding: 2px 7px; border-radius: 6px; background: #f4f6f9; background: var(--surface-2); color: #0b1f3a; color: var(--text); font-size: 12px; font-weight: 800; letter-spacing: .5px; }
 .team-logo { -webkit-flex: 0 0 auto; flex: 0 0 auto; width: 20px; height: 20px; }
 .pcard-team { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pcard-rank { position: absolute; top: 6px; left: 8px; font-size: 10px; font-weight: 700; color: #5b6b7c; color: var(--muted); }
+.pcard-rank { display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; color: #5b6b7c; color: var(--muted); }   /* in the right column, in flow — never over the portrait */
 
 .pcard-right { -webkit-flex: 0 0 auto; flex: 0 0 auto; margin-left: 10px; text-align: center; min-width: 52px; }
 .ovr { display: block; font-size: 30px; line-height: 1; font-weight: 900; letter-spacing: -1px; font-family: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif; }
@@ -236,9 +240,11 @@ html[data-theme="dark"] .is-99 .ovr { color: #fdbb30; color: var(--gold); }
 .change-up { color: #1b8f4a; color: var(--up); background: rgba(27,143,74,.12); }
 .change-down { color: #c0392b; color: var(--down); background: rgba(192,57,43,.12); }
 .change-flat { color: #5b6b7c; color: var(--muted); }
+.pcard .change-flat { display: none; }   /* on a card, "no change" is silence; the list still shows the dash */
 .change-new { color: #0057b8; background: rgba(0,87,184,.12); }
 .change-none { display: none; }
-.watch-star { position: absolute; top: 6px; right: 8px; color: #fdbb30; color: var(--gold); font-size: 14px; }
+.watch-star { color: #b8860b; font-size: 12px; }
+html[data-theme="dark"] .watch-star { color: #fdbb30; color: var(--gold); }
 
 /* ---------- list ---------- */
 .table-wrap { margin-top: 10px; border: 1px solid #d9e0e8; border-color: var(--line); border-radius: 14px; background: #fff; background: var(--surface); overflow: hidden; }
@@ -375,7 +381,13 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
   .tab { position: relative; }
   .tab-add { display: -webkit-box; display: -webkit-flex; display: flex; }
   .view-group { display: none; }
+  .chip .chip-count { display: none; }   /* the counts are what pushed the rail past the screen; labels alone fit */
+  .chips { padding-right: 4px; }
   .modal-sheet { border-radius: 0; }
+}
+
+@media (max-width: 359px) {
+  .brand-text { display: none; }   /* a 320px phone keeps the J mark only; the name is in the title bar */
 }
 
 /* ---------- tablet ---------- */
