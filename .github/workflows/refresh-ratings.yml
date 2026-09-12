@@ -1,10 +1,12 @@
 name: Refresh Madden ratings
 
-# EA posts roster updates on Thursdays. Fetch the official feed, commit the snapshot if it
-# changed, and GitHub Pages redeploys the site from the commit. Run by hand from the Actions tab.
+# EA posts roster updates weekly during the season, but not always on the same weekday. Check the
+# official feed every day (the fetcher exits 1 = unchanged, so nothing is committed on quiet days);
+# commit the snapshot only when it changed, and GitHub Pages redeploys from the commit. Run by hand
+# from the Actions tab.
 on:
   schedule:
-    - cron: "17 15 * * 4"      # Thursdays 15:17 UTC
+    - cron: "17 15 * * *"      # every day 15:17 UTC (11:17 ET); a no-change run costs ~15 s
   workflow_dispatch:
 
 permissions:
@@ -29,9 +31,11 @@ jobs:
         run: |
           git config user.name "ratings-bot"
           git config user.email "ratings-bot@users.noreply.github.com"
-          git add data/ratings.json data/stats
+          git add data/ratings.json data/stats data/history.json
           git commit -m "Ratings snapshot: $(python3 -c "import json;d=json.load(open('data/ratings.json'));print(d['iteration']['label'],'·',d['count'],'players')")"
           git push
-      - name: Fail loudly if the fetch broke
-        if: steps.fetch.outputs.rc == '2'
-        run: exit 1
+      - name: Fail loudly if the fetch broke (rc 2 = fetch/sanity failure; 3 = unchanged, fine)
+        if: steps.fetch.outputs.rc != '0' && steps.fetch.outputs.rc != '3'
+        run: |
+          echo "fetch_ratings.py exited ${{ steps.fetch.outputs.rc }}"
+          exit 1

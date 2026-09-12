@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#102a43">
+  <meta name="theme-color" content="#041c38">
   <title>Janafari — Madden 27 Ratings</title>
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230057b8' stroke='%23fdbb30' stroke-width='5'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Arial Narrow,Arial,sans-serif' font-weight='900' font-size='40' fill='%23fff'%3EJ%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=12">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -22,184 +23,159 @@
       }
     })();
   </script>
-
 </head>
 <body>
-  <div class="field-lines" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <div class="masthead">
-      <div class="brand-wrap">
-      <a class="brand" href="./" aria-label="Janafari — home">
-        <span class="j-mark" aria-hidden="true">J</span>
-        <span class="brand-text">
-          <h1 class="brand-name">Janafari</h1>
-          <span class="brand-desc">Madden 27 ratings tracker</span>
-        </span>
-      </a>
+  <header class="topbar" style="padding-top: env(safe-area-inset-top);">
+    <div class="wrap">
+      <div class="masthead">
+        <a class="brand" href="./" aria-label="Janafari — home">
+          <span class="j-mark" aria-hidden="true">J</span>
+          <span class="brand-text">
+            <h1 class="brand-name">Janafari</h1>
+            <span class="brand-desc">Madden 27 ratings tracker</span>
+          </span>
+        </a>
+        <nav class="header-actions" aria-label="Actions">
+          <button class="button button-gold" id="addButton" type="button"><span class="icon" aria-hidden="true">＋</span><span class="label">Add player</span></button>
+          <button class="button" id="updateButton" type="button" title="Refresh ratings"><span class="icon" aria-hidden="true">↻</span><span class="label">Refresh</span><span class="sr-only">ratings</span></button>
+          <button class="button button-icon" id="themeToggle" type="button" aria-pressed="false" title="Switch between light and dark"><span class="theme-icon" aria-hidden="true">☾</span><span class="sr-only">Toggle dark mode</span></button>
+          <button class="button button-icon" id="moreButton" type="button" title="More: backup, restore, where the numbers come from"><span aria-hidden="true">⋯</span><span class="sr-only">More</span></button>
+        </nav>
       </div>
-      <nav class="header-actions" aria-label="Board actions">
-        <button class="button theme-toggle" id="themeToggle" type="button" aria-pressed="false"
-                title="Switch between light and dark">
-          <span class="theme-icon" aria-hidden="true">☾</span><span class="theme-label">Dark</span>
-        </button>
-        <button class="button button-light" id="addButton" type="button">+ Add player</button>
-        <button class="button button-light" id="backupButton" type="button">Backup</button>
-        <button class="button button-red" id="updateButton" type="button">Check ratings</button>
-      </nav>
+
+      <div class="statline" id="statline" aria-live="polite">
+        <span class="stat gold"><b id="clubCount">–</b>in the 99 Club</span>
+        <span class="stat"><b id="trackedCount">–</b><span id="trackedLabel">players rated</span></span>
+        <span class="stat" id="moverStat" hidden><b id="moverValue">–</b><span id="moverName">biggest mover</span></span>
+        <span class="stat"><span id="sourceStamp">Loading EA's ratings…</span></span>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Which players to show">
+        <button class="tab active" type="button" role="tab" data-tab="watch" aria-selected="true"><span class="tab-icon" aria-hidden="true">★</span>My players<span class="tab-count" id="watchTabCount">0</span></button>
+        <button class="tab" type="button" role="tab" data-tab="league" aria-selected="false"><span class="tab-icon" aria-hidden="true">🏈</span>League</button>
+        <button class="tab tab-add" type="button" id="addTab"><span class="tab-icon" aria-hidden="true">＋</span>Add</button>
+      </div>
     </div>
   </header>
 
-  <main>
-    <section class="scorecards" aria-label="Rating summary">
-      <article class="scorecard scorecard-red">
-        <span class="score-label">99 CLUB</span>
-        <strong id="clubCount">0</strong>
-        <span id="clubNames">—</span>
-      </article>
-      <article class="scorecard scorecard-gold">
-        <span class="score-label">BIGGEST MOVER</span>
-        <strong id="moverValue">—</strong>
-        <span id="moverName">Add the next week to compare</span>
-      </article>
-      <article class="scorecard scorecard-navy">
-        <span class="score-label">PLAYERS TRACKED</span>
-        <strong id="trackedCount">0</strong>
-        <span id="trackedLabel">On your watchlist</span>
-      </article>
-    </section>
-
-    <section class="board-card">
-      <div class="tabs" role="tablist" aria-label="Which players to show">
-        <button class="tab active" type="button" role="tab" data-tab="watch" aria-selected="true">★ My watchlist <span class="tab-count" id="watchTabCount">0</span></button>
-        <button class="tab" type="button" role="tab" data-tab="league" aria-selected="false">League</button>
-      </div>
-      <div class="board-header">
-        <div>
-          <div class="section-kicker" id="boardKicker">YOUR PLAYERS</div>
-          <h2 id="boardTitle">My watchlist</h2>
-        </div>
-        <div class="week-control">
-          <label for="weekSelect">Viewing</label>
-          <select id="weekSelect" aria-label="Choose rating week"></select>
-        </div>
-      </div>
-
-      <div class="toolbar">
+  <main class="wrap board">
+    <div class="toolbar">
+      <div class="toolbar-row merge">
         <label class="search-box">
-          <span aria-hidden="true">⌕</span>
-          <input id="searchInput" type="search" placeholder="Search player or team" autocomplete="off">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <span class="sr-only">Search players</span>
+          <input id="searchInput" type="search" placeholder="Search any player or team" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button class="search-clear" id="searchClear" type="button" aria-label="Clear search" hidden>×</button>
         </label>
-        <div class="filter-group" role="group" aria-label="Filter players">
-          <button class="filter active" type="button" data-filter="all">All</button>
-          <button class="filter" type="button" data-filter="offense">Offense</button>
-          <button class="filter" type="button" data-filter="defense">Defense</button>
-          <button class="filter" type="button" data-filter="movers">Movers</button>
+        <div class="chips" role="group" aria-label="Filter players" id="filterChips">
+          <button class="chip active" type="button" data-filter="all">All</button>
+          <button class="chip" type="button" data-filter="offense">Offense</button>
+          <button class="chip" type="button" data-filter="defense">Defense</button>
+          <button class="chip" type="button" data-filter="special">Special teams</button>
+          <button class="chip" type="button" data-filter="movers" id="moversChip" hidden>Movers</button>
         </div>
         <div class="view-group" role="group" aria-label="Choose layout">
-          <button class="view-btn active" type="button" data-view="cards" aria-pressed="true">▦ Cards</button>
-          <button class="view-btn" type="button" data-view="list" aria-pressed="false">☰ List</button>
+          <button class="view-btn active" type="button" data-view="cards" aria-pressed="true" title="Cards"><span aria-hidden="true">▦</span><span class="sr-only">Cards</span></button>
+          <button class="view-btn" type="button" data-view="list" aria-pressed="false" title="List"><span aria-hidden="true">☰</span><span class="sr-only">List</span></button>
         </div>
       </div>
-
-      <div class="empty-state" id="loading"><div class="empty-icon">🏈</div><strong class="empty-title">Loading EA's ratings…</strong></div>
-      <div class="card-grid" id="playerCards"></div>
-
-      <div class="table-wrap" id="tableWrap" hidden>
-        <table>
-          <thead>
-            <tr>
-              <th class="rank-col">RK</th>
-              <th>PLAYER</th>
-              <th>POS</th>
-              <th>TEAM</th>
-              <th class="center">OVR</th>
-              <th class="center">WEEK</th>
-              <th>TREND</th>
-            </tr>
-          </thead>
-          <tbody id="playerRows"></tbody>
-        </table>
+      <div class="toolbar-row week-row" id="weekRow" hidden>
+        <label for="weekSelect" class="kicker" style="margin-right:10px">Viewing</label>
+        <select id="weekSelect" class="chip" aria-label="Choose rating week"></select>
       </div>
-      <div class="empty-state" id="emptyState" hidden>No players match this view.</div>
-      <p class="league-note" id="leagueNote" hidden>Showing the top 100. Search to find any of the other rated players.</p>
-    </section>
+    </div>
 
-    <section class="note-card">
-      <div class="note-icon" aria-hidden="true">i</div>
-      <div>
-        <strong>Where the numbers come from</strong>
-        <p>Every rating and attribute is EA's official Madden 27 data, saved with this page and refreshed each week during the season. <b>League</b> is everyone EA rates; <b>My watchlist</b> is the players you choose to follow. Nobody types a rating in here.</p>
-      </div>
-      <a href="https://www.ea.com/games/madden-nfl/ratings" target="_blank" rel="noopener">Check EA ratings <span aria-hidden="true">↗</span></a>
-    </section>
+    <p class="board-note" id="boardNote" hidden></p>
+    <div class="empty-state" id="loading"><div class="empty-icon">🏈</div><strong class="empty-title">Loading EA's ratings…</strong></div>
+    <div class="card-grid" id="playerCards"></div>
+
+    <div class="table-wrap" id="tableWrap" hidden>
+      <table>
+        <thead>
+          <tr>
+            <th class="rank-col">#</th>
+            <th>Player</th>
+            <th class="center">OVR</th>
+            <th class="center col-change" id="thChange" hidden>Week</th>
+            <th class="col-trend" id="thTrend" hidden>Trend</th>
+          </tr>
+        </thead>
+        <tbody id="playerRows"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="emptyState" hidden></div>
+    <div class="more-row" id="moreRow" hidden><button class="button button-quiet" id="moreButtonList" type="button">Show more</button></div>
   </main>
 
-  <footer>
-    <span>JANAFARI &nbsp;•&nbsp; BUILT FOR OUR HOUSE</span>
-    <span id="sourceStamp">Seeded Sep 2, 2026</span>
+  <footer class="wrap">
+    <span>Janafari · built for our house</span><br>
+    <span id="footerStamp"></span>
   </footer>
 
   <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle" hidden>
     <div class="modal-backdrop" data-close="add"></div>
     <div class="modal-sheet">
       <div class="modal-head">
-        <div>
-          <div class="section-kicker">FIND ANYONE IN THE LEAGUE</div>
-          <h2 id="addTitle">Add a player</h2>
-        </div>
+        <div><div class="kicker">Find anyone in the league</div><h2 id="addTitle">Add a player</h2></div>
         <button class="close-button" type="button" data-close="add" aria-label="Close">&times;</button>
       </div>
-      <label class="add-search">
-        <span aria-hidden="true">⌕</span>
-        <input id="addSearch" type="search" placeholder="Name, team or position" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      </label>
-      <p class="modal-copy" id="addStatus">Type a name, team or position — every EA-rated player is here.</p>
-      <div class="roster-list" id="addResults"></div>
+      <div class="modal-body">
+        <label class="search-box">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <span class="sr-only">Search the league</span>
+          <input id="addSearch" type="search" placeholder="Name, team or position" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </label>
+        <p class="modal-copy" id="addStatus" style="margin-top:12px">Type a name, team or position — every EA-rated player is here.</p>
+        <div class="roster-list" id="addResults"></div>
+      </div>
     </div>
   </div>
 
   <div class="modal" id="playerModal" role="dialog" aria-modal="true" aria-labelledby="playerTitle" hidden>
     <div class="modal-backdrop" data-close="player"></div>
-    <div class="modal-sheet small-sheet">
+    <div class="modal-sheet">
       <div class="modal-head">
-        <div>
-          <div class="section-kicker" id="playerKicker">PLAYER CARD</div>
-          <h2 id="playerTitle">Player</h2>
-        </div>
+        <div><div class="kicker" id="playerKicker">Player card</div><h2 id="playerTitle">Player</h2></div>
         <button class="close-button" type="button" data-close="player" aria-label="Close">&times;</button>
       </div>
-      <div class="bio-hero" id="bioHero"></div>
-      <dl class="bio-list" id="bioList"></dl>
-      <div class="bio-stats" id="bioStats"></div>
-      <div class="modal-actions modal-actions-center">
-        <button class="button button-red watch-toggle" id="watchToggle" type="button">☆ Add to my watchlist</button>
+      <div class="modal-body">
+        <div class="bio-hero" id="bioHero"></div>
+        <dl class="bio-list" id="bioList"></dl>
+        <div class="bio-stats" id="bioStats"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="button button-gold" id="watchToggle" type="button">☆ Add to my players</button>
       </div>
     </div>
   </div>
 
-  <div class="modal" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle" hidden>
-    <div class="modal-backdrop" data-close="backup"></div>
-    <div class="modal-sheet small-sheet">
+  <div class="modal" id="moreModal" role="dialog" aria-modal="true" aria-labelledby="moreTitle" hidden>
+    <div class="modal-backdrop" data-close="more"></div>
+    <div class="modal-sheet">
       <div class="modal-head">
-        <div>
-          <div class="section-kicker">KEEP IT SAFE</div>
-          <h2 id="backupTitle">Backup &amp; restore</h2>
-        </div>
-        <button class="close-button" type="button" data-close="backup" aria-label="Close">×</button>
+        <div><div class="kicker">Keep it safe</div><h2 id="moreTitle">Backup &amp; more</h2></div>
+        <button class="close-button" type="button" data-close="more" aria-label="Close">&times;</button>
       </div>
-      <p class="modal-copy">Your watchlist and the saved weeks live on this device. Save a backup occasionally in case Safari clears its website data.</p>
-      <button class="backup-action" id="exportButton" type="button"><b>Save a backup file</b><span>Downloads your watchlist and saved weeks</span></button>
-      <label class="backup-action file-action"><b>Restore a backup file</b><span>Choose a previously saved .json file</span><input id="importInput" type="file" accept="application/json,.json"></label>
-      <div class="danger-zone">
-        <button id="resetButton" type="button">Clear my watchlist</button>
+      <div class="modal-body">
+        <p class="modal-copy">Your players and the saved weeks live on this device. Save a backup once in a while in case Safari clears its website data.</p>
+        <button class="backup-action" id="exportButton" type="button"><b>Save a backup file</b><span>Downloads your players and saved weeks</span></button>
+        <label class="backup-action file-action"><b>Restore a backup file</b><span>Choose a previously saved .json file</span><input id="importInput" type="file" accept="application/json,.json"></label>
+        <div class="more-info">
+          <b>Where the numbers come from.</b> Every rating and attribute is EA's official Madden 27 data, saved with this page and checked for updates every day. Nobody types a rating in here.
+          <span id="moreStamp"></span><br>
+          <a href="https://www.ea.com/games/madden-nfl/ratings" target="_blank" rel="noopener">See EA's ratings page ↗</a>
+        </div>
+        <div class="danger-zone">
+          <button id="resetButton" type="button">Clear my players</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
   <script>
     (function () {
       var root = document.documentElement;
@@ -209,9 +185,9 @@
       function paint() {
         var dark = root.getAttribute('data-theme') === 'dark';
         btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
-        btn.querySelector('.theme-label').textContent = dark ? 'Light' : 'Dark';
         btn.querySelector('.theme-icon').textContent = dark ? '☀' : '☾';
-        if (meta) meta.setAttribute('content', dark ? '#05101f' : '#102a43');
+        btn.title = dark ? 'Switch to light' : 'Switch to dark';
+        if (meta) meta.setAttribute('content', dark ? '#05101f' : '#041c38');
       }
       btn.addEventListener('click', function () {
         var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -219,7 +195,6 @@
         try { localStorage.setItem('janafari-theme', next); } catch (e) {}
         paint();
       });
-      // follow the device only while the visitor has not chosen for themselves
       if (window.matchMedia) {
         var mq = window.matchMedia('(prefers-color-scheme: dark)');
         var onChange = function (e) {
