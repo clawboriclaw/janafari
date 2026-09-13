@@ -118,5 +118,697 @@
     "Pocket Deadeye": "Accurate when he stays in the pocket and sets his feet.",
     "Medium Route KO": "Breaks up passes on medium routes when he's covering.",
     "Ironman": "Never gets hurt — plays every snap."
+  },
+  "ea": {
+    "Double Me": {
+      "type": "X-Factor",
+      "description": "Aggressive receivers overpower defenders and attack the football. When they enter the zone, this ability increases their success rate on aggressive catches against single coverage.",
+      "imageUrl": "https://drop-assets.ea.com/images/17BKqtRugbIoCcUUWWhqyY/0a68bf3f0ce27575ded7f6da302e3967/DoubleMeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Mid In Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 10-20 yards from the LoS, inside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/3PzjrWMG8f5US6pVRwatnU/6fc40648d35517734f63de65f4bf699d/MidInElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Runoff Elite": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability will distract defenders for longer with their runoffs",
+      "imageUrl": "https://drop-assets.ea.com/images/2iDRNDUcOT1InzNSylmO47/226cfc2b6a379e65ee0a2333b18a5aae/RunOffElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Mid Out Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 10-20 yards from the LoS, outside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/3mn1uGnJkePmbbPlNpAcSn/a51de0bcb5645734317f74299b94f656/MidOutElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Acrobat": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability are more likely to succeed at catching tipped passes",
+      "imageUrl": "https://drop-assets.ea.com/images/5YzcbfI6dYN0qRFxFULDMX/ce778d1d0c7726db31229a3adce2605d/Acrobat.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Quick Jump": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability have a slightly reduced stamina cost and slightly longer perfect window for jumping snaps.",
+      "imageUrl": "https://drop-assets.ea.com/images/4tcsi80ho1OUcAd6xbgdCO/0479bcfae4709e622f4ed665a6e36df4/icon_signatureabilities_passiveabilities_TirelessRunner.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deep Out Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes 20+ yards from the LoS, outside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/2KunCOSZXc5sK3NS5J5ltN/97350cc45967ea2aaf3773ee2b9766d2/DeepOutElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Bazooka": {
+      "type": "X-Factor",
+      "description": "Quarterbacks with generational arms have the power to stretch any defense to its breaking point. When they enter the zone, their maximum throw distance is increased",
+      "imageUrl": "https://drop-assets.ea.com/images/5oo5mu8rnI4UYrqea9Y54u/1a0cdace92774cec4235a215c6614ce2/BazookaXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Fastbreak": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability receive better blocking support on designed quarterback run plays.",
+      "imageUrl": "https://drop-assets.ea.com/images/1ImMmHqAS7qvgOw6o6DoLc/23ba378de23f42f4d4be7658e4801812/FastBreak.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Dashing Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws under 40 yards while running outside the pocket (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/JGuuTuRdV12OY8xZYQC0I/76eb432f6029820772eedb6cbb9371c3/DashingDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Extender": {
+      "type": "Superstar Ability",
+      "description": "While in the pocket, passers with this ability have a slightly improved chance to break the first sack attempt by a blitzing defensive back.",
+      "imageUrl": "https://drop-assets.ea.com/images/1oWhWJEwVVjVEeEC2F07QF/02464141fba0ba1b6012061976ca8b96/PreassureBust.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Gunslinger": {
+      "type": "Superstar Ability",
+      "description": "QB has slightly increased pass anim speed when throwing under pressure.",
+      "imageUrl": "https://drop-assets.ea.com/images/2noMH957mxw14o7jWatoBR/539b2d915a806ef89afc8b8e34b4d94f/Gunslinger.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Dots": {
+      "type": "X-Factor",
+      "description": "Accurate passers know that ball placement is the difference between a touchdown and a turnover. When they enter the zone, all passes are thrown with elite accuracy and result in more completions",
+      "imageUrl": "https://drop-assets.ea.com/images/63ivYavtHdD0jpQ7NV2ndG/7399c42e8e16caf44b569ebf6652314f/HiLoDeadeyeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Long Range Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured deep throws while their feet are set (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/cIlBlFZZCXU5LrJ1yoKOZ/4a7e8f2e39d193a3ff49af55c38772ea/LongRangeDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "No-Look Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured cross-body throws up to 20 yards (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/7yWtbIwp0nZsaeuXqTDHqL/f5a4c5e7cd774219dd6af5e76b3ded48/NolookDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Lofting Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured lob and touch throws while their feet are set (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/7DueaPg7s9MYe9RsVePEjb/ecdd035c7250061bfe63a955c91f13a7/LoftingDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Unstoppable Force": {
+      "type": "X-Factor",
+      "description": "Elite pass rushers are a mix of strength, speed, and tenacity. When they enter the zone, this ability increases their win rate and block shed speed against one-on-one pass blocks.",
+      "imageUrl": "https://drop-assets.ea.com/images/19H9JO4Wz7u6iNvJ5qIuSY/718daaf38336e1ad5a24c49b0af6871f/UnstoppableForceXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Edge Threat": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability are slightly more likely to use faster, more dominant pass rush moves while rushing from the edge of the defense, and have more favorable disengage angles.",
+      "imageUrl": "https://drop-assets.ea.com/images/2IOz7wpX5ZiPbIEEvSEcyB/973d19f44b58a4ecfe60626ce0189f95/EdgeThreatElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Demoralizer": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will cause increased fatigue penalties when tackling a ballcarrier with a hit-stick tackle.",
+      "imageUrl": "https://drop-assets.ea.com/images/3UVhMUfUAVTzr5OxgFzIl9/e88b4788cfd78bcabc38d689bc16a531/Demoralizer.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "El Toro": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to receive dominant bull rush wins when their stamina is full. This consumes a large amount of additional stamina.",
+      "imageUrl": "https://drop-assets.ea.com/images/1vuoPXxIAd1nMM4ZfN8N3O/51a0aadb25aa9cdd64b0ee45fd118f61/ElToro.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Enforcer": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability allow fewer broken tackles when hit-sticking ballcarriers - regardless of the runner's size or power.",
+      "imageUrl": "https://drop-assets.ea.com/images/74Ymebc51ezMC64T2m3Ax5/4335a9bd21902e13efebabd1f3c8062e/Enforcer.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "YAC 'Em Up": {
+      "type": "X-Factor",
+      "description": "The best physical receivers don't just come down with the ball, they carry it home. When they enter the zone, they are nearly guaranteed to break their first post-catch tackle.",
+      "imageUrl": "https://drop-assets.ea.com/images/IKRYJ5cCnhevTMR31NbPl/a53f67bf4265e8b6966a28acde695600/YACEmUpXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Deep In Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 20+ yards from the LoS, inside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/5LPJpIPOtGXuPEN9gJoGU5/1ac89d865b58ce6e42215ec4896bff1a/DeepInElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Short In Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 10 yards from the LoS, inside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/7HjtFwNcPWQ5zm0CfLwRYg/0ef4965b37f1ac562a068f7face7a393/ShortInElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Universal Coverage": {
+      "type": "X-Factor",
+      "description": "The most physical coverage defenders prevent catches from happening even when their target has hands on the ball. When they enter the zone, they are nearly guaranteed knockouts.",
+      "imageUrl": "https://drop-assets.ea.com/images/6zEYKbsMEoV6JlTSEwt1SG/5ed2b6f4558bf11b23dcd0028a2f0d39/UniversalCoverage.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Lurker": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability can make spectacular interceptions while lurking in zones, and are more likely to attempt and succeed at diving swats/catches.",
+      "imageUrl": "https://drop-assets.ea.com/images/5RNZVv2Aj0dxnY7msIhjzc/d42df9d7e738765daaea8ff7362b1e26/Lurker.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Short Route KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to succeed at catch tackle knockouts in man-to-man versus short routes less than 10 yards from the LoS",
+      "imageUrl": "https://drop-assets.ea.com/images/6E5y0c0IrQPyl6PmDeMa6N/fc51659343b7d62ad2afee555c2a5b80/ShortRouteKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "One Step Ahead": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly increased chance to react much faster to receiver cut moves when in man coverage",
+      "imageUrl": "https://drop-assets.ea.com/images/6kIDdHZqQi9jzd5kNSylYp/2d7df5b158deb654d6156d69e34ef7fd/OneStepAhead.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "First One Free": {
+      "type": "X-Factor",
+      "description": "Some players thrive on making defenders look silly. When they enter the zone, this ability increases their fakeout rate on the next juke, spin or hurdle.",
+      "imageUrl": "https://drop-assets.ea.com/images/4aH5nREypiBu90r15Y5mH6/1b913d7950132ec523093c2c97a1fa5f/FirstOneFreeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Evasive": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability have steerable juke and spin animations.",
+      "imageUrl": "https://drop-assets.ea.com/images/7G2uAiNePlNPEtra6Y6BPG/e7bee3706f43b153967872cf8ea90c30/Evasive.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Human Joystick": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability can quickly shift momentum, change direction, and turn the corner without sacrificing speed.",
+      "imageUrl": "https://drop-assets.ea.com/images/70Z518IrBKkBBiVrCGvDZa/386e3e407877cbb1295e35b9cc529325/HumanJoyStick.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Dual Threat": {
+      "type": "X-Factor",
+      "description": "The most devastating defensive players often excel via versatility. When they enter the zone, they have an increased chance of defeating pass blocks, and knocking catches loose.",
+      "imageUrl": "https://drop-assets.ea.com/images/2QewqRSE89DbxuetV7FD9A/9b569e536232aee3d85227ee509aa056/ManKOElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Secure Tackler": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have an increased chance to avoid fakeouts.",
+      "imageUrl": "https://drop-assets.ea.com/images/16VE4X9HULRBBWBywReZiZ/a57c2e41d712db0c29aeea2c1717b488/SecureTackler.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Out My Way": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will have a slightly increased chance to win impact blocks against receivers.",
+      "imageUrl": "https://drop-assets.ea.com/images/1UDclSW1NOMu2nDgm6YNJF/1967369fe24cb7b8c5181d61fdf6d922/OutMyWay.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Recuperation": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability will recover from the effects of Wear and Tear and fatigue at a slightly increased rate between plays.",
+      "imageUrl": "https://drop-assets.ea.com/images/7l6xzI93d1shdwKXMw08Y0/3c583fa15b19fa6c288b5bbc511a5563/Recuperation.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Screen Protector": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability will dominantly win impact blocks on screen plays",
+      "imageUrl": "https://drop-assets.ea.com/images/6z1uUUI0I6nL8RVlAngOqd/fe94258d0c4a83c462fc0844484b8b20/ScreenProtector.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Tough Nut": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability have an increased number of blocker resistance points.",
+      "imageUrl": "https://drop-assets.ea.com/images/2SvlHTXiOmdW48RIIXAXFj/dc19336435422a6bf54a3bab47919626/ToughNut.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Run Protector": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability reduce a rusher's chances of using most quick run block shed moves.",
+      "imageUrl": "https://drop-assets.ea.com/images/3LMJXT6rhYD8Ma5hABrUqF/7243f48ed156054ed4e6f87d60c6209b/RunProtector.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Route Technician": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability have a high success rate when creating separation on the last cut of any route.",
+      "imageUrl": "https://drop-assets.ea.com/images/7oVhjGk2lhU1z5QTCN0Gxk/4a5179d5a574387202a17d6cbe86b27f/RouteTechnician.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Ankle Breaker": {
+      "type": "X-Factor",
+      "description": "Truly devastating receiving threats are the ones that catch and can't be caught. When they enter the zone, they have increased fakeout rates on spin/juke/hurdle after the catch.",
+      "imageUrl": "https://drop-assets.ea.com/images/14JR0Jnz0bxWVB3xUAkzgz/3a1c739ab67eff897139ea57c5376e35/AnkleBreakerXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Backfield Mismatch": {
+      "type": "Superstar Ability",
+      "description": "Running backs with this ability have slightly improved catch in traffic and route running when coming out of the backfield against linebackers and linemen.",
+      "imageUrl": "https://drop-assets.ea.com/images/5NsuJsuPlooZzT52XARKhh/716e60425450e0ee0e8e04315986fe24/BackfieldMismatch.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Outmatched": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to force catch knockouts against running backs",
+      "imageUrl": "https://drop-assets.ea.com/images/1z1ZGib208MCxDCQZoDdck/c286374f03213a13aace8996c550d0df/Outmatched.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Mid Zone KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to force catch knockouts and react quicker in any mid-field zone coverage, less than 20 yards from the LoS inside the numbers and 10-20 outside.",
+      "imageUrl": "https://drop-assets.ea.com/images/ft9gf3aHAyHA0UjOY89KW/e16d8776a2f98a3ea1fc1d87e6d37008/MidZoneKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Run & Gun": {
+      "type": "X-Factor",
+      "description": "Many passers use a combination of mobility and aggressiveness to make big plays. When they enter the zone, they have elite accuracy while throwing on the run.",
+      "imageUrl": "https://drop-assets.ea.com/images/7niDL9igPh9l1MfP0e6GkD/d59931af75fb75b285b19f0c4c4a5177/RunAndGunXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Sideline Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws outside the numbers (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/Rms9onnAR45omfFjkTKYj/d7f06e14833af062ab914162b96ecfb1/SideLineDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Fearless": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have a reduced chance to be impacted by throw penalties caused by defensive pressure while on the run",
+      "imageUrl": "https://drop-assets.ea.com/images/2LMtgLzwoxEL5vuTU8OHMh/93c0c2428571ec01ab59874db7a57644/FearlessXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Nasty Streak": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability will dominantly win impact blocks against linebackers and defensive backs when playing as a lineman or fullback.",
+      "imageUrl": "https://drop-assets.ea.com/images/1nJHT3OiibXd5W7yc798Ka/21a7b622b1826efbcfe6165afe008dbe/NastyStreak.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Relentless": {
+      "type": "X-Factor",
+      "description": "The most tenacious defenders beat their blocks by sheer force of will. When they enter the zone, their rush move attempts are free.",
+      "imageUrl": "https://drop-assets.ea.com/images/7hjEEDbAhAx9EnDctYgAMC/e70f38a78a47d908a5e386952c124817/RelentlessXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Swim Club": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will ignore one bar of blocker resistance when attempting swim/club pass rush moves",
+      "imageUrl": "https://drop-assets.ea.com/images/4I5rWe4S6NeE5aeKib1Zpi/582085a15e482373c3e242bf5555b982/SwimClub.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "No Outsiders": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have slightly improved run shed moves and disengage angles for a better chance at stopping outside zone plays.",
+      "imageUrl": "https://drop-assets.ea.com/images/2zS0HFhnKyshPZKQMETZZ0/a8317bfddf6009b71eaab9edf6d041d0/NoOutsiders.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Shutdown": {
+      "type": "X-Factor",
+      "description": "Shutdown defenders have the talent to erase receivers from the game. When they enter the zone, their coverage is tighter and interceptions are more frequent on contested catches.",
+      "imageUrl": "https://drop-assets.ea.com/images/3NaLugDJWHGvAc5UNoyMiT/0ab0eee613a1fc08ca0f6047d8e523c2/ShutdownXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Outside Shade": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly increased chance to react much faster to receiver cut moves when in man coverage and outside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/7i44RZ3oncRzQGjlFbuEZe/0e87bc0cfeee7f35054598c022d3f9f5/OutsideShadeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Unpredictable": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability are less likely to increase their blocker's resistance bars when performing shed wins",
+      "imageUrl": "https://drop-assets.ea.com/images/3WmRZRLGDpY02XxfMgaRWy/ebaf17298d4b8c5a774d242aa38aa501/Unpredictable.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Interior Threat": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability are slightly more likely to use faster, more dominant pass rush moves while rushing from the interior of the defense, and have more favorable disengage angles.",
+      "imageUrl": "https://drop-assets.ea.com/images/6HBKW82ykOqps49Esr88XB/6fad5b252826567444768a41b8f09531/RunEnder.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Secure Protector": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability reduce a rusher's chances of using a quick block shed move.",
+      "imageUrl": "https://drop-assets.ea.com/images/S30zbvR54yLS9vVcwfuWK/d771730c6c7f63de1239970b7262d48e/SecureProtector.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Short Out Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 10 yards from the LoS, outside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/6Mj2AIkpxuYuwBwXY4285Y/20e0ef9cf763b9db6058bc08e8bbc7ad/ShortOutElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Post Up": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability have a slightly increased chance to win any double team block they are engaged in.",
+      "imageUrl": "https://drop-assets.ea.com/images/6KLaUV2w1azDJFfZp4xljZ/7527de93be61203449d28ed396901dea/PostUp.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Pass Protector": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability reduce a rusher's chances of using most quick pass block shed moves.",
+      "imageUrl": "https://drop-assets.ea.com/images/7rJoeOyqpjSrOLTV98VWwN/ecddc5260ffb6f40749a40e1dbca2aff/PassProtector.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Freight Train": {
+      "type": "X-Factor",
+      "description": "Freight Trains are relentless runners who refuse to go down on first contact. When they enter the zone, this ability increases their chance to break the next tackle.",
+      "imageUrl": "https://drop-assets.ea.com/images/3C4qOQAC0ApK2mMm9GA7yO/4637d69c68ee0c52616566f6b85e19de/FreightTrainXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Arm Bar": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability have more powerful stiff arm animations and have a larger timing window for landing perfect stiff arms",
+      "imageUrl": "https://drop-assets.ea.com/images/2DYYYyMCUrwbN9yxZa74Bi/517952ee92a27e5743edade2416d45ba/ArmBar.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Tank": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability have an increased chance to break hit-stick tackle attempts made on them.",
+      "imageUrl": "https://drop-assets.ea.com/images/1ldd2fq3gTWFAeIlfPhswG/555911d27d71e59038eaa9e2c8052f98/ProtectiveCustodyXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Clutch": {
+      "type": "Superstar Ability",
+      "description": "When playing from behind, players with this ability can easily enter the Zone.",
+      "imageUrl": "https://drop-assets.ea.com/images/48vCVRYmtoi5oNsXgo00Va/0a456d67a8adbbd656f2e1b8d78de02d/Clutch.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Edge Protector": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability reduce an edge pass rusher's chances of using a quick block shed move.",
+      "imageUrl": "https://drop-assets.ea.com/images/1t4WIM6WegZXJ4XWTMkiK0/d8a4f38ea38fff1237bebf84efb0be9b/EdgeElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "All Day": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability will allow less frequent shed attempts by their block target",
+      "imageUrl": "https://drop-assets.ea.com/images/7nUvr1cSH1WBD232Z1zHRt/2126e80d93d1777476b366df94bb3268/AllDay.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Juke Box": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability have steerable juke animations.",
+      "imageUrl": "https://drop-assets.ea.com/images/3FFwgnzl93qwEjP847WTNg/e3542fa06dfe906d5cd837173176d006/JukeBox.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Energizer": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability will replenish a small portion of their stamina upon successfully performing any skill move",
+      "imageUrl": "https://drop-assets.ea.com/images/dvPtNAjYbiFiGP3DRBhWr/678f002adb19a822accb196c7a7243be/Energizer.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Fearmonger": {
+      "type": "X-Factor",
+      "description": "Some pass rushers intimidate quarterbacks with their sheer presence. When they enter the zone, they can apply significant pressure on quarterbacks even while engaged with blockers.",
+      "imageUrl": "https://drop-assets.ea.com/images/21OdUBkwIjRYQUdFmIldGc/f57e1d8d2956e7a4ee2a08fcc9553fe6/FearmongerXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Inside Stuff": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have slightly improved run shed moves and disengage angles for a better chance at stopping inside run plays.",
+      "imageUrl": "https://drop-assets.ea.com/images/2GWdtpFTFDWv8tnt4zVWmr/9765816a796e400550ea22f5ee5143bc/InsideStuff.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Linchpin": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability grant improved blocking to the entire offensive line.",
+      "imageUrl": "https://drop-assets.ea.com/images/74R0ZFQfrX64zvAbEBJPlI/41644c5619288159bae0c80d4f015b67/ImmovableObject.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Run Stopper": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability do not need to spend stamina on shed attempts during a run play",
+      "imageUrl": "https://drop-assets.ea.com/images/4LPtdfD0q9IiS9HhxGayiW/7c09f04b5b7086a6a46fd0e7a3a92784/RunStopper.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Threat Detector": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability will highlight any user defenders.",
+      "imageUrl": "https://drop-assets.ea.com/images/79yntNn7oknpeGBBM6xlcp/4c8bed9ee01e18dc5867edecaf4ea183/ThreatDetector.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Momentum Shift": {
+      "type": "X-Factor",
+      "description": "Momentum Shift players demoralize their opponents. When they enter the zone, all on field opponents are knocked out of the zone or lose any progress towards entering the zone.",
+      "imageUrl": "https://drop-assets.ea.com/images/7DMcC6NvFyBFl9TKg7vMlR/8d7de0ff33b7d7be195ca55ca7d4cef8/PowerForceXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Under Pressure": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability can apply pressure to the quarterback from a slightly improved distance.",
+      "imageUrl": "https://drop-assets.ea.com/images/4xbvXPORBQ5z3iXgAuudZI/f95379e496f507e17545f2726c2a48bd/UnderPressure.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Goal Line Stuff": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have slightly improved run shed moves and disengage angles for a better chance at stopping runs within 5 yards of the goal line.",
+      "imageUrl": "https://drop-assets.ea.com/images/5BL8rbRDW3DDaCiymmrV3G/0e07aaa3a62c09d5a452fba0d1bca052/GoalLineStuff.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deep In Zone KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to force catch knockouts and react quicker in deep zone coverage, 20+ yards from the LoS and inside the hash marks.",
+      "imageUrl": "https://drop-assets.ea.com/images/1NdtgLHrDkZbwUxUPcl2ky/bba6badc0c30f427d8f0a5bd133c3dce/DeepInZoneKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Truzz": {
+      "type": "X-Factor",
+      "description": "The most effective ball carriers prioritize maintaining possession over all else. When they enter the zone, no tackles made against them will result in a fumble.",
+      "imageUrl": "https://drop-assets.ea.com/images/2z0GqnhI9SDXKOOfAVcDuL/fd4d2cc7c9cc54eee62ed5504949e6b7/ProtectiveCustodyXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Gift-Wrapped": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have a better chance to complete passes to uncovered halfbacks.",
+      "imageUrl": "https://drop-assets.ea.com/images/3GrWOfkjD0eVumMA18HuHr/b08aad44444085a1a8c62447332a7e77/GiftWrapped.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Extra Credit": {
+      "type": "Superstar Ability",
+      "description": "Pass rushers with this ability pay a slightly reduced stamina cost for each move they attempt",
+      "imageUrl": "https://drop-assets.ea.com/images/TcSrdlJF1pMYIQYvLW5kT/14234bf73035383c1f142e7535a893b0/ExtraCredit.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Max Effort": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will ignore one bar of blocker resistance when attempting pass rush moves with effort",
+      "imageUrl": "https://drop-assets.ea.com/images/4OdqZAfvEN65BgiqF1NqHy/5b75b6334353a57f96d49db873c743cc/Speedster.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Puller Elite": {
+      "type": "Superstar Ability",
+      "description": "Blockers with this ability will frequently attempt slightly improved pull blocks vs. DBs",
+      "imageUrl": "https://drop-assets.ea.com/images/6jb0pQjtt9APIjIXHWzoEj/e0326ca2c8add315b86cb5b0bfd95408/PullerElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deep Route KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to succeed at catch tackle knockouts in man-to-man versus deep routes 20+ yards from the LoS",
+      "imageUrl": "https://drop-assets.ea.com/images/743pkfRTqU913tua534FPZ/18448d4661be20b72df95ffaa7d0e53c/DeepRouteKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Inside Shade": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly increased chance to react much faster to receiver cut moves when in man coverage and inside the numbers",
+      "imageUrl": "https://drop-assets.ea.com/images/6Oh5QRx1dGJLuLMhmmXsqB/28f776a4378816d07cd647e5706f3275/InsideShadeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "B.O.G.O.": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability are granted a free pass rush move once per play after spending stamina to perform one",
+      "imageUrl": "https://drop-assets.ea.com/images/730f5s1CMOMXTp5qJ97vyr/a31b90383627bdcc739e6b614dd6c7e1/BOGO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Steamroller": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability retain more of their forward momentum during tackles while travelling at high speeds.",
+      "imageUrl": "https://drop-assets.ea.com/images/BwOD9SfgH06wn0hOewlcB/e1c9b8c4c9775c7817d9c98bd416f139/Steamroller.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Backlash": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability will cause increased fatigue penalties against their tackler when tackled via a non-conservative tackle.",
+      "imageUrl": "https://drop-assets.ea.com/images/4FoteAXjO6ppYgE0BPYgQa/d729fd915083b89526a555f25eb9996c/Backlash.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Reinforcement": {
+      "type": "X-Factor",
+      "description": "The game's top defenders excel in all situations. When they enter the zone, this ability increases their chance of defeating run blocks, and disrupting catches via tackles.",
+      "imageUrl": "https://drop-assets.ea.com/images/76A20bYcHmoRvP7VXarWAE/5606f5fc267c367881392bb6082d681e/ReinforcementXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Flat Zone KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to force catch knockouts and react quicker in any flat zone coverage, less than 10 yards from the LoS and outside the hash marks.",
+      "imageUrl": "https://drop-assets.ea.com/images/J1Fr7r4ylGTM6wHEPJtQD/8cdd516a117bf7b2ccbf54b6ac69f5ba/FlatZoneKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Lumberjack": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly increased success rate and cause more fumbles when cut-sticking ballcarriers.",
+      "imageUrl": "https://drop-assets.ea.com/images/5d3szVOkAOomg5FXcjshrF/41a00204aa53a1ef447752d0a61e9709/Lumberjack.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Red Zone Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws while throwing in the red zone (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/6CmcrJxh9xfIFhhcfz4TA4/d0f0719fe3c85780e16e35072e5fdbb4/RedZoneDeadEye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deflator": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will cause increased fatigue penalties when tackling a ballcarrier with a non-conservative tackle.",
+      "imageUrl": "https://drop-assets.ea.com/images/15VBIsJ9LsNgW8zRv8QKhc/da46859635c6fed8f0d53ebb9a9616fb/Deflator.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Instant Rebate": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability are refunded stamina when they successfully shed blocks",
+      "imageUrl": "https://drop-assets.ea.com/images/c9sESxdXDLtPofrEoMLGJ/cbd6b6c97fa93ecb05f14f6b81bbc9ba/InstantRebate.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deep Out Zone KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to force catch knockouts and react quicker in deep zone coverage, 20+ yards from the LoS and outside the hash marks.",
+      "imageUrl": "https://drop-assets.ea.com/images/4Ck6Q4qjbiPypjVAipcgHi/0129489b93fd38217160b665b83d608d/DeepOutZoneKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Pro Reads": {
+      "type": "X-Factor",
+      "description": "For great quarterbacks, vision and anticipation are paramount. When they enter the zone, their first open receiver is highlighted and they ignore defensive pressure.",
+      "imageUrl": "https://drop-assets.ea.com/images/5EIfnrLxeOJU5KnSVCKcBG/ea11410f8963408c708bc720bef06d16/ProReadsXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Phenom": {
+      "type": "X-Factor",
+      "description": "Some athletes defy classification as much as they defy boundaries. When they enter the zone, they are highly likely to win the first interaction they have with a defender.",
+      "imageUrl": "https://drop-assets.ea.com/images/4fdSXuRycbhSVLnxZn0Ewv/a2d496ec82a65ae57d8e8e70babb2528/PhenomXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Inside Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws inside the numbers (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/4zNt7yXfsiqclykGfpoGTO/407b5bf86d42580b8133a7f0c8d02c34/InsideDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Bruiser": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability have more powerful truck and stiff arm animations and a larger timing window for perfect attempts.",
+      "imageUrl": "https://drop-assets.ea.com/images/7d8H2AKV015qRuMShGXiea/42f81c27ce3e302b7567b623439c5071/Bruiser.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Red Zone Threat": {
+      "type": "Superstar Ability",
+      "description": "When in the red zone, receivers with this ability have a better chance to win contested catches against single coverage.",
+      "imageUrl": "https://drop-assets.ea.com/images/6HfBpf6egfY5wAOwbZvFrC/8943297199af894ac60420f2715e46e5/RedZoneThreat.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "3rd Down Threat": {
+      "type": "Superstar Ability",
+      "description": "On 3rd down, receivers with this ability have a better chance to win contested catches against single coverage up to 25 yards from the line of scrimmage.",
+      "imageUrl": "https://drop-assets.ea.com/images/1XgWl0JQ4UPyCasnz7Rm9D/406aa7c95283f254aac9f5c8c4235810/TrustyHands.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Brick Wall": {
+      "type": "X-Factor",
+      "description": "While in the pocket, passers with this ability are almost guaranteed to break the first sack attempt by any blitzing defender",
+      "imageUrl": "https://drop-assets.ea.com/images/3HbnogHPS2EteTqZGGx2OV/e8d989b3b2d28f6e57f686f9b8b199bc/BrickWallXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Bottleneck": {
+      "type": "X-Factor",
+      "description": "Bottleneck defenders realize that the best way to stop a route is to act early. When they enter the zone, they are highly likely to dominantly win any man press encounter.",
+      "imageUrl": "https://drop-assets.ea.com/images/4rTFvzGfrZzTCF9s0GNR8C/a717241fa9ece5b4db0f6edde3d2bcc3/BottleNeckXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Bench Press": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability apply bonus fatigue to their man coverage target after a successful press win",
+      "imageUrl": "https://drop-assets.ea.com/images/3PqRKud7egJsk2tKihOTip/3ef3e74ed2a9b38da926d88900cf296f/BenchPress.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "On The Ball": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability are much less likely to be fooled by WR runoffs",
+      "imageUrl": "https://drop-assets.ea.com/images/GGqpC2DhGNjCnoWWu71Pq/e899e9801d5bde200a2ac10122b3fefe/OnTheBall.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "High Point Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on unpressured high point throws under 20 yards.",
+      "imageUrl": "https://drop-assets.ea.com/images/4Wg3K5J8lrRgaMzYKxpLCh/f113cff662c6a3397e414c0fe18e71ce/HighPointDeadeyeXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Roaming Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws while their feet are set outside the pocket (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/4zZb4gCwW7THTkKXlOb9Z9/ebfbde44f552edd508f82184d0a760e7/RoamingDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Reach For It": {
+      "type": "Superstar Ability",
+      "description": "Ballcarriers with this ability will have a slightly reduced fumble chance while reaching for extra yards during tackles",
+      "imageUrl": "https://drop-assets.ea.com/images/1CgEPtk6HS4IbcO8lTyUKU/4caa5708320375163b185558e8e82180/ReachForIt.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Matchup Nightmare": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability make sharper cuts and frequently win contested catches when covered by linebackers and linemen.",
+      "imageUrl": "https://drop-assets.ea.com/images/1QtTWP2k7jJURk1ZaOzBS8/f7cac3d69f65819c839e0c0df92402cc/MatchupNightmare.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Adrenaline Rush": {
+      "type": "Superstar Ability",
+      "description": "Pass rushers with this ability will heal some of their fatigue after sacking the QB",
+      "imageUrl": "https://drop-assets.ea.com/images/1vFhElFXD3vlDwKNR3t6qZ/2e74c23c454d693d2fdb8108bb52af3e/AdrenalineRush.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Deep Elite": {
+      "type": "Superstar Ability",
+      "description": "Receivers with this ability catch more consistently while catching passes less than 20+ yards from the LoS",
+      "imageUrl": "https://drop-assets.ea.com/images/4uRHnG2JQq72c19BDeBTHc/a39bb471c47847401f68bc1520b40d74/DeepRouteElite.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Mr. Big Stop": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability will start 3rd or 4th down with slightly increased fatigue replenishment",
+      "imageUrl": "https://drop-assets.ea.com/images/6IIIermTNfvb4r3K96cRex/bcba8941a388a883680389ef907c5f99/MrBigStop.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Pocket Deadeye": {
+      "type": "Superstar Ability",
+      "description": "Passers with this ability have elite accuracy on all unpressured throws while their feet are set in the pocket (except on high throws).",
+      "imageUrl": "https://drop-assets.ea.com/images/6POeZTNZp2rhkZ0bBqOz4P/ce0089096769d12d0c27b38cc0303035/PocketDeadeye.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "RAC 'em Up": {
+      "type": "X-Factor",
+      "description": "RAC receivers fight for every possible yard after making a catch. When they enter the zone, this ability increases their success rate on RAC catches",
+      "imageUrl": "https://drop-assets.ea.com/images/4OjT8OjU3DWhxfQr3Iw9xc/c9e36771ca18a6c6382fc85b08118c05/RACemUpXF.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/438X05gpHSj6bgCdxDJBAU/364bb01cdba7a6b51977533ab26a0207/005_XF_v03.png"
+    },
+    "Zen Kicker": {
+      "type": "Superstar Ability",
+      "description": "Kickers with this ability experience a slower kicking meter for better power and accuracy on kicks over 45 yards.",
+      "imageUrl": "https://drop-assets.ea.com/images/1vA4vptMN8ExkK3cMcoOuv/d7776da8e639c403decb3d56681eca03/FocusedKicker.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Medium Route KO": {
+      "type": "Superstar Ability",
+      "description": "Defenders with this ability have a slightly improved chance to succeed at catch tackle knockouts in man-to-man versus medium routes 10-20 yards from the LoS",
+      "imageUrl": "https://drop-assets.ea.com/images/7ofrUhDgsX5GjLizKIUJPz/e47f15f0dba57e4322d33e7a7595a4e5/MediumRouteKO.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Slot-O-Matic": {
+      "type": "Superstar Ability",
+      "description": "When lined up in the slot, receivers with this ability make faster cuts and have better hands when catching passes less than 8 yards from the LoS",
+      "imageUrl": "https://drop-assets.ea.com/images/3m0vfJhkLfnT2E2eikop6B/a34cad917fc8679023a7b73f96e82c91/SlotOMatic.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    },
+    "Ironman": {
+      "type": "Superstar Ability",
+      "description": "Players with this ability avoid any ratings penalties associated with playing outside of their primary position",
+      "imageUrl": "https://drop-assets.ea.com/images/7Ar31GHqfMvizScPHfcqCM/f4fcf0b916ebbbc33f3848e768c1de8e/IronMan.png",
+      "typeIconUrl": "https://drop-assets.ea.com/images/h3SsQOXrvPyxKUq7IlU14/6a6d597e7524fc282e69a5da45af07be/saIcon.png"
+    }
   }
 }

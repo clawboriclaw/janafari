@@ -25,6 +25,7 @@ HEADERS = {
 }
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "ratings.json")
 HISTORY = os.path.join(os.path.dirname(OUT), "history.json")   # every iteration's {id: ovr}, so a missed week is never lost
+ABILITIES = os.path.join(os.path.dirname(OUT), "abilities.json")   # EA's own ability descriptions + art, plus our kid-friendly lines
 SEASON_MARK = "madden-nfl-27"   # the feed has no season field; EA's portrait URLs carry the game name
 LIMIT = 100
 
@@ -82,6 +83,9 @@ def compact(p):
         "avatar": p.get("avatarUrl"),
         "abilities": [{"label": a.get("label"), "type": ((a.get("type") or {}).get("label") or "")}
                       for a in (p.get("playerAbilities") or []) if a.get("label")],
+        "_abilityDefs": [{"label": a.get("label"), "type": ((a.get("type") or {}).get("label") or ""), "description": a.get("description") or "",
+                          "imageUrl": a.get("imageUrl") or "", "typeIconUrl": ((a.get("type") or {}).get("iconUrl") or "")}
+                         for a in (p.get("playerAbilities") or []) if a.get("label")],
         "stats": stats,
         "diffs": diffs,
     }
@@ -184,6 +188,23 @@ def main(argv):
     for team, sheet in by_team.items():
         with open(os.path.join(stats_dir, team + ".json"), "w") as fh:
             json.dump(sheet, fh, separators=(",", ":"))
+    # data/abilities.json: EA's official description and artwork for every ability name seen this week ("ea"),
+    # merged with the kid-friendly lines the page shows first ("xfactor" / "superstar"); our lines are never overwritten.
+    defs = {}
+    try:
+        with open(ABILITIES) as fh:
+            defs = json.load(fh)
+    except Exception:
+        defs = {}
+    ea = defs.get("ea") or {}
+    for p in unique:
+        for a in p.get("_abilityDefs") or []:
+            if a["label"] and a["description"] and a["label"] not in ea:
+                ea[a["label"]] = {"type": a["type"], "description": a["description"], "imageUrl": a["imageUrl"], "typeIconUrl": a["typeIconUrl"]}
+    defs["ea"] = ea
+    defs.setdefault("xfactor", {}); defs.setdefault("superstar", {})
+    with open(ABILITIES, "w") as fh:
+        json.dump(defs, fh, indent=2, ensure_ascii=False)
     doc["players"] = [{k: p[k] for k in core_keys} for p in unique]
     with open(OUT, "w") as fh:
         json.dump(doc, fh, separators=(",", ":"), ensure_ascii=False)

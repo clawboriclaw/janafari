@@ -671,8 +671,12 @@
           if (open) { defBox.hidden = true; return; }
           chip.setAttribute("aria-expanded", "true");
           clear(defBox);
-          defBox.appendChild(textNode("b", "", (x ? "X-Factor · " : "Superstar · ") + a.label));
-          defBox.appendChild(textNode("p", "", abilityText(a) || "EA hasn't published a description we can show yet — but it's one of his " + (x ? "X-Factor powers." : "Superstar boosts.")));
+          var ea = ABILITY_DEFS && ABILITY_DEFS.ea && ABILITY_DEFS.ea[a.label], head = document.createElement("div"); head.className = "ability-def-head";
+          if (ea && ea.imageUrl) { var art = document.createElement("img"); art.className = "ability-art"; art.src = ea.imageUrl; art.alt = ""; art.addEventListener("error", function () { if (art.parentNode) { art.parentNode.removeChild(art); } }); head.appendChild(art); }
+          head.appendChild(textNode("b", "", (x ? "X-Factor · " : "Superstar · ") + a.label));
+          defBox.appendChild(head);
+          defBox.appendChild(textNode("p", "", abilityText(a) || (ea && ea.description) || "One of his " + (x ? "X-Factor powers." : "Superstar boosts.")));
+          if (ea && ea.description && abilityText(a)) { defBox.appendChild(textNode("p", "ability-ea", "EA says: " + ea.description)); }
           defBox.hidden = false;
         });
         ab.appendChild(chip);
@@ -1078,7 +1082,7 @@
         el("loading").hidden = true;
       };
       fetchJson(HISTORY_URL + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
-      fetchJson(ABILITIES_URL + "?v=1", function (defs) { if (defs && defs.xfactor && defs.superstar) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
+      fetchJson(ABILITIES_URL + "?v=2", function (defs) { if (defs && defs.xfactor && defs.superstar) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
     }, function () {
       failBoot("Could not load the ratings", "Check the internet and try again. The ratings file lives with this page.");
     });

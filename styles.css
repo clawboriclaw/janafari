@@ -385,7 +385,10 @@ body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
 .ability-x .ability-icon { background: rgba(255,255,255,.28); }
 .ability[aria-expanded="true"] { outline: 2px solid #fdbb30; outline-offset: 1px; }
 .ability-def { margin: 4px 0 6px; padding: 8px 10px; border-radius: 10px; background: #f4f6f9; background: var(--surface-2); font-weight: 500; font-size: 13px; line-height: 1.45; }
-.ability-def b { display: block; margin-bottom: 2px; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #5b6b7c; color: var(--muted); }
+.ability-def-head { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; margin-bottom: 4px; }
+.ability-art { width: 34px; height: 34px; margin-right: 8px; border-radius: 8px; background: #041c38; -webkit-flex: 0 0 auto; flex: 0 0 auto; }
+.ability-def b { display: block; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #5b6b7c; color: var(--muted); }
+.ability-ea { margin-top: 6px !important; font-size: 12px; color: #5b6b7c; color: var(--muted); }
 .ability-def p { margin: 0; }
 .bio-year, .bio-ring, .ability { display: inline-block; margin: 0 6px 6px 0; padding: 3px 8px; border-radius: 6px; background: #f4f6f9; background: var(--surface-2); font-size: 12px; font-weight: 700; }
 .bio-ring { background: #fdbb30; background: var(--gold); color: #0b1f3a; }

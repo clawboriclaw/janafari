@@ -14,7 +14,9 @@ Live site: <https://clawboriclaw.github.io/janafari/>
   sticks between visits. Works together with Offense / Defense / Special teams.
 - **Badges & abilities** — a red **X** on a card means an X-Factor player, a grey **★** means Superstar abilities
   (159 players). The **⭐ Stars** filter shows only them. On a card every ability name is a button: tap "Double Me"
-  and a plain-English meaning appears (`data/abilities.json`, all 115 names EA uses, written for a ten-year-old).
+  and a plain-English meaning appears, then EA's own description and artwork (`data/abilities.json`: our lines for
+  all 115 names, plus the `ea` block the fetcher fills from the feed — new names get EA's text automatically).
+  A player with no badge has no abilities in EA's feed this year (e.g. Aaron Donald at launch).
 - **Add** (＋) searches the whole league and opens a real player card: age, size, college, years pro,
   abilities, the top attributes with EA's week-over-week diffs, and a one-tap "Add to my players".
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
