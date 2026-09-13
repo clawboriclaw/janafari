@@ -279,7 +279,7 @@
 
         <section class="help-section" id="help-game">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">🏈</span></div>
-          <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle cones and defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. One tackle and the run is over — then your initials go on the board. Grab a floating football for two seconds of turbo. Seven points a touchdown; the score is on the scoreboard at the top right.</p>
+          <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle the defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. One tackle and the run is over — then your initials go on the board. Grab a floating football for two seconds of turbo. Seven points a touchdown; the score is on the scoreboard at the top right.</p>
             <p class="help-note">The big button starts a run and then jumps. Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
             <button class="button button-quiet help-go" type="button" data-go="game">Play End Zone Run</button></div>
         </section>
@@ -333,6 +333,7 @@
         <div class="game-actions">
           <button class="button button-quiet" id="gamePause" type="button" disabled>Pause</button>
           <button class="button button-quiet" id="gameRestart" type="button">Restart</button>
+          <button class="button button-quiet" id="gameScores" type="button" aria-expanded="false" aria-controls="gameBoard">🏆 Top runs</button>
           <button class="button button-quiet" id="gameSound" type="button" aria-pressed="false">🔇 Sound off</button>
           <button class="button button-quiet" id="gameExit" type="button">Exit</button>
         </div>
@@ -347,7 +348,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=25"></script>
   <script>
     (function () {
       var root = document.documentElement;

@@ -182,7 +182,7 @@
     stadium = i === 0 ? true : rnd() < 0.6;
     yards = 0; nextFirst = 10; obs = []; balls = []; spawnAt = i === 0 ? 3.0 : 2.4; turboAt = 20 + rnd() * 30;
     blimpX = (stadium && rnd() < 0.7) ? W + 60 * U : -1;   // it enters nose first from the right and tows the banner behind it
-    signX = stadium ? W * (0.45 + rnd() * 0.4) : -1; signText = board.length ? "GO " + board[0].ini + "!" : "GO 28!";
+    signX = stadium ? W * (0.45 + rnd() * 0.4) : -1; signText = ["GO COLTS!", "#28!", "DEFENSE!", "HORSESHOE!"][Math.floor(rnd() * 4)];
     loadLogo(team().abbr); loadLogo(opp.abbr); loadLogo(TEAMS[i % TEAMS.length].abbr);
     hud();
   }
@@ -220,10 +220,11 @@
   }
   function overlay(kind) {
     var box = ui.overlay, title = ui.overlayTitle, copy = ui.overlayCopy, btn = ui.overlayBtn;
-    ui.initials.hidden = kind !== "initials"; ui.boardWrap.hidden = !(kind === "ready" || kind === "over" || kind === "initials");
+    ui.initials.hidden = kind !== "initials";
+    if (kind === "ready" || kind === "over" || kind === "initials") { ui.boardWrap.hidden = false; ui.scores.setAttribute("aria-expanded", "true"); }
     if (!kind) { box.hidden = true; return; }
     box.hidden = false;
-    if (kind === "ready") { title.textContent = "End Zone Run"; copy.textContent = "You're Jonathan Taylor, #28. Hurdle the defenders and cones. Every 100 yards is a touchdown — then a new city, a little faster. One tackle and the run is over."; btn.textContent = "Start"; renderBoard(null); }
+    if (kind === "ready") { title.textContent = "End Zone Run"; copy.textContent = "You're Jonathan Taylor, #28. Hurdle the defenders. Every 100 yards is a touchdown — then a new city, a little faster. One tackle and the run is over."; btn.textContent = "Start"; renderBoard(null); }
     else if (kind === "paused") { title.textContent = "Paused"; copy.textContent = "Take a breath. Your yards are safe."; btn.textContent = "Resume"; }
     else if (kind === "initials") { title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = "That makes the board. Enter your initials."; btn.textContent = "Save"; ui.iniInput.value = ""; renderBoard({ ini: "", tds: tds, yards: peak }); window.setTimeout(function () { try { ui.iniInput.focus(); } catch (e) {} }, 40); return; }
     else if (kind === "over") { title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = (newBest ? "New best run! " : "") + (lastMiss === "early" ? "You jumped a little early — wait until they're closer." : "Jump a bit sooner next time."); btn.textContent = "Play again"; renderBoard(null); }
@@ -287,10 +288,9 @@
     if (player.y > 0) { player.y = 0; player.vy = 0; player.jumps = 0; }
     spawnAt -= dt;
     if (spawnAt <= 0 && celebrate <= 0 && yards < DRIVE - 6) {
-      var d = Math.min(driveIdx, 8), r = Math.random(), type;
-      if (r < 0.32 - d * 0.02) { type = "cone"; } else if (r < 0.74) { type = "def"; } else if (d >= 2 && r < 0.9) { type = "cones2"; } else { type = "def"; }
-      var w = type === "cones2" ? 40 : (type === "def" ? 30 : 18), h = type === "def" ? 44 : 22;
-      obs.push({ type: type, x: W + 40 * U, w: w * U, h: h * U, hit: false, skin: Math.random() < 0.5 ? "#8d5524" : "#c68642" });
+      var d = Math.min(driveIdx, 8), type = (d >= 1 && Math.random() < 0.18 + d * 0.04) ? "def2" : "def";   // players only: one defender, or two shoulder to shoulder from drive 2
+      var w = type === "def2" ? 52 : 30, h = 44;
+      obs.push({ type: type, x: W + 40 * U, w: w * U, h: h * U, hit: false, skin: Math.random() < 0.5 ? "#8d5524" : "#c68642", skin2: Math.random() < 0.5 ? "#8d5524" : "#c68642" });
       spawnAt = Math.max(0.85, 2.3 - yards * 0.011 - d * 0.11) + Math.random() * 0.6;
     }
     if (yards > turboAt && celebrate <= 0) { balls.push({ x: W + 30 * U, y: -70 * U }); turboAt = yards + 35 + Math.random() * 40; }
@@ -455,16 +455,15 @@
     var s = 2.4 * u, defPal = { H: opp.colors[0], X: opp.colors[1], F: "#8d5524", M: "#2b2b2b", J: opp.colors[0], N: opp.colors[0], S: "#8d5524", P: opp.colors[1] === "#ffffff" ? "#d9d9d9" : "#e8e8e8", K: "#1b1b1b" };
     for (i = 0; i < obs.length; i += 1) {
       var o = obs[i];
-      if (o.type === "cone" || o.type === "cones2") {
-        var n = o.type === "cones2" ? 2 : 1, cwid = o.w / n, k;
-        for (k = 0; k < n; k += 1) { var ox = o.x + k * cwid; ctx.fillStyle = "#ff7a1a"; ctx.beginPath(); ctx.moveTo(ox, gy); ctx.lineTo(ox + cwid / 2, gy - o.h); ctx.lineTo(ox + cwid, gy); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fillRect(ox + 4 * u, gy - o.h * 0.45, cwid - 8 * u, 3 * u); }
-      } else {
-        defPal.S = o.skin; defPal.F = o.skin;
-        ctx.globalAlpha = o.hit ? 0.45 : 1;
-        drawSprite(Math.floor(t * 6 + i) % 2 ? DEF_A : DEF_B, Math.floor(t * 6 + i) % 2 ? "da" : "db", o.x + o.w / 2 - 8 * s * SX, gy - 20 * s, s, defPal);
-        ctx.fillStyle = opp.colors[1]; ctx.fillRect(o.x + o.w / 2 - 1.5 * s * SX, gy - 12 * s, 3 * s * SX, 2 * s);
-        ctx.globalAlpha = 1;
+      var nDef = o.type === "def2" ? 2 : 1, k;
+      ctx.globalAlpha = o.hit ? 0.45 : 1;
+      for (k = 0; k < nDef; k += 1) {
+        var dx = o.x + (nDef === 1 ? o.w / 2 : o.w * (0.27 + k * 0.46)), fa = Math.floor(t * 6 + i + k) % 2;
+        defPal.S = k ? o.skin2 : o.skin; defPal.F = defPal.S;
+        drawSprite(fa ? DEF_A : DEF_B, fa ? "da" : "db", dx - 8 * s * SX, gy - 20 * s, s, defPal);
+        ctx.fillStyle = opp.colors[1]; ctx.fillRect(dx - 1.5 * s * SX, gy - 12 * s, 3 * s * SX, 2 * s);
       }
+      ctx.globalAlpha = 1;
     }
     // Jonathan Taylor #28
     var px = W * 0.22, py = gy + player.y, runPal = { H: "#ffffff", X: "#003b75", F: "#8d5524", M: "#2b2b2b", J: "#003b75", N: "#003b75", S: "#8d5524", P: "#ffffff", K: "#1b1b1b" };
@@ -503,7 +502,7 @@
     ui.yards = el("gameYards"); ui.lives = el("gameLives"); ui.best = el("gameBest"); ui.drive = el("gameDrive");
     ui.jump = el("gameJump"); ui.pause = el("gamePause"); ui.restart = el("gameRestart"); ui.sound = el("gameSound"); ui.exit = el("gameExit");
     ui.overlay = el("gameOverlay"); ui.overlayTitle = el("gameOverlayTitle"); ui.overlayCopy = el("gameOverlayCopy"); ui.overlayBtn = el("gameOverlayBtn");
-    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.iniSkip = el("gameIniSkip"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList");
+    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.iniSkip = el("gameIniSkip"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList"); ui.scores = el("gameScores");
     var press = function (fn) { return function (e) { if (e && e.preventDefault && e.type === "touchstart") { e.preventDefault(); } fn(); }; };
     var jumpOrStart = function () { if (!ui.initials.hidden) { return; } if (!running || over) { running = false; start(); } else if (paused) { resume(); } else { jump(); } };
     ui.jump.addEventListener("touchstart", press(jumpOrStart)); ui.jump.addEventListener("mousedown", press(jumpOrStart));
@@ -514,6 +513,7 @@
     ui.overlayBtn.addEventListener("click", function () { if (!ui.initials.hidden) { saveInitials(); } else if (paused && running && !over) { resume(); } else { running = false; start(); } });
     ui.overlay.addEventListener("click", function (e) { if (e.target === ui.overlay && ui.initials.hidden) { if (paused && running && !over) { resume(); } else if (!running || over) { running = false; start(); } } });
     ui.iniSkip.addEventListener("click", function () { pendingScore = null; overlay("over"); });
+    ui.scores.addEventListener("click", function () { var show = ui.boardWrap.hidden; if (show) { renderBoard(null); } ui.boardWrap.hidden = !show; ui.scores.setAttribute("aria-expanded", show ? "true" : "false"); });
     ui.iniInput.addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3); renderBoard({ ini: this.value, tds: tds, yards: peak }); });   // the board updates as you type
     ui.sound.addEventListener("click", function () { soundOn = !soundOn; ui.sound.setAttribute("aria-pressed", soundOn ? "true" : "false"); ui.sound.textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off"; if (soundOn) { beep(660, 60, "triangle"); } });
     ui.exit.addEventListener("click", function () { if (bridge) { bridge.close("gameModal"); } });
