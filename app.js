@@ -634,9 +634,24 @@
     list.appendChild(infoRow("College", dd(p.college || facts.college || "—")));
     list.appendChild(infoRow("Years pro", dd(typeof p.yearsPro === "number" ? (p.yearsPro === 0 ? "Rookie" : String(p.yearsPro)) : "—")));
     if (p.abilities && p.abilities.length) {
-      var ab = document.createElement("dd");
-      p.abilities.forEach(function (a) { ab.appendChild(textNode("span", "ability" + (/x-factor/i.test(a.type) ? " ability-x" : ""), a.label)); });
-      list.appendChild(infoRow("Abilities", ab));
+      var ab = document.createElement("dd"), row = document.createElement("div"), dt = document.createElement("div"), info = document.createElement("button"), help = document.createElement("div");
+      p.abilities.forEach(function (a) {
+        var x = /x-factor/i.test(a.type), chip = textNode("span", "ability" + (x ? " ability-x" : ""), a.label);
+        chip.title = (x ? "X-Factor: " : "Superstar ability: ") + a.label; ab.appendChild(chip);
+      });
+      row.className = "bio-row bio-row-abilities";
+      dt.className = "bio-dt-with-info";
+      dt.appendChild(document.createTextNode("Abilities"));
+      info.type = "button"; info.className = "info-btn"; info.setAttribute("aria-label", "What are X-Factor and Superstar abilities?"); info.setAttribute("aria-expanded", "false");
+      info.appendChild(textNode("span", "", "i"));
+      dt.appendChild(info);
+      help.className = "ability-help"; help.hidden = true;
+      help.appendChild(textNode("p", "", "X-Factor (red) is a star's signature power. It switches on once he gets hot in a game — a few big plays — and while it's on he's nearly unstoppable at that one thing."));
+      help.appendChild(textNode("p", "", "Superstar abilities (grey) are always on: a steady boost to one skill. Both come straight from EA's Madden 27 ratings."));
+      info.addEventListener("click", function () { var open = help.hidden; help.hidden = !open; info.setAttribute("aria-expanded", open ? "true" : "false"); });
+      var ddWrap = document.createElement("dd"); ddWrap.appendChild(ab); ddWrap.appendChild(help);
+      row.appendChild(dt); row.appendChild(ddWrap);
+      list.appendChild(row);
     }
     if (facts.draftYear) {
       var draft = dd(String(facts.draftYear)); draft.appendChild(textNode("small", "", "Round " + facts.draftRound + ", pick " + facts.draftPick));
@@ -882,7 +897,7 @@
   }
 
   /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
-  var GAME_URL = "game.js?v=3", gameLoading = false;
+  var GAME_URL = "game.js?v=4", gameLoading = false;
   var modalApi = { show: showModal, close: closeModal, toast: showToast };
   function openGame(opener) {
     if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); return; }

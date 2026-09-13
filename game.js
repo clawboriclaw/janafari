@@ -1,6 +1,6 @@
 /* End Zone Run v2 — Janafari's endless football runner (Chrome-dinosaur style, Colts edition).
    Loaded lazily by app.js the first time someone taps Play; nothing here runs on the ratings page.
-   Canvas 2D, ES5, no assets: runner, defenders, cones, skylines, crowd and fireworks are all paths.
+   Canvas 2D, ES5: path-drawn action with cached ESPN team emblems and offline badge fallbacks.
    Design (owner, 2026-09-12): Jonathan Taylor #28 in Colts blue; the run is CONTINUOUS — every 100 yards
    is a touchdown (arms up, fireworks, roar) and the next drive starts against the next team: their colours
    on the defenders, their city behind the stadium, faster. Day rolls into dusk, night and dawn across
@@ -60,6 +60,7 @@
   var player = { y: 0, vy: 0, jumps: 0 };
   var obs = [], balls = [], particles = [], rockets = [], stars = [];
   var stadium = true, opp = HOME, seed = 1;
+  var logos = {}, driveStarted = -3;
   var soundOn = false, actx = null, reducedMotion = false, bridge = null, ui = {};
 
   function el(id) { return document.getElementById(id); }
@@ -94,6 +95,7 @@
   function roar(ms) {
     if (!soundOn || !ensureAudio()) { return; }
     try {
+      if (actx.state === "suspended" && actx.resume) { actx.resume(); }   // after Exit/reopen the context is suspended (K3)
       var len = Math.floor(actx.sampleRate * ms / 1000), buf = actx.createBuffer(1, len, actx.sampleRate), d = buf.getChannelData(0), i;
       for (i = 0; i < len; i += 1) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
       var src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
@@ -118,6 +120,8 @@
   /* ---------- drives ---------- */
   function setDrive(i) {
     driveIdx = i; opp = team(); seed = 7 + i * 31;
+    loadLogo(opp.abbr); loadLogo(TEAMS[i % TEAMS.length].abbr);   // this drive's badge now, the next one a drive early
+    driveStarted = t; loadLogo(opp.abbr);
     stadium = i === 0 ? true : rnd() < 0.55;       // the home opener is always a full house
     yards = 0; nextFirst = 10; obs = []; balls = []; spawnAt = i === 0 ? 3.0 : 2.2; turboAt = 20 + rnd() * 30;
     hud();
@@ -292,19 +296,102 @@
     else if (kind === "snow") { ctx.fillStyle = "rgba(255,255,255,.85)"; for (i = 0; i < 40; i += 1) { ctx.fillRect(((i * 53 * u) + t * 20 * u) % W, ((i * 37 * u) + t * 40 * u) % base, 2 * u, 2 * u); } }
   }
   function drawCrowd(gy, u, colors) {
-    var rows = 4, r, c, cols = Math.ceil(W / (10 * u)) + 1, top = gy - 58 * u;
-    ctx.fillStyle = "#2a2f3a"; ctx.fillRect(0, top - 4 * u, W, 62 * u);
-    var wx = (waveT * 220 * u) % (W + 300 * u) - 100 * u;   // the wave rolls left → right
-    for (r = 0; r < rows; r += 1) {
-      for (c = 0; c < cols; c += 1) {
-        var x = c * 10 * u + (r % 2) * 5 * u, base = top + r * 13 * u + 10 * u;
-        var wave = Math.max(0, 1 - Math.abs(wx - x) / (60 * u)), y = base - wave * 6 * u;
-        ctx.fillStyle = ((c + r) % 3 === 0) ? colors[1] : (((c + r) % 3 === 1) ? colors[0] : "#e8c39e");
-        ctx.fillRect(x, y - 6 * u, 6 * u, 6 * u);
-        if (wave > 0.5) { ctx.fillRect(x - 2 * u, y - 10 * u, 2 * u, 5 * u); ctx.fillRect(x + 6 * u, y - 10 * u, 2 * u, 5 * u); }
-      }
+    // Six paint calls: dark stand, two blended tiers, two brightness ripples, front rail.
+    // Bottom is above the 44-unit defenders and 40-unit runner, with breathing room.
+    var bottom = gy - 52 * u, top = bottom - 28 * u, r;
+    var wx = reducedMotion ? W * 0.5 : (waveT * 35 * u) % (W + 160 * u) - 80 * u;
+    ctx.save();
+    ctx.fillStyle = "#242d3b"; ctx.fillRect(0, top, W, bottom - top);
+    for (r = 0; r < 2; r += 1) {
+      var y = top + (3 + r * 12) * u;
+      ctx.globalAlpha = 0.35; ctx.fillStyle = colors[r]; ctx.fillRect(0, y, W, 9 * u);
+      var ripple = ctx.createLinearGradient(wx - 80 * u, 0, wx + 80 * u, 0);
+      ripple.addColorStop(0, "rgba(255,255,255,0)");
+      ripple.addColorStop(0.5, "rgba(255,255,255,.07)");
+      ripple.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.globalAlpha = 1; ctx.fillStyle = ripple; ctx.fillRect(0, y, W, 9 * u);
     }
-    ctx.fillStyle = "#3a4050"; ctx.fillRect(0, gy - 6 * u, W, 6 * u);
+    ctx.fillStyle = "#3a4656"; ctx.fillRect(0, bottom - 2 * u, W, 2 * u);
+    ctx.restore();
+  }
+  function runnerLimb(points, width, color) {
+    ctx.beginPath(); ctx.moveTo(points[0], points[1]);
+    var i; for (i = 2; i < points.length; i += 2) { ctx.lineTo(points[i], points[i + 1]); }
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = width + 1.6; ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+  }
+  function drawRunner(px, py, u) {
+    // Local coordinates preserve the 22 x 40 footprint; poses never alter the collision box.
+    var phase = Math.floor(yards * 3) % 2, blue = "#003b75", skin = "#995e3c";
+    var frontLeg, backLeg, frontArm, backArm;
+    if (pushAnim > 0) {
+      frontLeg = [0, -15, 6, -10, 8, -3]; backLeg = [-3, -15, -7, -9, -5, -2];
+      frontArm = [2, -26, 7, -23, 9, -27]; backArm = [-4, -26, -8, -30, -8, -33];
+    } else if (celebrate > 0) {
+      frontLeg = [1, -15, 4, -8, 5, -2]; backLeg = [-3, -15, -5, -8, -6, -2];
+      frontArm = [3, -26, 8, -31, 9, -37]; backArm = [-4, -26, -8, -31, -9, -37];
+    } else if (player.y < 0) {
+      frontLeg = [1, -15, 5, -13, 8, -12]; backLeg = [-3, -15, -7, -7, -9, -12];
+      frontArm = [2, -26, 6, -23, 9, -22]; backArm = [-4, -26, -8, -24, -9, -21];
+    } else if (phase) {
+      frontLeg = [1, -15, 6, -9, 7, -2]; backLeg = [-3, -15, -7, -9, -6, -6];
+      frontArm = [2, -26, -2, -21, -7, -22]; backArm = [-4, -26, 3, -22, 8, -25];
+    } else {
+      frontLeg = [1, -15, -4, -10, -7, -4]; backLeg = [-3, -15, 3, -8, 5, -2];
+      frontArm = [2, -26, 6, -22, 9, -25]; backArm = [-4, -26, -7, -21, -9, -22];
+    }
+    ctx.save(); ctx.translate(px, py); ctx.scale(u, u);
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    if (pushAnim > 0) { ctx.translate(0, -18); ctx.rotate(-0.24 * Math.min(1, pushAnim * 2)); ctx.translate(0, 18); }
+    runnerLimb(backArm, 3, skin);
+    runnerLimb(backLeg, 4, "#002954");
+    runnerLimb([backLeg[4] - 1, backLeg[5], backLeg[4] + 2, backLeg[5]], 2.4, "#152133");
+    runnerLimb(frontLeg, 4.5, blue);
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(frontLeg[0] + 1, frontLeg[1]); ctx.lineTo(frontLeg[2] + 1, frontLeg[3]); ctx.stroke();
+    runnerLimb([frontLeg[4] - 1, frontLeg[5], frontLeg[4] + 2, frontLeg[5]], 2.4, "#152133");
+    // Tapered jersey and rounded shoulder pads.
+    ctx.beginPath(); ctx.moveTo(-6, -28); ctx.quadraticCurveTo(0, -31, 6, -27);
+    ctx.lineTo(5, -16); ctx.quadraticCurveTo(0, -14, -6, -16); ctx.closePath();
+    ctx.fillStyle = blue; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+    runnerLimb(frontArm, 3, skin);
+    ctx.beginPath(); ctx.moveTo(-6, -27); ctx.quadraticCurveTo(-5, -31, 0, -30);
+    ctx.quadraticCurveTo(5, -30, 6, -26); ctx.lineTo(3, -24); ctx.lineTo(-5, -25); ctx.closePath();
+    ctx.fillStyle = blue; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 9px Arial, sans-serif"; ctx.fillText("28", 0, -17);
+    // Rounded side-view shell, face opening, cage and a visible Colts horseshoe.
+    ctx.beginPath(); ctx.moveTo(-6, -31); ctx.quadraticCurveTo(-9, -38, -3, -39);
+    ctx.quadraticCurveTo(5, -41, 7, -34); ctx.lineTo(4, -30); ctx.lineTo(-3, -29); ctx.closePath();
+    ctx.fillStyle = "#fff"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = skin; ctx.fillRect(4, -34, 3, 4);
+    ctx.strokeStyle = blue; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-4, -36);
+    ctx.lineTo(-4, -33); ctx.quadraticCurveTo(-1, -29, 1, -33); ctx.lineTo(1, -36); ctx.stroke();
+    runnerLimb([4, -34, 9, -34, 9, -30, 4, -30], 0.8, "#66768b");
+    ctx.restore();
+  }
+  function loadLogo(abbr) {
+    if (!logos[abbr]) {
+      var img = new Image(); logos[abbr] = img;
+      img.src = "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png";
+    }
+  }
+  function drawLogo(abbr, x, y, size) {
+    var img = logos[abbr], r = size * 0.2;
+    ctx.save();
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.drawImage(img, x, y, size, size);
+    } else {
+      // Pending, offline and failed images all have an immediate readable fallback.
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + size - r, y);
+      ctx.quadraticCurveTo(x + size, y, x + size, y + r); ctx.lineTo(x + size, y + size - r);
+      ctx.quadraticCurveTo(x + size, y + size, x + size - r, y + size); ctx.lineTo(x + r, y + size);
+      ctx.quadraticCurveTo(x, y + size, x, y + size - r); ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+      ctx.fillStyle = "#24364d"; ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = size / 28; ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "bold " + (size * 0.29) + "px Arial, sans-serif"; ctx.fillText(abbr, x + size / 2, y + size / 2);
+    }
+    ctx.restore();
   }
   function draw() {
     if (!ctx) { return; }
@@ -314,13 +401,21 @@
     if (night > 0) { ctx.fillStyle = "rgba(255,255,255," + (0.8 * night) + ")"; for (i = 0; i < stars.length; i += 1) { ctx.fillRect(stars[i].x * W, stars[i].y * gy, stars[i].s * u, stars[i].s * u); } }
     var sunX = W * ((ph + 0.5) % 1), sunY = gy * 0.2 + Math.abs(0.5 - ((ph + 0.5) % 1)) * gy * 0.6;
     ctx.beginPath(); ctx.arc(sunX, sunY, 12 * u, 0, Math.PI * 2); ctx.fillStyle = night > 0.5 ? "#f4f1e0" : "#ffd54a"; ctx.fill();
-    drawSkyline(tm.sky, gy - (stadium ? 62 * u : 8 * u), night, u);
+    drawSkyline(tm.sky, gy - (stadium ? 80 * u : 52 * u), night, u);
     if (stadium) {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, Math.max(0, gy - 52 * u)); ctx.clip();
       drawCrowd(gy, u, tm.colors);
-      if (night > 0.3) { for (i = 0; i < 3; i += 1) { var lxp = W * (0.15 + i * 0.35); ctx.fillStyle = "#6b7280"; ctx.fillRect(lxp - 2 * u, gy - 120 * u, 4 * u, 62 * u); ctx.fillStyle = "rgba(255,244,200," + (0.9 * night) + ")"; ctx.fillRect(lxp - 14 * u, gy - 126 * u, 28 * u, 8 * u); ctx.fillStyle = "rgba(255,244,200," + (0.08 * night) + ")"; ctx.beginPath(); ctx.moveTo(lxp - 14 * u, gy - 118 * u); ctx.lineTo(lxp - 90 * u, gy); ctx.lineTo(lxp + 90 * u, gy); ctx.lineTo(lxp + 14 * u, gy - 118 * u); ctx.fill(); } }
+      if (night > 0.3) { for (i = 0; i < 3; i += 1) { var lxp = W * (0.15 + i * 0.35); ctx.fillStyle = "#6b7280"; ctx.fillRect(lxp - 2 * u, gy - 120 * u, 4 * u, 68 * u); ctx.fillStyle = "rgba(255,244,200," + (0.9 * night) + ")"; ctx.fillRect(lxp - 14 * u, gy - 126 * u, 28 * u, 8 * u); ctx.fillStyle = "rgba(255,244,200," + (0.08 * night) + ")"; ctx.beginPath(); ctx.moveTo(lxp - 14 * u, gy - 118 * u); ctx.lineTo(lxp - 70 * u, gy - 52 * u); ctx.lineTo(lxp + 70 * u, gy - 52 * u); ctx.lineTo(lxp + 14 * u, gy - 118 * u); ctx.fill(); } }
+      ctx.restore();
     }
     ctx.fillStyle = night > 0.5 ? "#1a5c2c" : "#1f7a3a"; ctx.fillRect(0, gy, W, H - gy);
     var step = 5 * PPY, off = (Math.max(0, yards) * PPY) % step, px0 = W * 0.22;
+    // One emblem anchored to the drive's 50-yard line, with no modulo/repetition.
+    var logoSize = Math.min(36 * u, H - gy - 4 * u), midfield = px0 + (50 - yards) * PPY;
+    if (logoSize > 0 && midfield + logoSize / 2 >= 0 && midfield - logoSize / 2 <= W) {
+      ctx.save(); ctx.globalAlpha = 0.18;
+      drawLogo(tm.abbr, midfield - logoSize / 2, gy + (H - gy - logoSize) / 2, logoSize); ctx.restore();
+    }
     ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 2;
     for (i = -1; i < W / step + 2; i += 1) { var x = i * step - off; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x, H); ctx.stroke(); }
     ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.font = "bold " + Math.round(11 * u) + "px Arial, sans-serif"; ctx.textAlign = "center";
@@ -349,25 +444,21 @@
         ctx.globalAlpha = 1;
       }
     }
-    // Jonathan Taylor #28: Colts blue, white 28, white helmet with the horseshoe; arms out on a hurdle, up for a touchdown
-    var px = W * 0.22 - (pushAnim > 0 ? pushAnim * 30 * u : 0), phh = 40 * u, py = gy + player.y, blink = hurt > 0 && celebrate <= 0 && Math.floor(t * 12) % 2 === 0;
-    if (turbo > 0) { ctx.fillStyle = "rgba(253,187,48,.35)"; ctx.fillRect(px - 40 * u, py - phh, 30 * u, phh); }
-    if (!blink) {
-      var swing = player.y ? 0 : Math.sin(yards * 6) * 6 * u, armsUp = celebrate > 0, armsOut = player.y < 0 && !armsUp;
-      ctx.fillStyle = "#e8c39e"; ctx.fillRect(px - 8 * u, py - 12 * u, 5 * u, 12 * u + swing); ctx.fillRect(px + 3 * u, py - 12 * u, 5 * u, 12 * u - swing);
-      ctx.fillStyle = "#003b75"; ctx.beginPath(); ctx.rect(px - 11 * u, py - phh + 12 * u, 22 * u, 18 * u); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(11 * u) + "px Arial, sans-serif"; ctx.fillText("28", px, py - phh + 26 * u);
-      ctx.fillStyle = "#e8c39e";
-      if (armsUp) { ctx.fillRect(px - 16 * u, py - phh - 6 * u, 5 * u, 20 * u); ctx.fillRect(px + 11 * u, py - phh - 6 * u, 5 * u, 20 * u); }
-      else if (armsOut) { ctx.fillRect(px - 22 * u, py - phh + 14 * u, 12 * u, 5 * u); ctx.fillRect(px + 10 * u, py - phh + 14 * u, 12 * u, 5 * u); }
-      else { ctx.fillRect(px - 15 * u, py - phh + 14 * u, 5 * u, 12 * u); ctx.fillRect(px + 10 * u, py - phh + 14 * u, 5 * u, 12 * u); }
-      ctx.beginPath(); ctx.arc(px, py - phh + 2 * u, 9 * u, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = "#003b75"; ctx.lineWidth = 2.2 * u; ctx.beginPath(); ctx.arc(px + 1 * u, py - phh + 2 * u, 4 * u, Math.PI * 0.15, Math.PI * 0.85, true); ctx.stroke();   // the horseshoe
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 * u; ctx.fillStyle = "#003b75"; ctx.fillRect(px - 9 * u, py - phh + 1 * u, 18 * u, 3 * u);
-    }
+    var px = W * 0.22 - (pushAnim > 0 ? pushAnim * 30 * u : 0), py = gy + player.y;
+    var blink = hurt > 0 && celebrate <= 0 && pushAnim <= 0 && Math.floor(t * 12) % 2 === 0;
+    if (turbo > 0) { ctx.fillStyle = "rgba(253,187,48,.35)"; ctx.fillRect(px - 40 * u, py - 40 * u, 30 * u, 40 * u); }
+    if (!blink) { drawRunner(px, py, u); }
     for (i = 0; i < rockets.length; i += 1) { ctx.fillStyle = "#fff"; ctx.fillRect(rockets[i].x - 1 * u, rockets[i].y, 2 * u, 8 * u); }
     for (i = 0; i < particles.length; i += 1) { var p = particles[i]; ctx.globalAlpha = Math.min(1, p.life); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 4 * u, 4 * u); }
     ctx.globalAlpha = 1;
+    if (running && t - driveStarted < 3) {
+      ctx.save(); ctx.fillStyle = "rgba(13,28,49,.86)"; ctx.fillRect(0, 0, W, 40 * u);
+      drawLogo(tm.abbr, 8 * u, 6 * u, 28 * u);
+      ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.font = "bold " + (12 * u) + "px Arial, sans-serif";
+      ctx.fillText((driveIdx === 0 ? "HOME · " : "at ") + tm.city.toUpperCase(), 44 * u, 20 * u, W - 52 * u);
+      ctx.restore();
+    }
     if (celebrate > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(1, celebrate) + ")"; ctx.font = "bold " + Math.round(28 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.fillText("TOUCHDOWN!", W * 0.5, gy * 0.45); }
   }
 
@@ -388,7 +479,7 @@
     ui.yards = el("gameYards"); ui.lives = el("gameLives"); ui.best = el("gameBest"); ui.drive = el("gameDrive");
     ui.jump = el("gameJump"); ui.pause = el("gamePause"); ui.restart = el("gameRestart"); ui.sound = el("gameSound"); ui.exit = el("gameExit");
     ui.overlay = el("gameOverlay"); ui.overlayTitle = el("gameOverlayTitle"); ui.overlayCopy = el("gameOverlayCopy"); ui.overlayBtn = el("gameOverlayBtn");
-    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList");
+    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.iniSkip = el("gameIniSkip"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList");
     var press = function (fn) { return function (e) { if (e && e.preventDefault && e.type === "touchstart") { e.preventDefault(); } fn(); }; };
     var jumpOrStart = function () { if (!ui.initials.hidden) { return; } if (!running || over) { running = false; start(); } else if (paused) { resume(); } else { jump(); } };
     ui.jump.addEventListener("touchstart", press(jumpOrStart)); ui.jump.addEventListener("mousedown", press(jumpOrStart));
@@ -398,6 +489,7 @@
     ui.restart.addEventListener("click", function () { running = false; start(); });
     ui.overlayBtn.addEventListener("click", function () { if (!ui.initials.hidden) { saveInitials(); } else if (paused && running && !over) { resume(); } else { running = false; start(); } });
     ui.overlay.addEventListener("click", function (e) { if (e.target === ui.overlay && ui.initials.hidden) { if (paused && running && !over) { resume(); } else if (!running || over) { running = false; start(); } } });
+    ui.iniSkip.addEventListener("click", function () { pendingScore = null; overlay("over"); });   // qualify but decline: no row, straight to the result (K3)
     ui.iniInput.addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3); });
     ui.sound.addEventListener("click", function () { soundOn = !soundOn; ui.sound.setAttribute("aria-pressed", soundOn ? "true" : "false"); ui.sound.textContent = soundOn ? "🔊 Sound on" : "🔇 Sound off"; if (soundOn) { beep(660, 60, "triangle"); } });
     ui.exit.addEventListener("click", function () { if (bridge) { bridge.close("gameModal"); } });
@@ -408,6 +500,7 @@
   }
   function open(opener, api) {
     bridge = api; bindOnce(); readBest();
+    loadLogo(HOME.abbr); loadLogo(TEAMS[0].abbr); loadLogo(TEAMS[1].abbr); loadLogo(TEAMS[2].abbr);   // the first drives never show the text fallback
     running = false; paused = false; over = false; obs = []; balls = []; particles = []; rockets = []; yards = 0; total = 0; tds = 0; driveIdx = 0; opp = HOME; stadium = true; pendingScore = null;
     bridge.show("gameModal", opener);
     window.setTimeout(function () { resize(); hud(); overlay("ready"); }, 40);
