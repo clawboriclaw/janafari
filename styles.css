@@ -376,6 +376,17 @@ body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
 .ability-help p { margin: 0 0 6px; }
 .ability-help p:last-child { margin-bottom: 0; }
 .game-ini-skip { margin-left: 8px; vertical-align: top; min-height: 56px; }
+.tier-badge { -webkit-flex: 0 0 auto; flex: 0 0 auto; display: inline-block; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; font: 900 11px/18px "Arial Narrow", Arial, sans-serif; text-align: center; letter-spacing: 0; }
+.tier-x { background: #ba0c2f; background: var(--scarlet); color: #fff; }
+.tier-star { background: #6b7a8c; color: #fff; }
+.player-sub .tier-badge { margin-right: 6px; vertical-align: middle; }
+.ability { border: 0; cursor: pointer; text-align: left; min-height: 44px; display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }   /* every control is 44px, chips included */
+.ability .ability-icon { display: inline-block; min-width: 14px; margin-right: 5px; border-radius: 4px; background: rgba(0,0,0,.12); color: inherit; font-size: 10px; line-height: 14px; text-align: center; }
+.ability-x .ability-icon { background: rgba(255,255,255,.28); }
+.ability[aria-expanded="true"] { outline: 2px solid #fdbb30; outline-offset: 1px; }
+.ability-def { margin: 4px 0 6px; padding: 8px 10px; border-radius: 10px; background: #f4f6f9; background: var(--surface-2); font-weight: 500; font-size: 13px; line-height: 1.45; }
+.ability-def b { display: block; margin-bottom: 2px; font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #5b6b7c; color: var(--muted); }
+.ability-def p { margin: 0; }
 .bio-year, .bio-ring, .ability { display: inline-block; margin: 0 6px 6px 0; padding: 3px 8px; border-radius: 6px; background: #f4f6f9; background: var(--surface-2); font-size: 12px; font-weight: 700; }
 .bio-ring { background: #fdbb30; background: var(--gold); color: #0b1f3a; }
 .ability-x { background: #ba0c2f; background: var(--scarlet); color: #fff; }

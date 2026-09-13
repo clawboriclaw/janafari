@@ -19,7 +19,9 @@
   var STORAGE_KEY = "janafari-v2";
   var LEGACY_KEY = "our-madden-27-board-v1";
   var DATA_URL = "data/ratings.json";
-  var HISTORY_URL = "data/history.json";   // every iteration the Action has seen: {id,label,date,ratings}[]
+  var HISTORY_URL = "data/history.json";
+  var ABILITIES_URL = "data/abilities.json";   // plain-English meaning of every X-Factor / Superstar name
+  var ABILITY_DEFS = null;                      // {xfactor:{name:text}, superstar:{name:text}} once loaded   // every iteration the Action has seen: {id,label,date,ratings}[]
   var LEAGUE_LIMIT = 100;      // league tab with no search: the top 100
   var SEARCH_LIMIT = 120;      // a search never renders more than this (old iPads froze on 3,000)
   var PAGE = 24;               // cards drawn before "Show more" (portraits are ~120 KB each)
@@ -131,6 +133,23 @@
   // Only the 32 clubs have a badge; free agents ("FA") get a neutral monogram, never a 404.
   function logoUrl(abbr) { return knownTeam[abbr] ? "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png" : null; }
   function teamText(p) { return p.team === "FA" ? "Free agent" : p.team + " · " + p.teamName; }
+  // A player's tier from EA's abilities: "x" = has an X-Factor, "star" = Superstar abilities only, "" = none.
+  function tierOf(p) {
+    var i, list = p.abilities || [], star = false;
+    for (i = 0; i < list.length; i += 1) { if (/x-factor/i.test(list[i].type)) { return "x"; } star = true; }
+    return star ? "star" : "";
+  }
+  function badgeNode(p) {
+    var tier = tierOf(p); if (!tier) { return null; }
+    var b = textNode("span", "tier-badge tier-" + tier, tier === "x" ? "X" : "★");
+    b.title = tier === "x" ? "X-Factor" : "Superstar"; b.setAttribute("aria-label", tier === "x" ? "X-Factor player" : "Superstar player");
+    return b;
+  }
+  function abilityText(a) {
+    if (!ABILITY_DEFS) { return null; }
+    var x = /x-factor/i.test(a.type);
+    return (x ? ABILITY_DEFS.xfactor : ABILITY_DEFS.superstar)[a.label] || null;
+  }
 
   /* ---------- state ---------- */
   function makeDefaultState() { return { version: 2, watchlist: [], snapshots: [] }; }
@@ -292,6 +311,7 @@
   function matchesTeam(p) { return !activeTeam || p.team === activeTeam; }
   function matchesFilter(p) {
     if (activeFilter === "all") { return true; }
+    if (activeFilter === "stars") { return !!tierOf(p); }
     if (activeFilter === "movers") { var c = getChange(p.id); return c !== null && c !== 0; }
     return p.side === activeFilter;
   }
@@ -370,6 +390,7 @@
     body.appendChild(textNode("h3", "pcard-name", p.name));
     meta.className = "pcard-meta";
     meta.appendChild(textNode("span", "pos-pill", p.pos));
+    var bdg = badgeNode(p); if (bdg) { meta.appendChild(bdg); }
     var logo = buildLogo(p); if (logo) { meta.appendChild(logo); }
     meta.appendChild(textNode("span", "pcard-team", teamText(p)));
     body.appendChild(meta);
@@ -397,7 +418,8 @@
     row.setAttribute("aria-label", p.name + ", " + p.pos + ", " + teamText(p) + ", overall " + (r === null ? "unknown" : r));
     wrap.className = "player-wrap"; info.className = "player-info";
     info.appendChild(textNode("span", "player-name", p.name + (isWatched(p.id) ? " ★" : "")));
-    info.appendChild(textNode("span", "player-sub", p.pos + " · " + teamText(p)));
+    var sub = textNode("span", "player-sub", p.pos + " · " + teamText(p)); var rb = badgeNode(p); if (rb) { sub.insertBefore(rb, sub.firstChild); }
+    info.appendChild(sub);
     wrap.appendChild(buildPortrait(p)); wrap.appendChild(info); playerCell.appendChild(wrap);
     ovrCell.className = "center"; ovrCell.appendChild(textNode("span", "ovr-badge" + (r === 99 ? " ovr-99" : ""), r === null ? "—" : String(r)));
     row.appendChild(textNode("td", "rank-col", String(rank))); row.appendChild(playerCell); row.appendChild(ovrCell);
@@ -460,12 +482,13 @@
 
   function renderFilterCounts() {
     var query = searchTerm.toLowerCase().replace(/^\s+|\s+$/g, "");
-    var counts = { all: 0, offense: 0, defense: 0, special: 0, movers: 0 };
+    var counts = { all: 0, offense: 0, defense: 0, special: 0, stars: 0, movers: 0 };
     poolForTab().forEach(function (p) {
       if (!matchesTeam(p) || !matchesSearch(p, query)) { return; }
       var c = getChange(p.id);
       counts.all += 1;
       if (counts.hasOwnProperty(p.side)) { counts[p.side] += 1; }
+      if (tierOf(p)) { counts.stars += 1; }
       if (c !== null && c !== 0) { counts.movers += 1; }
     });
     Array.prototype.forEach.call(document.querySelectorAll(".chip[data-filter]"), function (btn) {
@@ -616,7 +639,8 @@
     var r = rating(p.id), change = getChange(p.id), parts = changeParts(change);
     var hero = el("bioHero"), list = el("bioList"), statsBox = el("bioStats"), watchBtn = el("watchToggle");
     el("playerTitle").textContent = p.name;
-    el("playerKicker").textContent = (p.posName || p.pos) + "  ·  " + (p.team === "FA" ? "FREE AGENT" : p.teamFull.toUpperCase());
+    var tier = tierOf(p);
+    el("playerKicker").textContent = (p.posName || p.pos) + "  ·  " + (p.team === "FA" ? "FREE AGENT" : p.teamFull.toUpperCase()) + (tier === "x" ? "  ·  X-FACTOR" : (tier === "star" ? "  ·  SUPERSTAR" : ""));
 
     clear(hero);
     hero.style.background = "linear-gradient(150deg, " + (teamColors[p.team] || "#174a6e") + " 0%, rgba(0,0,0,.55) 140%)";
@@ -635,10 +659,25 @@
     list.appendChild(infoRow("Years pro", dd(typeof p.yearsPro === "number" ? (p.yearsPro === 0 ? "Rookie" : String(p.yearsPro)) : "—")));
     if (p.abilities && p.abilities.length) {
       var ab = document.createElement("dd"), row = document.createElement("div"), dt = document.createElement("div"), info = document.createElement("button"), help = document.createElement("div");
+      var defBox = document.createElement("div"); defBox.className = "ability-def"; defBox.hidden = true;
       p.abilities.forEach(function (a) {
-        var x = /x-factor/i.test(a.type), chip = textNode("span", "ability" + (x ? " ability-x" : ""), a.label);
-        chip.title = (x ? "X-Factor: " : "Superstar ability: ") + a.label; ab.appendChild(chip);
+        var x = /x-factor/i.test(a.type), chip = document.createElement("button");
+        chip.type = "button"; chip.className = "ability" + (x ? " ability-x" : ""); chip.setAttribute("aria-expanded", "false");
+        chip.appendChild(textNode("span", "ability-icon", x ? "X" : "★")); chip.appendChild(document.createTextNode(a.label));
+        chip.title = (x ? "X-Factor: " : "Superstar: ") + a.label + " — tap for what it means";
+        chip.addEventListener("click", function () {
+          var open = chip.getAttribute("aria-expanded") === "true";
+          Array.prototype.forEach.call(ab.querySelectorAll(".ability"), function (c) { c.setAttribute("aria-expanded", "false"); });
+          if (open) { defBox.hidden = true; return; }
+          chip.setAttribute("aria-expanded", "true");
+          clear(defBox);
+          defBox.appendChild(textNode("b", "", (x ? "X-Factor · " : "Superstar · ") + a.label));
+          defBox.appendChild(textNode("p", "", abilityText(a) || "EA hasn't published a description we can show yet — but it's one of his " + (x ? "X-Factor powers." : "Superstar boosts.")));
+          defBox.hidden = false;
+        });
+        ab.appendChild(chip);
       });
+      ab.appendChild(defBox);
       row.className = "bio-row bio-row-abilities";
       dt.className = "bio-dt-with-info";
       dt.appendChild(document.createTextNode("Abilities"));
@@ -646,8 +685,8 @@
       info.appendChild(textNode("span", "", "i"));
       dt.appendChild(info);
       help.className = "ability-help"; help.hidden = true;
-      help.appendChild(textNode("p", "", "X-Factor (red) is a star's signature power. It switches on once he gets hot in a game — a few big plays — and while it's on he's nearly unstoppable at that one thing."));
-      help.appendChild(textNode("p", "", "Superstar abilities (grey) are always on: a steady boost to one skill. Both come straight from EA's Madden 27 ratings."));
+      help.appendChild(textNode("p", "", "X (red) = X-Factor: a star's signature power. It switches on once he gets hot in a game — a few big plays — and while it's on he's nearly unstoppable at that one thing."));
+      help.appendChild(textNode("p", "", "★ (grey) = Superstar: always on, a steady boost to one skill. Tap any ability to see what it means. Both come straight from EA's Madden 27 ratings."));
       info.addEventListener("click", function () { var open = help.hidden; help.hidden = !open; info.setAttribute("aria-expanded", open ? "true" : "false"); });
       var ddWrap = document.createElement("dd"); ddWrap.appendChild(ab); ddWrap.appendChild(help);
       row.appendChild(dt); row.appendChild(ddWrap);
@@ -1039,6 +1078,7 @@
         el("loading").hidden = true;
       };
       fetchJson(HISTORY_URL + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
+      fetchJson(ABILITIES_URL + "?v=1", function (defs) { if (defs && defs.xfactor && defs.superstar) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
     }, function () {
       failBoot("Could not load the ratings", "Check the internet and try again. The ratings file lives with this page.");
     });

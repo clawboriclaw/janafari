@@ -12,6 +12,9 @@ Live site: <https://clawboriclaw.github.io/janafari/>
   overall, search finds anyone. **My players** — the players this device's owner chose to follow.
 - **Team** chip → tap a logo (32 clubs + free agents) to see that whole roster, sorted by overall; the pick
   sticks between visits. Works together with Offense / Defense / Special teams.
+- **Badges & abilities** — a red **X** on a card means an X-Factor player, a grey **★** means Superstar abilities
+  (159 players). The **⭐ Stars** filter shows only them. On a card every ability name is a button: tap "Double Me"
+  and a plain-English meaning appears (`data/abilities.json`, all 115 names EA uses, written for a ten-year-old).
 - **Add** (＋) searches the whole league and opens a real player card: age, size, college, years pro,
   abilities, the top attributes with EA's week-over-week diffs, and a one-tap "Add to my players".
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
