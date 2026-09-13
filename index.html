@@ -9,7 +9,7 @@
   <title>Janafari — Madden 27 Ratings</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 role=%22img%22 aria-label=%22Janafari J%22%3E%3Crect x=%222%22 y=%222%22 width=%2260%22 height=%2260%22 rx=%2212%22 fill=%22%23041c38%22 stroke=%22%23fdbb30%22 stroke-width=%224%22/%3E%3Crect x=%229%22 y=%229%22 width=%2246%22 height=%2246%22 rx=%228%22 fill=%22none%22 stroke=%22%23fdbb30%22 stroke-width=%221.5%22 stroke-dasharray=%223 3%22 opacity=%22.7%22/%3E%3Cpath d=%22M22 13 H48 V22 H43 V39 Q43 51 30 51 Q16 51 16 39 V33 H25 V39 Q25 44 30 44 Q34 44 34 39 V22 H22 Z%22 fill=%22%23fff%22/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=21">
+  <link rel="stylesheet" href="styles.css?v=22">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -46,6 +46,7 @@
         </nav>
       </div>
 
+      <button class="egg-runner" id="eggRunner" type="button" aria-label="Play End Zone Run" title="Catch him!" hidden><span aria-hidden="true">🏃</span></button>
       <div class="statline" id="statline" aria-live="polite">
         <span class="stat"><b id="trackedCount">–</b><span id="trackedLabel">players rated</span></span>
         <span class="stat gold"><b id="clubCount">–</b>in the 99 Club</span>
@@ -277,7 +278,7 @@
 
         <section class="help-section" id="help-game">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">🏈</span></div>
-          <div class="help-text"><h3>End Zone Run</h3><p>A little game: your player runs down the field — tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hop over defenders and cones. Reach <b>100 yards</b> for a touchdown. You get three chances.</p>
+          <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle cones and defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. A tackle pushes you back 10 yards; the run ends if you get pushed behind your own goal line. Grab a floating football for turbo. Top runs go on the board with your initials.</p>
             <p class="help-note">The big button starts a run and then jumps. Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
             <button class="button button-quiet help-go" type="button" data-go="game">Play End Zone Run</button></div>
         </section>
@@ -312,12 +313,17 @@
         <button class="close-button" type="button" data-close="game" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body game-body">
-        <div class="game-hud" aria-live="off"><span id="gameYards">0 yd</span><span id="gameLives" class="game-lives" aria-label="3 chances left">♥♥♥</span><span id="gameBest">Best 0 yd</span></div>
+        <div class="game-hud" aria-live="off"><span id="gameYards">0 yd</span><span id="gameLives" class="game-tds">0 TDs</span><span id="gameBest">Best 0 TD · 0 yd</span></div>
+        <div class="game-drive" id="gameDrive">Home opener · Indianapolis</div>
         <div class="game-stage" id="gameStage">
           <canvas id="gameCanvas" aria-label="End Zone Run field" role="img"></canvas>
           <div class="game-overlay" id="gameOverlay">
             <b id="gameOverlayTitle">End Zone Run</b>
-            <p id="gameOverlayCopy">Tap Jump (or press Space) to hop over defenders and cones. Reach 100 yards for a touchdown. Three chances.</p>
+            <p id="gameOverlayCopy">Tap the big button to start.</p>
+            <div class="game-initials" id="gameInitials" hidden>
+              <label for="gameIni" class="sr-only">Your initials, up to three letters</label>
+              <input id="gameIni" class="game-ini" type="text" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="AAA">
+            </div>
             <button class="button button-gold" id="gameOverlayBtn" type="button">Start</button>
           </div>
         </div>
@@ -328,14 +334,18 @@
           <button class="button button-quiet" id="gameSound" type="button" aria-pressed="false">🔇 Sound off</button>
           <button class="button button-quiet" id="gameExit" type="button">Exit</button>
         </div>
-        <p class="help-note game-note">The big button starts a run, then jumps. A tap on the field or <b>Space</b> does the same. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
+        <div class="game-board" id="gameBoard" hidden>
+          <div class="game-board-title">★ TOP RUNS ★</div>
+          <ol id="gameBoardList"></ol>
+        </div>
+        <p class="help-note game-note">The big button starts a run, then jumps. A tap on the field or <b>Space</b> does the same. A tackle pushes you back 10 yards. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
   <script>
     (function () {
       var root = document.documentElement;

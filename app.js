@@ -882,7 +882,7 @@
   }
 
   /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
-  var GAME_URL = "game.js?v=2", gameLoading = false;
+  var GAME_URL = "game.js?v=3", gameLoading = false;
   var modalApi = { show: showModal, close: closeModal, toast: showToast };
   function openGame(opener) {
     if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); return; }
@@ -892,6 +892,19 @@
     sc.onload = function () { gameLoading = false; if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); } };
     sc.onerror = function () { gameLoading = false; showToast("The game could not load. Check the internet and try again."); };
     document.body.appendChild(sc);
+  }
+
+  // Easter egg: every so often, while the page is visible and no sheet is open, a tiny runner sprints across
+  // the top bar (3.2 s). Tapping him opens End Zone Run. He never runs over an open sheet or a hidden tab.
+  function eggSprint() {
+    var egg = el("eggRunner");
+    if (!egg || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
+    egg.hidden = false; egg.className = "egg-runner";
+    window.setTimeout(function () { egg.className = "egg-runner run"; }, 30);
+    window.setTimeout(function () { if (egg.className.indexOf("run") !== -1) { egg.hidden = true; egg.className = "egg-runner"; } }, 3600);
+  }
+  function scheduleEgg(first) {
+    window.setTimeout(function () { eggSprint(); scheduleEgg(false); }, first ? 9000 : 45000 + Math.random() * 45000);
   }
 
   function bindEvents() {
@@ -929,6 +942,8 @@
     el("teamChip").addEventListener("click", openTeams);
     el("helpButton").addEventListener("click", function (e) { openHelp(e.currentTarget); });
     el("playEgg").addEventListener("click", function (e) { openGame(e.currentTarget); });
+    el("eggRunner").addEventListener("click", function (e) { var egg = e.currentTarget; egg.hidden = true; egg.className = "egg-runner"; openGame(el("moreButton")); });
+    scheduleEgg(true);
     el("playMore").addEventListener("click", function () { closeModal("moreModal"); openGame(el("moreButton")); });
     el("helpMore").addEventListener("click", function () { openHelp(el("moreButton")); });
     el("inviteTour").addEventListener("click", function (e) { openTour(e.currentTarget); });

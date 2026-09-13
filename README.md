@@ -17,14 +17,17 @@ Live site: <https://clawboriclaw.github.io/janafari/>
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
   sheets. Tablet (601–1024 px): 2–3 columns, search on its own row. Desktop: 4 columns, one toolbar row.
 - Every control is at least 44 px tall; the search field uses 16 px text so iOS does not zoom.
-- **End Zone Run** — a one-button football mini-game (🏈 in the footer, More → Play, or the Playbook):
-  the big button starts a run and then jumps (a tap on the field or Space does the same); 100 yards =
-  touchdown, three chances; Pause (P), Restart, Exit (Esc), sound off until switched on. Sizes, speed and
-  physics scale with the canvas width (W/6 px per yard), so a phone and an iPad play the same game and the
-  field never slides under the obstacles. `game.js` loads only when someone taps Play,
-  the loop runs only while the sheet is open and the game is running, backgrounding pauses, Exit stops loop
-  and sound, best distance lives in `janafari-ezr-best-v1`. Play-tested with a timing bot: a run is ~36 s
-  and winnable with a 0.25–0.5 s reaction lead; reduced-motion gets no confetti.
+- **End Zone Run** — an endless Chrome-dinosaur-style football runner (🏈 in the footer, More → Play, the
+  Playbook, or catch the tiny runner who sprints across the top bar now and then). You're Jonathan Taylor #28:
+  the big button starts a run and then jumps (a tap on the field or Space does the same). Every 100 yards is a
+  touchdown — arms up, fireworks, crowd roar — and the next drive is against the next team (AFC South first, then
+  around the league): their colours on the defenders, their city behind the stadium, a little faster. Day rolls
+  into dusk, night and dawn; some drives are a packed stadium with the wave. A tackle pushes you back 10 yards;
+  the run ends only behind your own goal line. First-down chain every 10 yards; a floating football gives two
+  seconds of turbo. Top-10 board with three initials (`janafari-ezr-scores-v1`), best run in `janafari-ezr-v2`.
+  `game.js` loads only on Play; the loop runs only while the sheet is open and running; backgrounding pauses;
+  Exit stops loop and sound; sound off until switched on; reduced motion → no fireworks. Everything scales with
+  the canvas width so a phone and an iPad play the same game.
 - **⋯ More** holds backup & restore, "where the numbers come from" and the EA link — the things a kid
   should not press by accident.
 
