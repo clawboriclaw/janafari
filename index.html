@@ -279,7 +279,7 @@
 
         <section class="help-section" id="help-game">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">🏈</span></div>
-          <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle cones and defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. A tackle pushes you back 10 yards; the run ends if you get pushed behind your own goal line. Grab a floating football for turbo. Top runs go on the board with your initials.</p>
+          <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle cones and defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. One tackle and the run is over — then your initials go on the board. Grab a floating football for two seconds of turbo. Seven points a touchdown; the score is on the scoreboard at the top right.</p>
             <p class="help-note">The big button starts a run and then jumps. Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
             <button class="button button-quiet help-go" type="button" data-go="game">Play End Zone Run</button></div>
         </section>
@@ -314,7 +314,7 @@
         <button class="close-button" type="button" data-close="game" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body game-body">
-        <div class="game-hud" aria-live="off"><span id="gameYards">0 yd</span><span id="gameLives" class="game-tds">0 TDs</span><span id="gameBest">Best 0 TD · 0 yd</span></div>
+        <div class="game-hud" aria-live="off"><span id="gameYards">0 yd</span><span id="gameLives" class="game-tds">IND 0</span><span id="gameBest">Best 0 pts · 0 yd</span></div>
         <div class="game-drive" id="gameDrive">Home opener · Indianapolis</div>
         <div class="game-stage" id="gameStage">
           <canvas id="gameCanvas" aria-label="End Zone Run field" role="img"></canvas>
@@ -340,14 +340,14 @@
           <div class="game-board-title">★ TOP RUNS ★</div>
           <ol id="gameBoardList"></ol>
         </div>
-        <p class="help-note game-note">The big button starts a run, then jumps. A tap on the field or <b>Space</b> does the same. A tackle pushes you back 10 yards. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
+        <p class="help-note game-note">The big button starts a run, then jumps. A tap on the field or <b>Space</b> does the same. One tackle ends the run. Pause: <b>P</b>. Exit: <b>Esc</b>. Sound is off until you switch it on.</p>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
   <script>
     (function () {
       var root = document.documentElement;

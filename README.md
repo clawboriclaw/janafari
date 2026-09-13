@@ -17,17 +17,19 @@ Live site: <https://clawboriclaw.github.io/janafari/>
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
   sheets. Tablet (601–1024 px): 2–3 columns, search on its own row. Desktop: 4 columns, one toolbar row.
 - Every control is at least 44 px tall; the search field uses 16 px text so iOS does not zoom.
-- **End Zone Run** — an endless Chrome-dinosaur-style football runner (🏈 in the footer, More → Play, the
-  Playbook, or catch the tiny runner who sprints across the top bar now and then). You're Jonathan Taylor #28:
-  the big button starts a run and then jumps (a tap on the field or Space does the same). Every 100 yards is a
-  touchdown — arms up, fireworks, crowd roar — and the next drive is against the next team (AFC South first, then
-  around the league): their colours on the defenders, their city behind the stadium, a little faster. Day rolls
-  into dusk, night and dawn; some drives are a packed stadium with the wave. A tackle pushes you back 10 yards;
-  the run ends only behind your own goal line. First-down chain every 10 yards; a floating football gives two
-  seconds of turbo. Top-10 board with three initials (`janafari-ezr-scores-v1`), best run in `janafari-ezr-v2`.
-  `game.js` loads only on Play; the loop runs only while the sheet is open and running; backgrounding pauses;
-  Exit stops loop and sound; sound off until switched on; reduced motion → no fireworks. Everything scales with
-  the canvas width so a phone and an iPad play the same game.
+- **End Zone Run** — an endless Tecmo/Retro-Bowl-style football runner with modern backgrounds (🏈 in the
+  footer, More → Play, the Playbook, or catch the tiny runner who sprints across the top bar). You're Jonathan
+  Taylor #28 in pixel art; the big button starts a run and then jumps (a tap on the field or Space does the same).
+  Every 100 yards is a touchdown — arms up, fireworks, crowd roar, 7 points on the Tecmo scoreboard at the top
+  right — then the next drive is at the next team's stadium (AFC South first, then around the league): their
+  pixel defenders, their painted end zone with goal posts, their city skyline and weather (snow in Buffalo,
+  Green Bay, Denver…, rain in Seattle), a stadium crowd doing the wave with a fan's sign, a blimp with a
+  JANAFARI banner, day rolling into night. Halftime after two touchdowns. **One tackle and the run is over**
+  (yellow flag, whistle); if it makes the top 10 you type three initials while the board updates live.
+  First-down chain every 10 yards; a floating football gives two seconds of turbo. Keys:
+  `janafari-ezr-v2` (best) and `janafari-ezr-scores-v1` (board). `game.js` loads only on Play; the loop runs
+  only while the sheet is open and running; backgrounding pauses; Exit stops loop and sound; sound off until
+  switched on; reduced motion → no fireworks. Everything scales with the canvas width.
 - **⋯ More** holds backup & restore, "where the numbers come from" and the EA link — the things a kid
   should not press by accident.
 
