@@ -88,16 +88,17 @@
     for (r = -1; r <= H2; r += 1) { for (c = -1; c <= W2; c += 1) { if (!filled(r, c) && (filled(r - 1, c) || filled(r + 1, c) || filled(r, c - 1) || filled(r, c + 1))) { cells.push([r, c]); } } }
     outlineCache[key] = cells; return cells;
   }
-  function drawSprite(frame, key, x, y, s, pal) {   // x,y = top-left of the 16×20 box
-    var r, c, cells = outlineOf(frame, key), i;
+  var SX = 0.72;   // a pixel is 0.72× as wide as it is tall — the athletes read as tall, not wide (owner: "the sprites look fat")
+  function drawSprite(frame, key, x, y, s, pal) {   // x,y = top-left of the 16×20 box; box is 16·s·SX wide, 20·s tall
+    var r, c, cells = outlineOf(frame, key), i, sw = s * SX;
     ctx.fillStyle = "#ffffff";
-    for (i = 0; i < cells.length; i += 1) { ctx.fillRect(x + cells[i][1] * s, y + cells[i][0] * s, s + 0.5, s + 0.5); }
+    for (i = 0; i < cells.length; i += 1) { ctx.fillRect(x + cells[i][1] * sw, y + cells[i][0] * s, sw + 0.5, s + 0.5); }
     for (r = 0; r < frame.length; r += 1) {
       var row = frame[r], runStart = -1, runCh = "";
       for (c = 0; c <= row.length; c += 1) {
         var ch = c < row.length ? row.charAt(c) : ".";
         if (ch !== runCh) {
-          if (runCh !== "." && runCh !== "" && runStart >= 0) { ctx.fillStyle = pal[runCh] || "#f0f"; ctx.fillRect(x + runStart * s, y + r * s, (c - runStart) * s + 0.5, s + 0.5); }
+          if (runCh !== "." && runCh !== "" && runStart >= 0) { ctx.fillStyle = pal[runCh] || "#f0f"; ctx.fillRect(x + runStart * sw, y + r * s, (c - runStart) * sw + 0.5, s + 0.5); }
           runStart = c; runCh = ch;
         }
       }
@@ -180,12 +181,12 @@
     driveIdx = i; opp = visitor(); seed = 7 + i * 31; driveT = 0;
     stadium = i === 0 ? true : rnd() < 0.6;
     yards = 0; nextFirst = 10; obs = []; balls = []; spawnAt = i === 0 ? 3.0 : 2.4; turboAt = 20 + rnd() * 30;
-    blimpX = (stadium && rnd() < 0.6) ? W + 80 * U : -1;
+    blimpX = (stadium && rnd() < 0.7) ? W + 60 * U : -1;   // it enters nose first from the right and tows the banner behind it
     signX = stadium ? W * (0.45 + rnd() * 0.4) : -1; signText = board.length ? "GO " + board[0].ini + "!" : "GO 28!";
     loadLogo(team().abbr); loadLogo(opp.abbr); loadLogo(TEAMS[i % TEAMS.length].abbr);
     hud();
   }
-  function paceYps() { return (2.3 + 0.32 * Math.min(driveIdx, 8)) * (turbo > 0 ? 1.6 : 1); }
+  function paceYps() { return (2.8 + 0.36 * Math.min(driveIdx, 8)) * (turbo > 0 ? 1.6 : 1); }   // owner: "speed the game a little bit up"
   function reset() {
     total = 0; peak = 0; tds = 0; t = 0; celebrate = 0; halftime = 0; turbo = 0; chainFlash = 0; lastMiss = ""; newBest = false; pendingScore = null; tackleAt = null;
     player.y = 0; player.vy = 0; player.jumps = 0; particles = []; rockets = []; over = false; paused = false;
@@ -280,7 +281,7 @@
     if (turbo > 0) { turbo -= dt; }
     if (celebrate > 0) { celebrate -= dt; }
     if (chainFlash > 0) { chainFlash -= dt; }
-    if (blimpX > -1) { blimpX -= 18 * U * dt; if (blimpX < -160 * U) { blimpX = -1; } }
+    if (blimpX > -1) { blimpX -= 26 * U * dt; if (blimpX < -60 * U) { blimpX = -1; } }
     if (yards >= nextFirst && nextFirst < DRIVE) { nextFirst += 10; chainFlash = 0.8; beep(1046, 60, "sine", 0.04); }
     player.vy += 1150 * U * dt; player.y += player.vy * dt;
     if (player.y > 0) { player.y = 0; player.vy = 0; player.jumps = 0; }
@@ -290,7 +291,7 @@
       if (r < 0.32 - d * 0.02) { type = "cone"; } else if (r < 0.74) { type = "def"; } else if (d >= 2 && r < 0.9) { type = "cones2"; } else { type = "def"; }
       var w = type === "cones2" ? 40 : (type === "def" ? 30 : 18), h = type === "def" ? 44 : 22;
       obs.push({ type: type, x: W + 40 * U, w: w * U, h: h * U, hit: false, skin: Math.random() < 0.5 ? "#8d5524" : "#c68642" });
-      spawnAt = Math.max(0.95, 2.6 - yards * 0.012 - d * 0.12) + Math.random() * 0.7;
+      spawnAt = Math.max(0.85, 2.3 - yards * 0.011 - d * 0.11) + Math.random() * 0.6;
     }
     if (yards > turboAt && celebrate <= 0) { balls.push({ x: W + 30 * U, y: -70 * U }); turboAt = yards + 35 + Math.random() * 40; }
     var i, px = W * 0.22, pw = 24 * U, ph = 42 * U, gy = H * GROUND;
@@ -347,6 +348,23 @@
     else if (kind === "fountain") { ctx.fillRect(lx - 30 * u, base - 8 * u, 60 * u, 8 * u); ctx.fillStyle = "rgba(180,220,255,.8)"; ctx.fillRect(lx - 2 * u, base - 46 * u, 4 * u, 38 * u); ctx.fillRect(lx - 16 * u, base - 30 * u, 3 * u, 22 * u); ctx.fillRect(lx + 13 * u, base - 30 * u, 3 * u, 22 * u); }
     else if (kind === "harbor") { ctx.fillRect(lx - 60 * u, base - 6 * u, 120 * u, 6 * u); ctx.fillRect(lx - 20 * u, base - 30 * u, 40 * u, 24 * u); ctx.fillRect(lx - 2 * u, base - 56 * u, 4 * u, 26 * u); }
     else if (kind === "neon") { ctx.fillRect(lx - 4 * u, base - 100 * u, 8 * u, 100 * u); ctx.fillStyle = "#ff4fd8"; ctx.fillRect(lx - 30 * u, base - 60 * u, 60 * u, 6 * u); ctx.fillStyle = "#4ff0ff"; ctx.fillRect(lx - 24 * u, base - 48 * u, 48 * u, 6 * u); }
+  }
+  function drawBlimp(x, y, u, night) {
+    var body = night > 0.5 ? "#9aa3b3" : "#e6eaf0", shade = night > 0.5 ? "#6f7887" : "#c3cad6", bob = Math.sin(t * 1.3) * 2 * u;
+    y += bob;
+    // trailing banner on a line behind the tail
+    ctx.strokeStyle = "rgba(60,70,90,.7)"; ctx.lineWidth = 1 * u; ctx.beginPath(); ctx.moveTo(x + 38 * u, y); ctx.lineTo(x + 52 * u, y + 2 * u); ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.fillRect(x + 52 * u, y - 6 * u, 74 * u, 12 * u); ctx.strokeStyle = "#041c38"; ctx.lineWidth = 1 * u; ctx.strokeRect(x + 52 * u, y - 6 * u, 74 * u, 12 * u);
+    ctx.fillStyle = "#003b75"; ctx.font = "bold " + Math.round(8 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("JANAFARI", x + 89 * u, y + 3 * u);
+    // hull: a long teardrop, darker underside, tail fins, gondola
+    ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(x - 44 * u, y); ctx.quadraticCurveTo(x - 30 * u, y - 14 * u, x + 10 * u, y - 12 * u); ctx.quadraticCurveTo(x + 40 * u, y - 10 * u, x + 44 * u, y); ctx.quadraticCurveTo(x + 40 * u, y + 10 * u, x + 10 * u, y + 12 * u); ctx.quadraticCurveTo(x - 30 * u, y + 14 * u, x - 44 * u, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = shade; ctx.beginPath(); ctx.moveTo(x - 40 * u, y + 3 * u); ctx.quadraticCurveTo(x - 20 * u, y + 13 * u, x + 10 * u, y + 12 * u); ctx.quadraticCurveTo(x + 40 * u, y + 10 * u, x + 44 * u, y); ctx.quadraticCurveTo(x + 20 * u, y + 6 * u, x - 40 * u, y + 3 * u); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#003b75"; ctx.beginPath(); ctx.moveTo(x + 30 * u, y - 4 * u); ctx.lineTo(x + 48 * u, y - 13 * u); ctx.lineTo(x + 44 * u, y - 1 * u); ctx.closePath(); ctx.fill();   // top fin
+    ctx.beginPath(); ctx.moveTo(x + 30 * u, y + 4 * u); ctx.lineTo(x + 48 * u, y + 13 * u); ctx.lineTo(x + 44 * u, y + 1 * u); ctx.closePath(); ctx.fill();   // bottom fin
+    ctx.fillStyle = "#003b75"; ctx.fillRect(x - 24 * u, y - 4 * u, 44 * u, 8 * u);   // the side stripe
+    ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(6.5 * u) + "px Arial, sans-serif"; ctx.fillText("COLTS", x - 2 * u, y + 2.5 * u);
+    ctx.fillStyle = "#2b3442"; ctx.fillRect(x - 10 * u, y + 11 * u, 18 * u, 5 * u);   // gondola
+    if (night > 0.3) { ctx.fillStyle = "rgba(255,80,80," + night + ")"; ctx.fillRect(x - 44 * u, y - 1 * u, 2 * u, 2 * u); ctx.fillStyle = "rgba(120,255,120," + night + ")"; ctx.fillRect(x + 43 * u, y - 1 * u, 2 * u, 2 * u); ctx.fillStyle = "rgba(255,255,255," + (Math.floor(t * 2) % 2 ? night : 0) + ")"; ctx.fillRect(x - 2 * u, y + 15 * u, 2 * u, 2 * u); }
   }
   function drawWeather(kind, bottom, u) {
     var i;
@@ -413,7 +431,7 @@
     var sunX = W * ((ph + 0.5) % 1), sunY = H * 0.06 + Math.abs(0.5 - ((ph + 0.5) % 1)) * H * 0.3;
     ctx.beginPath(); ctx.arc(sunX, sunY, 11 * u, 0, Math.PI * 2); ctx.fillStyle = night > 0.5 ? "#f4f1e0" : "#ffd54a"; ctx.fill();
     drawSkyline(tm.sky, stadium ? standsTop + 6 * u : wallTop, night, u);
-    if (blimpX > -1) { ctx.fillStyle = night > 0.5 ? "#8a93a3" : "#d7dce3"; ctx.beginPath(); ellipse(blimpX, H * 0.12, 42 * u, 12 * u); ctx.fill(); ctx.fillStyle = "#041c38"; ctx.fillRect(blimpX - 30 * u, H * 0.12 - 4 * u, 60 * u, 8 * u); ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(7 * u) + "px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("JANAFARI", blimpX, H * 0.12 + 2.5 * u); }
+    if (blimpX > -1) { drawBlimp(blimpX, H * 0.215, u, night); }   // below the scoreboard, above the stands
     if (stadium) { drawStands(standsTop, standsBottom, u, tm.colors, night); }
     drawWall(wallTop, u, tm.colors, tm.name);
     // sideline strip then the field
@@ -434,7 +452,7 @@
     ctx.lineWidth = 2 * u; ctx.strokeStyle = "#fff";
     for (i = 0; i < balls.length; i += 1) { var bl = balls[i], by = gy + bl.y + Math.sin(t * 5) * 4 * u; ctx.fillStyle = "#8b4513"; ctx.beginPath(); ellipse(bl.x, by, 12 * u, 7 * u); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fillRect(bl.x - 5 * u, by - 1 * u, 10 * u, 2 * u); }
     // obstacles: cones, and pixel defenders in the opponent's colours
-    var s = 2.2 * u, defPal = { H: opp.colors[0], X: opp.colors[1], F: "#8d5524", M: "#2b2b2b", J: opp.colors[0], N: opp.colors[0], S: "#8d5524", P: opp.colors[1] === "#ffffff" ? "#d9d9d9" : "#e8e8e8", K: "#1b1b1b" };
+    var s = 2.4 * u, defPal = { H: opp.colors[0], X: opp.colors[1], F: "#8d5524", M: "#2b2b2b", J: opp.colors[0], N: opp.colors[0], S: "#8d5524", P: opp.colors[1] === "#ffffff" ? "#d9d9d9" : "#e8e8e8", K: "#1b1b1b" };
     for (i = 0; i < obs.length; i += 1) {
       var o = obs[i];
       if (o.type === "cone" || o.type === "cones2") {
@@ -443,8 +461,8 @@
       } else {
         defPal.S = o.skin; defPal.F = o.skin;
         ctx.globalAlpha = o.hit ? 0.45 : 1;
-        drawSprite(Math.floor(t * 6 + i) % 2 ? DEF_A : DEF_B, Math.floor(t * 6 + i) % 2 ? "da" : "db", o.x + o.w / 2 - 8 * s, gy - 20 * s, s, defPal);
-        ctx.fillStyle = opp.colors[1]; ctx.fillRect(o.x + o.w / 2 - 1.5 * s, gy - 12 * s, 3 * s, 2 * s);
+        drawSprite(Math.floor(t * 6 + i) % 2 ? DEF_A : DEF_B, Math.floor(t * 6 + i) % 2 ? "da" : "db", o.x + o.w / 2 - 8 * s * SX, gy - 20 * s, s, defPal);
+        ctx.fillStyle = opp.colors[1]; ctx.fillRect(o.x + o.w / 2 - 1.5 * s * SX, gy - 12 * s, 3 * s * SX, 2 * s);
         ctx.globalAlpha = 1;
       }
     }
@@ -452,8 +470,8 @@
     var px = W * 0.22, py = gy + player.y, runPal = { H: "#ffffff", X: "#003b75", F: "#8d5524", M: "#2b2b2b", J: "#003b75", N: "#003b75", S: "#8d5524", P: "#ffffff", K: "#1b1b1b" };
     if (turbo > 0) { ctx.fillStyle = "rgba(253,187,48,.35)"; ctx.fillRect(px - 44 * u, py - 42 * u, 30 * u, 42 * u); }
     var frame = celebrate > 0 ? ARMS_UP : (player.y < 0 ? JUMP : (Math.floor(yards * 4) % 2 ? RUN_A : RUN_B)), fkey = celebrate > 0 ? "up" : (player.y < 0 ? "jump" : (Math.floor(yards * 4) % 2 ? "ra" : "rb"));
-    drawSprite(frame, fkey, px - 8 * s, py - 20 * s, s, runPal);
-    ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(3.4 * s) + "px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("28", px + 0.5 * s, py - 10.6 * s);   // the number sits on the jersey pixels
+    drawSprite(frame, fkey, px - 8 * s * SX, py - 20 * s, s, runPal);
+    ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(3.1 * s) + "px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("28", px + 0.5 * s * SX, py - 10.6 * s);   // the number sits on the jersey pixels
     if (over && tackleAt) {   // the yellow flag flies where the tackle happened
       ctx.fillStyle = "#ffd400"; ctx.beginPath(); ctx.moveTo(tackleAt.x, tackleAt.y - 30 * u); ctx.lineTo(tackleAt.x + 14 * u, tackleAt.y - 24 * u); ctx.lineTo(tackleAt.x + 2 * u, tackleAt.y - 16 * u); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#ffd400"; ctx.font = "bold " + Math.round(18 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("TACKLED!", W * 0.5, H * 0.24);
