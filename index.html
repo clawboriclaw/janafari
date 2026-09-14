@@ -9,7 +9,7 @@
   <title>Janafari — Madden 27 Ratings</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 role=%22img%22 aria-label=%22Janafari J%22%3E%3Crect x=%222%22 y=%222%22 width=%2260%22 height=%2260%22 rx=%2212%22 fill=%22%23041c38%22 stroke=%22%23fdbb30%22 stroke-width=%224%22/%3E%3Crect x=%229%22 y=%229%22 width=%2246%22 height=%2246%22 rx=%228%22 fill=%22none%22 stroke=%22%23fdbb30%22 stroke-width=%221.5%22 stroke-dasharray=%223 3%22 opacity=%22.7%22/%3E%3Cpath d=%22M22 13 H48 V22 H43 V39 Q43 51 30 51 Q16 51 16 39 V33 H25 V39 Q25 44 30 44 Q34 44 34 39 V22 H22 Z%22 fill=%22%23fff%22/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -325,6 +325,7 @@
             <div class="game-initials" id="gameInitials" hidden>
               <label for="gameIni" class="sr-only">Your initials, up to three letters</label>
               <input id="gameIni" class="game-ini" type="text" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="AAA">
+              <button class="button button-gold game-ini-save" id="gameIniSave" type="button">Save</button>
               <button class="button button-quiet game-ini-skip" id="gameIniSkip" type="button">No thanks</button>
             </div>
             <button class="button button-gold" id="gameOverlayBtn" type="button">Start</button>
@@ -349,7 +350,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=28"></script>
   <script>
     (function () {
       var root = document.documentElement;

@@ -940,7 +940,7 @@
   }
 
   /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
-  var GAME_URL = "game.js?v=7", gameLoading = false;
+  var GAME_URL = "game.js?v=8", gameLoading = false;
   var modalApi = { show: showModal, close: closeModal, toast: showToast };
   function openGame(opener) {
     if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); return; }

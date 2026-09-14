@@ -29,8 +29,11 @@ Live site: <https://clawboriclaw.github.io/janafari/>
   right — then the next drive is at the next team's stadium (AFC South first, then around the league): their
   pixel defenders, their painted end zone with goal posts, their city skyline and weather (snow in Buffalo,
   Green Bay, Denver…, rain in Seattle), a stadium crowd doing the wave with a fan's sign, a blimp with a
-  JANAFARI banner, day rolling into night. Halftime after two touchdowns. **One tackle and the run is over**
-  (yellow flag, whistle); if it makes the top 10 you type three initials while the board updates live.
+  JANAFARI banner, day rolling into night. Halftime after two touchdowns. Beat the Texans, Jaguars and Titans for an AFC SOUTH CHAMPS banner. A hurdle
+  streak counter celebrates 3/5/10 in a row; "12 yd to your best" turns into NEW BEST! when he passes it; a grabbed
+  football shouts UNSTOPPABLE with a draining 2-second bar. **One tackle and the run is over**
+  (yellow flag, whistle); then an honest coach line (early / late / flat-footed), the initials right under it if the run makes the top 10,
+  and Run again one tap away.
   First-down chain every 10 yards; a floating football gives two seconds of turbo. Keys:
   `janafari-ezr-v2` (best) and `janafari-ezr-scores-v1` (board). `game.js` loads only on Play; the loop runs
   only while the sheet is open and running; backgrounding pauses; Exit stops loop and sound; sound off until

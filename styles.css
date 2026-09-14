@@ -375,7 +375,7 @@ body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
 .ability-help { margin-top: 6px; padding: 8px 10px; border-radius: 10px; background: #f4f6f9; background: var(--surface-2); font-weight: 500; font-size: 13px; line-height: 1.45; }
 .ability-help p { margin: 0 0 6px; }
 .ability-help p:last-child { margin-bottom: 0; }
-.game-ini-skip { margin-left: 8px; vertical-align: top; min-height: 56px; }
+.game-ini-save, .game-ini-skip { margin: 4px 0 4px 8px; min-height: 44px; font-size: 14px; padding: 0 12px; }
 .tier-badge { -webkit-flex: 0 0 auto; flex: 0 0 auto; display: inline-block; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; font: 900 11px/18px "Arial Narrow", Arial, sans-serif; text-align: center; letter-spacing: 0; }
 .tier-x { background: #ba0c2f; background: var(--scarlet); color: #fff; }
 .tier-star { background: #6b7a8c; color: #fff; }
@@ -472,8 +472,11 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 .game-stage canvas { display: block; width: 100%; touch-action: manipulation; }
 .game-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: vertical; -webkit-flex-direction: column; flex-direction: column; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; padding: 16px; text-align: center; color: #fff; background: rgba(4,28,56,.78); }
 .game-overlay b { font-size: 22px; font-family: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-.game-overlay p { margin: 6px 0 10px; max-width: 34em; font-size: 13px; line-height: 1.35; }
-@media (min-width: 601px) { .game-overlay b { font-size: 26px; } .game-overlay p { font-size: 14px; } }
+.game-overlay p { margin: 4px 0 8px; max-width: 34em; font-size: 12px; line-height: 1.3; }
+.game-overlay .button { min-height: 44px; }
+.game-overlay { padding: 10px 12px; -webkit-box-pack: start; -webkit-justify-content: flex-start; justify-content: flex-start; }
+.game-overlay b { margin-top: 2px; }
+@media (min-width: 601px) { .game-overlay b { font-size: 26px; } .game-overlay p { font-size: 14px; } .game-overlay { -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; } .game-ini { min-height: 56px; font-size: 30px; width: 5.2em; } }
 .game-jump { width: 100%; min-height: 64px; margin-top: 10px; font-size: 22px; letter-spacing: 2px; touch-action: manipulation; }
 
 .game-actions { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 6px -4px 0; }
@@ -483,10 +486,10 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 .game-drive { margin: -4px 0 8px; font-size: 13px; color: #5b6b7c; color: var(--muted); font-weight: 700; }
 .game-overlay { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .game-overlay p { max-width: 36em; }
-.game-initials { margin: 4px 0 10px; }
+.game-initials { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; -webkit-box-align: center; -webkit-align-items: center; align-items: center; margin: 2px 0 6px; }
 .game-ini {
-  width: 5.2em; min-height: 56px; padding: 0 8px; text-align: center;
-  font: 900 30px/1 "Courier New", Courier, monospace; letter-spacing: .35em; text-transform: uppercase;
+  width: 4.6em; min-height: 44px; padding: 0 6px; text-align: center;
+  font: 900 22px/1 "Courier New", Courier, monospace; letter-spacing: .3em; text-transform: uppercase;
   color: #fdbb30; color: var(--gold); background: #041c38; background: var(--navy); border: 2px solid #fdbb30; border-color: var(--gold); border-radius: 10px;
 }
 .game-board { width: 100%; max-width: 360px; margin: 12px auto 0; padding: 8px 12px 6px; border-radius: 10px; background: #041c38; background: var(--navy); border: 1px solid rgba(253,187,48,.6); font-family: "Courier New", Courier, monospace; }

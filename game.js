@@ -109,6 +109,7 @@
   var running = false, paused = false, over = false;
   var driveIdx = 0, yards = 0, total = 0, peak = 0, tds = 0, speed = 0, t = 0, spawnAt = 0, celebrate = 0, halftime = 0, turbo = 0, nextFirst = 10, chainFlash = 0, turboAt = 0, waveT = 0, driveT = 0;
   var best = { yards: 0, tds: 0 }, newBest = false, lastMiss = "", board = [], pendingScore = null, tackleAt = null;
+  var streak = 0, bestStreak = 0, hurdles = 0, streakFlash = 0, streakText = "", bestFlash = 0, bestHit = false, beaten = {}, champFlash = 0;   // hurdle streak · personal-best chase · beat the division
   var player = { y: 0, vy: 0, jumps: 0 };
   var obs = [], balls = [], particles = [], rockets = [], stars = [], flakes = [];
   var stadium = true, opp = HOME, seed = 1, blimpX = -1, signX = -1, signText = "";
@@ -126,8 +127,8 @@
   }
   function writeBest() { try { localStorage.setItem(KEY, JSON.stringify(best)); } catch (e) {} }
   function writeBoard() { try { localStorage.setItem(SCORES_KEY, JSON.stringify(board)); } catch (e) {} }
-  function team() { return driveIdx === 0 ? HOME : TEAMS[(driveIdx - 1) % TEAMS.length]; }   // the venue: stands, wall, end zone, city
-  function visitor() { return driveIdx === 0 ? TEAMS[0] : team(); }                             // the defenders: at the home opener the Texans visit
+  function team() { return driveIdx === 0 ? HOME : TEAMS[driveIdx % TEAMS.length]; }   // the venue: home opener, then at JAX, TEN, NE … (Houston comes back around at drive 32)
+  function visitor() { return driveIdx === 0 ? TEAMS[0] : team(); }                       // the defenders: at the home opener the Texans visit
   function betterThan(a, b) { return a.tds > b.tds || (a.tds === b.tds && a.yards > b.yards); }
   function qualifies(score) { return board.length < BOARD_MAX || betterThan(score, board[board.length - 1]); }
   function placeOf(score) { var i; for (i = 0; i < board.length; i += 1) { if (betterThan(score, board[i])) { return i; } } return board.length; }
@@ -189,6 +190,7 @@
   function paceYps() { return (2.8 + 0.36 * Math.min(driveIdx, 8)) * (turbo > 0 ? 1.6 : 1); }   // owner: "speed the game a little bit up"
   function reset() {
     total = 0; peak = 0; tds = 0; t = 0; celebrate = 0; halftime = 0; turbo = 0; chainFlash = 0; lastMiss = ""; newBest = false; pendingScore = null; tackleAt = null;
+    streak = 0; bestStreak = 0; hurdles = 0; streakFlash = 0; streakText = ""; bestFlash = 0; bestHit = false; beaten = {}; champFlash = 0;
     player.y = 0; player.vy = 0; player.jumps = 0; particles = []; rockets = []; over = false; paused = false;
     setDrive(0);
   }
@@ -224,11 +226,21 @@
     if (kind === "ready" || kind === "over" || kind === "initials") { ui.boardWrap.hidden = false; ui.scores.setAttribute("aria-expanded", "true"); }
     if (!kind) { box.hidden = true; return; }
     box.hidden = false;
-    if (kind === "ready") { title.textContent = "End Zone Run"; copy.textContent = "You're Jonathan Taylor, #28. Hurdle the defenders. Every 100 yards is a touchdown — then a new city, a little faster. One tackle and the run is over."; btn.textContent = "Start"; renderBoard(null); }
+    if (kind === "ready") { title.textContent = "End Zone Run"; copy.textContent = "You're Jonathan Taylor, #28. Hurdle the defenders. Every 100 yards is a touchdown — then a new city, a little faster. Grab a football for 2 seconds of UNSTOPPABLE (run right through them). Beat the Texans, Jaguars and Titans. One tackle and the run is over."; btn.textContent = "Start"; renderBoard(null); }
     else if (kind === "paused") { title.textContent = "Paused"; copy.textContent = "Take a breath. Your yards are safe."; btn.textContent = "Resume"; }
-    else if (kind === "initials") { title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = "That makes the board. Enter your initials."; btn.textContent = "Save"; ui.iniInput.value = ""; renderBoard({ ini: "", tds: tds, yards: peak }); window.setTimeout(function () { try { ui.iniInput.focus(); } catch (e) {} }, 40); return; }
-    else if (kind === "over") { title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = (newBest ? "New best run! " : "") + (lastMiss === "early" ? "You jumped a little early — wait until they're closer." : "Jump a bit sooner next time."); btn.textContent = "Play again"; renderBoard(null); }
+    else if (kind === "initials") {   // the coach line comes first, the initials sit right under it, and Run again is always one tap away
+      title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = coachLine() + " It makes the board — initials?"; btn.textContent = "Run again";
+      ui.iniInput.value = ""; renderBoard({ ini: "", tds: tds, yards: peak }); window.setTimeout(function () { try { ui.iniInput.focus(); } catch (e) {} }, 40); return;
+    }
+    else if (kind === "over") { title.textContent = "TACKLED — " + (tds * POINTS) + " PTS · " + peak + " YD"; copy.textContent = (newBest ? "NEW BEST RUN! " : "") + coachLine(); btn.textContent = "Run again"; renderBoard(null); }
     window.setTimeout(function () { try { btn.focus(); } catch (e) {} }, 30);
+  }
+  function coachLine() {
+    var h = hurdles ? " You hurdled " + hurdles + (bestStreak >= 3 ? " (best streak " + bestStreak + ")." : ".") : "";
+    if (lastMiss === "early") { return "You jumped a little early and came down on him — wait until he's one step closer." + h; }
+    if (lastMiss === "late") { return "He got you before you were up — tap a little sooner." + h; }
+    if (lastMiss === "ground") { return "He got you flat-footed — tap JUMP when he's about two steps away." + h; }
+    return "Tackled." + h;
   }
   function saveInitials() {
     var ini = String(ui.iniInput.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
@@ -236,7 +248,7 @@
     var score = { ini: ini, tds: tds, yards: peak, date: new Date().toISOString().slice(0, 10) }, placed = placeOf(score);
     board.splice(placed, 0, score); board = board.slice(0, BOARD_MAX); writeBoard();
     pendingScore = { placed: placed }; beep(1046, 80, "triangle"); window.setTimeout(function () { beep(1318, 160, "triangle"); }, 90);
-    overlay("over");
+    overlay("over"); ui.overlayCopy.textContent = "Saved: " + ini + " · #" + (placed + 1) + " on the board. " + coachLine();
   }
 
   function start() {
@@ -260,6 +272,11 @@
   }
   function touchdown() {
     tds += 1; celebrate = 2.6; roar(1400);
+    var rival = visitor().abbr;
+    if ((rival === "HOU" || rival === "JAX" || rival === "TEN") && !beaten[rival]) {
+      beaten[rival] = true;
+      if (beaten.HOU && beaten.JAX && beaten.TEN) { champFlash = 3.2; window.setTimeout(function () { roar(1200); }, 700); }
+    }
     beep(523, 120, "triangle"); window.setTimeout(function () { beep(659, 120, "triangle"); }, 130); window.setTimeout(function () { beep(784, 260, "triangle"); }, 260);
     if (!reducedMotion) { var i; for (i = 0; i < 6; i += 1) { rockets.push({ x: W * (0.2 + Math.random() * 0.7), y: H * 0.42, vy: -(200 + Math.random() * 120) * U, fuse: 0.4 + Math.random() * 0.5, c: i % 3 === 0 ? "#fdbb30" : (i % 3 === 1 ? team().colors[1] : "#ffffff") }); } }
     if (tds === 2) { halftime = 2.6; }
@@ -284,6 +301,10 @@
     if (chainFlash > 0) { chainFlash -= dt; }
     if (blimpX > -1) { blimpX -= 26 * U * dt; if (blimpX < -60 * U) { blimpX = -1; } }
     if (yards >= nextFirst && nextFirst < DRIVE) { nextFirst += 10; chainFlash = 0.8; beep(1046, 60, "sine", 0.04); }
+    if (streakFlash > 0) { streakFlash -= dt; }
+    if (bestFlash > 0) { bestFlash -= dt; }
+    if (champFlash > 0) { champFlash -= dt; }
+    if (!bestHit && best.yards > 0 && peak > best.yards) { bestHit = true; bestFlash = 2.0; beep(1568, 160, "triangle", 0.05); }   // the moment he passes his own best
     player.vy += 1150 * U * dt; player.y += player.vy * dt;
     if (player.y > 0) { player.y = 0; player.vy = 0; player.jumps = 0; }
     spawnAt -= dt;
@@ -306,9 +327,13 @@
       var pl = px - pw / 2 + 4 * U, pr = px + pw / 2 - 4 * U, pb = gy + player.y - 2 * U;
       var ol = o.x + o.w * 0.12, orr = o.x + o.w * 0.88, ot = gy - o.h + 4 * U;
       if (!o.hit && turbo <= 0 && pr > ol && pl < orr && pb > ot) {
-        o.hit = true; lastMiss = player.y < -2 ? "early" : "late"; tackleAt = { x: o.x + o.w / 2, y: gy - o.h };
+        o.hit = true; lastMiss = player.y >= -2 ? "ground" : (player.vy > 0 ? "early" : "late"); tackleAt = { x: o.x + o.w / 2, y: gy - o.h };   // falling onto him = early; still rising = late
         endRun(); return;   // one tackle and the run is over
-      } else if (turbo > 0 && !o.hit && pr > ol && pl < orr) { o.hit = true; burst(o.x + o.w / 2, gy - o.h / 2, "#ffffff"); }
+      } else if (turbo > 0 && !o.hit && pr > ol && pl < orr) { o.hit = true; o.smashed = true; burst(o.x + o.w / 2, gy - o.h / 2, "#ffffff"); }
+      if (!o.cleared && !o.smashed && o.x + o.w < pl) {   // he cleared this group cleanly
+        o.cleared = true; hurdles += 1; streak += 1; if (streak > bestStreak) { bestStreak = streak; }
+        if (streak === 3 || streak === 5 || streak === 10 || streak === 15 || streak === 20 || (streak > 20 && streak % 10 === 0)) { streakText = streak + " IN A ROW!"; streakFlash = 1.4; beep(1174, 70, "triangle", 0.04); }
+      }
     }
     if (yards >= DRIVE) { touchdown(); }
     for (i = rockets.length - 1; i >= 0; i -= 1) { var rk = rockets[i]; rk.y += rk.vy * dt; rk.fuse -= dt; if (rk.fuse <= 0) { burst(rk.x, rk.y, rk.c); rockets.splice(i, 1); } }
@@ -420,6 +445,13 @@
     ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(12 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText(String(tds * POINTS), x + 46 * u, y + 13 * u); ctx.fillText("0", x + 46 * u, y + 25 * u);
     ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(9 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText("YDS", x + w - 6 * u, y + 12 * u);
     ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(12 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText(String(total), x + w - 6 * u, y + 25 * u);
+    // strip 2: hurdle streak and the division stamps
+    var y2 = y + h + 3 * u; ctx.fillStyle = "rgba(4,28,56,.8)"; ctx.fillRect(x, y2, w, 26 * u);
+    ctx.textAlign = "left"; ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(8 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText("HURDLES", x + 6 * u, y2 + 10 * u);
+    ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.fillText(String(hurdles) + (streak >= 3 ? "  x" + streak : ""), x + w - 6 * u, y2 + 10 * u);
+    var stamps = [["HOU", beaten.HOU], ["JAX", beaten.JAX], ["TEN", beaten.TEN]], k;
+    ctx.textAlign = "left"; ctx.fillStyle = "#fdbb30"; ctx.fillText("DIV", x + 6 * u, y2 + 21 * u);
+    for (k = 0; k < 3; k += 1) { ctx.fillStyle = stamps[k][1] ? "#4cd964" : "rgba(255,255,255,.35)"; ctx.textAlign = "right"; ctx.fillText((stamps[k][1] ? "✓" : "·") + stamps[k][0], x + w - 6 * u - (2 - k) * 30 * u, y2 + 21 * u); }
   }
   function draw() {
     if (!ctx) { return; }
@@ -467,7 +499,11 @@
     }
     // Jonathan Taylor #28
     var px = W * 0.22, py = gy + player.y, runPal = { H: "#ffffff", X: "#003b75", F: "#8d5524", M: "#2b2b2b", J: "#003b75", N: "#003b75", S: "#8d5524", P: "#ffffff", K: "#1b1b1b" };
-    if (turbo > 0) { ctx.fillStyle = "rgba(253,187,48,.35)"; ctx.fillRect(px - 44 * u, py - 42 * u, 30 * u, 42 * u); }
+    if (turbo > 0) {
+      ctx.fillStyle = "rgba(253,187,48,.35)"; ctx.fillRect(px - 44 * u, py - 42 * u, 30 * u, 42 * u);
+      ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(11 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("UNSTOPPABLE!", px, py - 54 * u);
+      ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(px - 20 * u, py - 50 * u, 40 * u, 4 * u); ctx.fillStyle = "#fdbb30"; ctx.fillRect(px - 20 * u, py - 50 * u, 40 * u * Math.max(0, turbo / 2), 4 * u);   // the two seconds draining
+    }
     var frame = celebrate > 0 ? ARMS_UP : (player.y < 0 ? JUMP : (Math.floor(yards * 4) % 2 ? RUN_A : RUN_B)), fkey = celebrate > 0 ? "up" : (player.y < 0 ? "jump" : (Math.floor(yards * 4) % 2 ? "ra" : "rb"));
     drawSprite(frame, fkey, px - 8 * s * SX, py - 20 * s, s, runPal);
     ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(3.1 * s) + "px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("28", px + 0.5 * s * SX, py - 10.6 * s);   // the number sits on the jersey pixels
@@ -482,6 +518,10 @@
     if (driveT < 3 && running && !over) { var bw = 150 * u, bx = 8 * u, byy = 8 * u; ctx.fillStyle = "rgba(4,28,56,.85)"; ctx.fillRect(bx, byy, bw, 30 * u); drawLogo(tm.abbr, bx + 3 * u, byy + 3 * u, 24 * u, 1); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.font = "bold " + Math.round(10 * u) + "px Arial, sans-serif"; ctx.fillText(driveIdx === 0 ? "HOME OPENER" : "AT " + tm.city.toUpperCase(), bx + 32 * u, byy + 13 * u); ctx.fillStyle = "#fdbb30"; ctx.font = Math.round(8 * u) + "px Arial, sans-serif"; ctx.fillText(tm.name, bx + 32 * u, byy + 24 * u); }
     drawScoreboard(u);
     if (celebrate > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(1, celebrate) + ")"; ctx.font = "bold " + Math.round(26 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("TOUCHDOWN!", W * 0.5, H * 0.24); }
+    if (streakFlash > 0) { ctx.fillStyle = "rgba(253,187,48," + Math.min(1, streakFlash) + ")"; ctx.font = "bold " + Math.round(15 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText(streakText, W * 0.5, H * 0.62); }
+    if (bestFlash > 0) { ctx.fillStyle = "rgba(255,255,255," + Math.min(1, bestFlash) + ")"; ctx.font = "bold " + Math.round(20 * u) + "px 'Arial Narrow', Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText("NEW BEST!", W * 0.5, H * 0.34); }
+    else if (running && !over && best.yards > 0 && !bestHit && best.yards - peak <= 30 && best.yards - peak > 0) { ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.font = "bold " + Math.round(11 * u) + "px Arial, sans-serif"; ctx.textAlign = "center"; ctx.fillText((best.yards - peak) + " yd to your best", W * 0.5, H * 0.34); }
+    if (champFlash > 0) { ctx.fillStyle = "rgba(4,28,56,.8)"; ctx.fillRect(0, H * 0.28, W, H * 0.26); ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(22 * u) + "px 'Courier New', Courier, monospace"; ctx.textAlign = "center"; ctx.fillText("AFC SOUTH CHAMPS!", W * 0.5, H * 0.41); ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(10 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText("Texans, Jaguars and Titans — all beaten", W * 0.5, H * 0.50); }
     if (halftime > 0) { ctx.fillStyle = "rgba(4,28,56,.75)"; ctx.fillRect(0, H * 0.3, W, H * 0.34); ctx.fillStyle = "#fdbb30"; ctx.font = "bold " + Math.round(22 * u) + "px 'Courier New', Courier, monospace"; ctx.textAlign = "center"; ctx.fillText("HALFTIME", W * 0.5, H * 0.45); ctx.fillStyle = "#fff"; ctx.font = "bold " + Math.round(11 * u) + "px 'Courier New', Courier, monospace"; ctx.fillText("IND " + (tds * POINTS) + "  ·  " + total + " YDS", W * 0.5, H * 0.57); }
   }
 
@@ -502,7 +542,7 @@
     ui.yards = el("gameYards"); ui.lives = el("gameLives"); ui.best = el("gameBest"); ui.drive = el("gameDrive");
     ui.jump = el("gameJump"); ui.pause = el("gamePause"); ui.restart = el("gameRestart"); ui.sound = el("gameSound"); ui.exit = el("gameExit");
     ui.overlay = el("gameOverlay"); ui.overlayTitle = el("gameOverlayTitle"); ui.overlayCopy = el("gameOverlayCopy"); ui.overlayBtn = el("gameOverlayBtn");
-    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.iniSkip = el("gameIniSkip"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList"); ui.scores = el("gameScores");
+    ui.initials = el("gameInitials"); ui.iniInput = el("gameIni"); ui.iniSkip = el("gameIniSkip"); ui.iniSave = el("gameIniSave"); ui.boardWrap = el("gameBoard"); ui.boardList = el("gameBoardList"); ui.scores = el("gameScores");
     var press = function (fn) { return function (e) { if (e && e.preventDefault && e.type === "touchstart") { e.preventDefault(); } fn(); }; };
     var jumpOrStart = function () { if (!ui.initials.hidden) { return; } if (!running || over) { running = false; start(); } else if (paused) { resume(); } else { jump(); } };
     ui.jump.addEventListener("touchstart", press(jumpOrStart)); ui.jump.addEventListener("mousedown", press(jumpOrStart));
@@ -510,7 +550,8 @@
     canvas.addEventListener("touchstart", press(jumpOrStart)); canvas.addEventListener("mousedown", press(jumpOrStart));
     ui.pause.addEventListener("click", function () { if (paused) { resume(); } else { pause(); } });
     ui.restart.addEventListener("click", function () { running = false; start(); });
-    ui.overlayBtn.addEventListener("click", function () { if (!ui.initials.hidden) { saveInitials(); } else if (paused && running && !over) { resume(); } else { running = false; start(); } });
+    ui.overlayBtn.addEventListener("click", function () { if (paused && running && !over) { resume(); } else { running = false; start(); } });   // Run again — even from the initials prompt
+    ui.iniSave.addEventListener("click", saveInitials);
     ui.overlay.addEventListener("click", function (e) { if (e.target === ui.overlay && ui.initials.hidden) { if (paused && running && !over) { resume(); } else if (!running || over) { running = false; start(); } } });
     ui.iniSkip.addEventListener("click", function () { pendingScore = null; overlay("over"); });
     ui.scores.addEventListener("click", function () { var show = ui.boardWrap.hidden; if (show) { renderBoard(null); } ui.boardWrap.hidden = !show; ui.scores.setAttribute("aria-expanded", show ? "true" : "false"); });
@@ -530,6 +571,6 @@
     window.setTimeout(function () { resize(); hud(); overlay("ready"); }, 40);
   }
   function stop() { cancel(); running = false; paused = false; particles = []; rockets = []; try { if (actx && actx.suspend) { actx.suspend(); } } catch (e) {} }
-  function peek() { return { yards: yards, total: total, peak: peak, tds: tds, drive: driveIdx, opp: opp.abbr, stadium: stadium, night: skyColors(dayPhase()).night, speed: speed, running: running, paused: paused, over: over, turbo: turbo, celebrate: celebrate, halftime: halftime, playerX: W * 0.22, playerY: player.y, board: board.length, obstacles: obs.map(function (o) { return { x: o.x, w: o.w, h: o.h, type: o.type }; }) }; }
+  function peek() { return { yards: yards, total: total, peak: peak, tds: tds, drive: driveIdx, opp: opp.abbr, stadium: stadium, night: skyColors(dayPhase()).night, speed: speed, running: running, paused: paused, over: over, turbo: turbo, celebrate: celebrate, halftime: halftime, playerX: W * 0.22, playerY: player.y, board: board.length, hurdles: hurdles, streak: streak, beaten: beaten, bestHit: bestHit, obstacles: obs.map(function (o) { return { x: o.x, w: o.w, h: o.h, type: o.type }; }) }; }
   window.JanafariGame = { open: open, stop: stop, peek: peek };
 }());
