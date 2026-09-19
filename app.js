@@ -31,7 +31,7 @@
       club: { min: 99, label: "in the 99 Club" },
       sides: ["offense", "defense", "special"],
       hasFA: true, facts: true,                    // free agents in the feed · draft/Super Bowl facts
-      game: { url: "game.js?v=8", api: "JanafariGame", modal: "gameModal", name: "End Zone Run", egg: "eggRunner" },
+      arcade: { url: "game.js?v=8", api: "JanafariGame", modal: "gameModal", name: "End Zone Run", egg: "eggRunner" },   // `game` is the ratings title; the mini-game is `arcade`
       logo: function (abbr) { return "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png"; },
       tiers: { x: { short: "X", name: "X-Factor", kicker: "X-FACTOR" }, star: { short: "★", name: "Superstar", kicker: "SUPERSTAR" } },
       abilitiesLabel: "Abilities", abilitiesQuestion: "What are X-Factor and Superstar abilities?",
@@ -77,7 +77,7 @@
       club: { min: 95, label: "rated 95 or better" },
       sides: ["guard", "forward", "center"],
       hasFA: false, facts: false,
-      game: { url: "hoops.js?v=1", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
+      arcade: { url: "hoops.js?v=2", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
       // ESPN's logo slugs are not the NBA's abbreviations for six clubs
       logo: function (abbr) { var s = { GSW: "gs", NOP: "no", NYK: "ny", SAS: "sa", UTA: "utah", WAS: "wsh" }[abbr] || abbr.toLowerCase(); return "https://a.espncdn.com/i/teamlogos/nba/500/" + s + ".png"; },
       tiers: { x: { short: "HOF", name: "Hall of Fame badge", kicker: "HALL OF FAME" } },   // Gold is too common to be a card badge (227 of 535 players)
@@ -1022,17 +1022,17 @@
   }
 
   /* ---------- the sport's game (End Zone Run · Janafari Jam): loaded only when someone asks to play ----------
-     Each sport names its script, its global, its sheet and its easter egg in SPORT.game. The bridge hands the
+     Each sport names its script, its global, its sheet and its easter egg in SPORT.arcade. The bridge hands the
      game the page's modal helpers plus the loaded roster and logo URLs, so Janafari Jam can field real players. */
   var gameLoading = false;
   var modalApi = { show: showModal, close: closeModal, toast: showToast, players: function () { return DATA ? DATA.players : []; }, logo: function (abbr) { return SPORT.logo(abbr); } };
   function openGame(opener) {
-    var g = SPORT.game;
+    var g = SPORT.arcade;
     if (window[g.api]) { window[g.api].open(opener || el("moreButton"), modalApi); return; }
     if (gameLoading) { return; }
     gameLoading = true; showToast("Loading " + g.name + "…");
     var sc = document.createElement("script"); sc.src = g.url;
-    sc.onload = function () { gameLoading = false; if (window[g.api]) { window[g.api].open(opener || el("moreButton"), modalApi); } };
+    sc.onload = function () { gameLoading = false; if (window[g.api] && SPORT.arcade.api === g.api) { window[g.api].open(opener || el("moreButton"), modalApi); } };   // the sport may have been switched while the script was downloading
     sc.onerror = function () { gameLoading = false; showToast("The game could not load. Check the internet and try again."); };
     document.body.appendChild(sc);
   }
@@ -1041,11 +1041,11 @@
   // (3.2 s) — a tiny runner on the football side, a bouncing ball on the basketball side. Tapping it opens the
   // game. It never runs over an open sheet or a hidden tab.
   function eggSprint() {
-    var egg = el(SPORT.game.egg);
+    var egg = el(SPORT.arcade.egg), base = "egg-runner" + (egg && egg.id === "eggBall" ? " egg-ball" : "");   // the ball keeps its own styling while it runs
     if (!egg || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
-    egg.hidden = false; egg.className = "egg-runner";
-    window.setTimeout(function () { egg.className = "egg-runner run"; }, 30);
-    window.setTimeout(function () { if (egg.className.indexOf("run") !== -1) { egg.hidden = true; egg.className = "egg-runner"; } }, 3600);
+    egg.hidden = false; egg.className = base;
+    window.setTimeout(function () { egg.className = base + " run"; }, 30);
+    window.setTimeout(function () { if (egg.className.indexOf("run") !== -1) { egg.hidden = true; egg.className = base; } }, 3600);
   }
   function scheduleEgg(first) {
     window.setTimeout(function () { eggSprint(); scheduleEgg(false); }, first ? 9000 : 45000 + Math.random() * 45000);
@@ -1091,7 +1091,7 @@
     el("playEgg").addEventListener("click", function (e) { openGame(e.currentTarget); });
     el("playEggNba").addEventListener("click", function (e) { openGame(e.currentTarget); });
     Array.prototype.forEach.call(document.querySelectorAll(".egg-runner"), function (egg) {
-      egg.addEventListener("click", function () { egg.hidden = true; egg.className = "egg-runner"; openGame(el("moreButton")); });
+      egg.addEventListener("click", function () { egg.hidden = true; egg.className = egg.className.replace(/\s*\brun\b/, ""); openGame(el("moreButton")); });
     });
     scheduleEgg(true);
     el("playMore").addEventListener("click", function () { closeModal("moreModal"); openGame(el("moreButton")); });

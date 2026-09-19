@@ -70,6 +70,7 @@
   var running = false, paused = false, over = false, twoP = false;
   var t = 0, floorY = 0, rimY = 0, rimHalf = 0, gravity = 0, round = 0, oppIdx = 0, opp = TEAMS[0];
   var score = [0, 0], streak = 0, bestStreak = 0, totalPts = 0, best = { streak: 0 }, board = [], pendingScore = null, newBest = false;   // totalPts = your baskets across the run (board tie-break)
+  var runGen = 0;   // bumped by every start()/stop(): a timer from an earlier run finds a different number and does nothing
   var loosFor = 0, sinceBasket = 0, shots = [0, 0], makes = [0, 0], lastScorer = 1, frames = 0, lastShots = [];   // lastShots: the last 12 shots for peek()   // seconds since anyone last held the ball · per-side shot counts (peek)
   var ball, teams = [], rules = null, ruleCard = 0, ruleText = "", freeze = 0, banner = "", bannerT = 0, clock = SHOT_CLOCK, lastTouch = -1, stuck = 0, matchOver = "";
   var particles = [], flakes = [], logos = {}, seed = 7;
@@ -110,8 +111,10 @@
 
   /* ---------- sound (WebAudio bleeps; nothing plays until the switch is on) ---------- */
   function ensureAudio() { if (actx) { return true; } try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) { return false; } actx = new AC(); return true; } catch (e) { return false; } }
+  var noteTimers = [];
+  function later(ms, fn) { noteTimers.push(window.setTimeout(fn, ms)); }   // a delayed note that stop() can cancel
   function beep(freq, ms, type, gain) {
-    if (!soundOn || !ensureAudio()) { return; }
+    if (!soundOn || !ensureAudio() || isHidden()) { return; }
     try {
       if (actx.state === "suspended" && actx.resume) { actx.resume(); }
       var o = actx.createOscillator(), g = actx.createGain(), now = actx.currentTime;
@@ -119,7 +122,7 @@
       o.connect(g); g.connect(actx.destination); o.start(now); g.gain.exponentialRampToValueAtTime(0.0005, now + ms / 1000); o.stop(now + ms / 1000);
     } catch (e) {}
   }
-  function swish() { beep(1500, 60, "sine", 0.05); window.setTimeout(function () { beep(1900, 120, "sine", 0.05); }, 60); window.setTimeout(function () { beep(2400, 160, "sine", 0.04); }, 130); }
+  function swish() { beep(1500, 60, "sine", 0.05); later(60, function () { beep(1900, 120, "sine", 0.05); }); later(130, function () { beep(2400, 160, "sine", 0.04); }); }
   function buzzer() { beep(180, 700, "sawtooth", 0.06); }
   function bounceSound(v) { if (v > 120 * U) { beep(160, 40, "triangle", Math.min(0.06, v / (4000 * U))); } }
 
@@ -134,7 +137,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     floorY = H * 0.82; rimY = H * 0.40; rimHalf = 19 * U;   // a friendly rim: the ball is 10 U across
     flakes = []; var i; for (i = 0; i < 70; i += 1) { flakes.push({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() }); }
-    if (teams.length) { placeAll(); }
+    if (teams.length) { rescaleAll(); placeAll(); }
     draw();
   }
 
@@ -143,8 +146,15 @@
   // right hoop), side 1 = them (attack the left). `bodyK` scales height; `head` scales the head.
   function makePlayer(side, idx, info, x) {
     var h = info.height || 78;
-    return { side: side, idx: idx, info: info, x: x, y: 0, vy: 0, r: 18 * U, bodyK: 0.85 + (h - 72) / 40, head: 1, ground: true, hold: false, shootAt: -1, facing: side === 0 ? 1 : -1,
-             speed: (150 + ((info.ovr || 78) - 70) * 4) * U, jumpV: (430 + ((info.dunk || 70) - 60) * 2.2) * U, acc: (info.threePt || 70), dunk: (info.dunk || 70), think: 0, wantJump: false, tilt: 0, run: 0 };
+    var p = { side: side, idx: idx, info: info, x: x, y: 0, vy: 0, r: 18 * U, bodyK: 0.85 + (h - 72) / 40, head: 1, ground: true, hold: false, shootAt: -1, facing: side === 0 ? 1 : -1,
+              speedU: 150 + ((info.ovr || 78) - 70) * 4, jumpU: 430 + ((info.dunk || 70) - 60) * 2.2, speed: 0, jumpV: 0, acc: (info.threePt || 70), dunk: (info.dunk || 70), think: 0, wantJump: false, tilt: 0, run: 0 };
+    rescale(p); return p;
+  }
+  // Speed, jump, radii and gravity are all "per U": a rotation changes U, so they are re-derived together (Codex, 2026-09-19).
+  function rescale(p) { p.speed = p.speedU * U; p.jumpV = p.jumpU * U; p.r = 18 * U; }
+  function rescaleAll() {
+    teams.forEach(function (team) { team.forEach(rescale); });
+    if (rules) { gravity = 1500 * U * rules.grav.k; if (ball) { ball.r = 10 * U * rules.ball.r; } }
   }
   function placeAll(giveTo) {
     var i; for (i = 0; i < teams[0].length; i += 1) { var p = teams[0][i]; p.x = W * (0.28 + i * 0.12); p.y = floorY - p.r * p.bodyK; p.vy = 0; p.ground = true; p.hold = false; p.shootAt = -1; }
@@ -281,6 +291,7 @@
     if (ball.holder) { clock -= dt; if (clock <= 0) { var h = ball.holder; loose(-h.facing * 120 * U, -260 * U); beep(300, 200, "square", 0.04); } }
     // the ball
     if (!ball.holder) {
+      ball.py = ball.y;   // where it was this frame: the basket test looks at the real crossing, not a guessed one (Codex: a 30 fps iPad lost half its baskets)
       ball.vy += gravity * rules.ball.g * dt; ball.x += ball.vx * dt; ball.y += ball.vy * dt; ball.spin += ball.vx * dt * 0.05;
       var drag = rules.ball.drag || 0.05; ball.vx -= ball.vx * drag * dt; ball.vy -= ball.vy * drag * 0.6 * dt;   // air: a beach ball settles fast
       if (rules.ball.wobble) { ball.vy += Math.sin(t * 17) * 40 * U * dt; }
@@ -335,9 +346,9 @@
       if (dir === 1 && ball.x + ball.r > bx && ball.x < bx + 10 * U && ball.vx > 0) { ball.x = bx - ball.r; ball.vx = -ball.vx * 0.55; beep(700, 30, "square", 0.02); }
       if (dir === -1 && ball.x - ball.r < bx && ball.x > bx - 10 * U && ball.vx < 0) { ball.x = bx + ball.r; ball.vx = -ball.vx * 0.55; beep(700, 30, "square", 0.02); }
     }
-    if (ball.shot && ball.shot.side === side && ball.shot.at === null && ball.vy > 0 && ball.y > rimY && ball.y - ball.vy * 0.02 <= rimY + ball.r) { ball.shot.at = Math.round((ball.x - hx) / U); }
+    if (ball.shot && ball.shot.side === side && ball.shot.at === null && ball.vy > 0 && ball.y > rimY && ball.py <= rimY + ball.r) { ball.shot.at = Math.round((ball.x - hx) / U); }
     // the basket: through the rim, moving down, centre between the pegs
-    if (ball.vy > 0 && ball.y - ball.vy * 0.016 <= rimY && ball.y > rimY && Math.abs(ball.x - hx) < rimHalf - ball.r * 0.5 && ball.r < rimHalf) {
+    if (ball.vy > 0 && ball.py <= rimY && ball.y > rimY && Math.abs(ball.x - hx) < rimHalf - ball.r * 0.5 && ball.r < rimHalf) {
       basket(side);
     }
   }
@@ -354,7 +365,7 @@
       if (scorer === 0) { streak += 1; if (streak > bestStreak) { bestStreak = streak; } banner = "PACERS WIN " + score[0] + "–" + score[1] + "!"; buzzer(); }
       else { banner = opp.name + " WIN " + score[1] + "–" + score[0]; buzzer(); }
       bannerT = 2.2;
-    } else { window.setTimeout(function () { if (running && !over) { newRules(false); } }, 900); }
+    } else { var gen = runGen; window.setTimeout(function () { if (gen === runGen && running && !over) { newRules(false); } }, 900); }
     hud();
   }
   function confetti(x, y, c) { if (reducedMotion) { return; } var i; for (i = 0; i < 26; i += 1) { var a = Math.random() * Math.PI * 2, v = (80 + Math.random() * 160) * U; particles.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 100 * U, life: 0.8 + Math.random() * 0.6, c: Math.random() < 0.35 ? "#ffffff" : c }); } }
@@ -415,7 +426,7 @@
     if (!ini) { ini = "JAN"; }
     var s = { ini: ini, streak: streak, pts: totalPts, date: new Date().toISOString().slice(0, 10) }, placed = placeOf(s);
     board.splice(placed, 0, s); board = board.slice(0, BOARD_MAX); writeBoard();
-    pendingScore = { placed: placed }; beep(1046, 80, "triangle"); window.setTimeout(function () { beep(1318, 160, "triangle"); }, 90);
+    pendingScore = { placed: placed }; beep(1046, 80, "triangle"); later(90, function () { beep(1318, 160, "triangle"); });
     overlay("over"); ui.overlayCopy.textContent = "Saved: " + ini + " · #" + (placed + 1) + " on the board. " + lossLine();
   }
   function endRun() {
@@ -429,7 +440,7 @@
   function start() {
     if (running && !over) { return; }
     buildRoster();
-    running = true; over = false; paused = false; t = 0; streak = 0; bestStreak = 0; totalPts = 0; sinceBasket = 0; loosFor = 0; shots = [0, 0]; makes = [0, 0]; oppIdx = 0; opp = TEAMS[0]; score = [0, 0]; round = 0; pendingScore = null; particles = []; freeze = 0; matchOver = ""; banner = ""; bannerT = 0;
+    runGen += 1; running = true; over = false; paused = false; t = 0; streak = 0; bestStreak = 0; totalPts = 0; sinceBasket = 0; loosFor = 0; shots = [0, 0]; makes = [0, 0]; oppIdx = 0; opp = TEAMS[0]; score = [0, 0]; round = 0; pendingScore = null; particles = []; freeze = 0; matchOver = ""; banner = ""; bannerT = 0;
     ball = { x: 0, y: 0, vx: 0, vy: 0, r: 11 * U, holder: null, spin: 0, lastThrow: -9, thrower: null };
     var mine = duo(HOME_ABBR), theirs = duo(opp.abbr);
     teams = [[makePlayer(0, 0, mine[0], W * 0.28), makePlayer(0, 1, mine[1], W * 0.4)], [makePlayer(1, 0, theirs[0], W * 0.72), makePlayer(1, 1, theirs[1], W * 0.6)]];
@@ -567,9 +578,9 @@
       if (!ui.initials.hidden) { return; }
       if (!running || over) { running = false; start(); return; }
       if (paused) { resume(); return; }
-      if (twoP) {   // two players on one screen: left half is you, right half is them
-        var rect = canvas.getBoundingClientRect(), px = (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX) - rect.left;
-        press(px < rect.width / 2 ? 0 : 1);
+      if (twoP) {   // two players on one screen: left half is you, right half is them — every NEW finger counts, not the first one still held
+        var rect = canvas.getBoundingClientRect(), list = e.changedTouches && e.changedTouches.length ? e.changedTouches : [e], k;
+        for (k = 0; k < list.length; k += 1) { press((list[k].clientX - rect.left) < rect.width / 2 ? 0 : 1); }
       } else { press(0); }
     };
     ui.jump.addEventListener("touchstart", press0); ui.jump.addEventListener("mousedown", press0);
@@ -602,7 +613,11 @@
     bridge.show("hoopsModal", opener);
     window.setTimeout(function () { resize(); placeAll(); hud(); overlay("ready"); draw(); }, 40);
   }
-  function stop() { cancel(); running = false; paused = false; particles = []; try { if (actx && actx.suspend) { actx.suspend(); } } catch (e) {} }
+  function stop() {
+    cancel(); running = false; paused = false; particles = []; runGen += 1;
+    while (noteTimers.length) { window.clearTimeout(noteTimers.pop()); }   // no note may land after Exit
+    try { if (actx && actx.suspend) { actx.suspend(); } } catch (e) {}
+  }
   // peek() is for tests and reviewers: a read-only snapshot of the match (the page never calls it).
   function peek() { return { lastShots: lastShots, frames: frames, matchOver: matchOver, holder: ball && ball.holder ? ball.holder.info.name : "", clock: clock, shots: shots, makes: makes, running: running, paused: paused, over: over, score: score.slice(0), streak: streak, opp: opp.abbr, rules: rules, ball: ball ? { x: ball.x, y: ball.y, held: !!ball.holder } : null, players: teams.length ? teams[0].concat(teams[1]).map(function (p) { return { side: p.side, x: Math.round(p.x), y: Math.round(p.y), vy: Math.round(p.vy), ground: p.ground, hold: p.hold, shootAt: p.shootAt, bodyK: Math.round(p.bodyK * 100) / 100, name: p.info.name }; }) : [] }; }
   window.JanafariHoops = { open: open, stop: stop, peek: peek };
