@@ -2,26 +2,116 @@
   "use strict";
 
   /* ------------------------------------------------------------------
-     Janafari v3 — real ratings, a real watchlist, one screen per job.
-     Every number on this page comes from EA's official Madden 27 ratings
-     feed, snapshotted into data/ratings.json by tools/fetch_ratings.py
-     (checked daily by a GitHub Action). Nobody types a rating in here.
+     Janafari v4 — real ratings, a real watchlist, one screen per job,
+     TWO sports on one page (2026-09-19). Every number comes from a feed
+     snapshotted into data/ by a fetcher and checked daily by a GitHub
+     Action. Nobody types a rating in here.
+       🏈 Madden 27   EA's official ratings feed  → data/ratings.json
+       🏀 NBA 2K27    2K Ratings' Play Now database → data/nba/ratings.json
        League     = every rated player (top 100 shown; search finds anyone)
        My players = the players THIS device's owner chose to follow
-     Weeks are the feed's own iterations (Launch, Week 1, Week 2 ...): each
-     new iteration the page sees becomes a snapshot, so week-over-week
-     arrows are EA's changes, not ours. If EA changes numbers UNDER the same
-     iteration id (it did: 2,364 → 3,111 players under "1-base"), the stored
-     snapshot is replaced, never kept stale (review finding, 2026-09-12).
+     Weeks are the feed's own iterations (Launch, Week 1 … / roster updates):
+     each new iteration the page sees becomes a snapshot, so week-over-week
+     arrows are the feed's changes, not ours. If a feed changes numbers UNDER
+     the same iteration id (EA did: 2,364 → 3,111 players under "1-base"),
+     the stored snapshot is replaced, never kept stale (review, 2026-09-12).
+     Everything sport-specific lives in SPORTS below; the rest of the file
+     reads SPORT (the active one) and never says "football" itself. The two
+     watchlists are separate keys, so switching sports never touches the other.
      ES5 on purpose: the old iPad in the house must keep working.
      ------------------------------------------------------------------ */
 
-  var STORAGE_KEY = "janafari-v2";
-  var LEGACY_KEY = "our-madden-27-board-v1";
-  var DATA_URL = "data/ratings.json";
-  var HISTORY_URL = "data/history.json";
-  var ABILITIES_URL = "data/abilities.json";   // plain-English meaning of every X-Factor / Superstar name
-  var ABILITY_DEFS = null;                      // {xfactor:{name:text}, superstar:{name:text}} once loaded   // every iteration the Action has seen: {id,label,date,ratings}[]
+  var SPORTS = {
+    nfl: {
+      key: "nfl", game: "Madden 27", icon: "🏈", noun: "NFL",
+      title: "Janafari — Madden 27 Ratings", desc: "Your Madden clubhouse · Madden 27 ratings",
+      storageKey: "janafari-v2", legacyKey: "our-madden-27-board-v1", teamKey: "janafari-team",
+      dataUrl: "data/ratings.json", historyUrl: "data/history.json", defsUrl: "data/abilities.json?v=2", statsDir: "data/stats/",
+      source: "EA", sourceLong: "EA's official Madden 27 ratings feed", sourceLink: "https://www.ea.com/games/madden-nfl/ratings",
+      club: { min: 99, label: "in the 99 Club" },
+      sides: ["offense", "defense", "special"],
+      hasFA: true, facts: true, game3: true,      // free agents in the feed · draft/Super Bowl facts · End Zone Run
+      logo: function (abbr) { return "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png"; },
+      tiers: { x: { short: "X", name: "X-Factor", kicker: "X-FACTOR" }, star: { short: "★", name: "Superstar", kicker: "SUPERSTAR" } },
+      abilitiesLabel: "Abilities", abilitiesQuestion: "What are X-Factor and Superstar abilities?",
+      abilitiesHelp: ["X (red) = X-Factor: a star's signature power. It switches on once he gets hot in a game — a few big plays — and while it's on he's nearly unstoppable at that one thing.",
+                      "★ (grey) = Superstar: always on, a steady boost to one skill. Tap any ability to see what it means. Both come straight from EA's Madden 27 ratings."],
+      abilityFallback: function (x) { return "One of his " + (x ? "X-Factor powers." : "Superstar boosts."); },
+      collegeLabel: "College", backupName: "janafari-backup.json",
+      teams: [
+        { abbr: "ARI", name: "Cardinals", color: "#a40227" }, { abbr: "ATL", name: "Falcons", color: "#a71930" }, { abbr: "BAL", name: "Ravens", color: "#29126f" },
+        { abbr: "BUF", name: "Bills", color: "#00338d" }, { abbr: "CAR", name: "Panthers", color: "#0085ca" }, { abbr: "CHI", name: "Bears", color: "#0b1c3a" },
+        { abbr: "CIN", name: "Bengals", color: "#fb4f14" }, { abbr: "CLE", name: "Browns", color: "#472a08" }, { abbr: "DAL", name: "Cowboys", color: "#002a5c" },
+        { abbr: "DEN", name: "Broncos", color: "#0a2343" }, { abbr: "DET", name: "Lions", color: "#0076b6" }, { abbr: "GB", name: "Packers", color: "#204e32" },
+        { abbr: "HOU", name: "Texans", color: "#021018" }, { abbr: "IND", name: "Colts", color: "#003b75" }, { abbr: "JAX", name: "Jaguars", color: "#007487" },
+        { abbr: "KC", name: "Chiefs", color: "#e31837" }, { abbr: "LAC", name: "Chargers", color: "#0080c6" }, { abbr: "LAR", name: "Rams", color: "#003594" },
+        { abbr: "LV", name: "Raiders", color: "#000000" }, { abbr: "MIA", name: "Dolphins", color: "#008e97" }, { abbr: "MIN", name: "Vikings", color: "#4f2683" },
+        { abbr: "NE", name: "Patriots", color: "#002a5c" }, { abbr: "NO", name: "Saints", color: "#d3bc8d" }, { abbr: "NYG", name: "Giants", color: "#003c7f" },
+        { abbr: "NYJ", name: "Jets", color: "#115740" }, { abbr: "PHI", name: "Eagles", color: "#06424d" }, { abbr: "PIT", name: "Steelers", color: "#000000" },
+        { abbr: "SEA", name: "Seahawks", color: "#002a5c" }, { abbr: "SF", name: "49ers", color: "#aa0000" }, { abbr: "TB", name: "Buccaneers", color: "#bd1c36" },
+        { abbr: "TEN", name: "Titans", color: "#4495d2" }, { abbr: "WSH", name: "Commanders", color: "#5a1414" }
+      ],
+      statLabels: {
+        speed: "Speed", acceleration: "Acceleration", agility: "Agility", strength: "Strength", awareness: "Awareness", jumping: "Jumping",
+        stamina: "Stamina", injury: "Injury", toughness: "Toughness", throwPower: "Throw power", throwAccuracyShort: "Short accuracy",
+        throwAccuracyMid: "Mid accuracy", throwAccuracyDeep: "Deep accuracy", throwOnTheRun: "Throw on the run", throwUnderPressure: "Under pressure",
+        playAction: "Play action", breakSack: "Break sack", carrying: "Carrying", bCVision: "Ball carrier vision", trucking: "Trucking",
+        breakTackle: "Break tackle", jukeMove: "Juke", spinMove: "Spin", stiffArm: "Stiff arm", changeOfDirection: "Change of direction",
+        catching: "Catching", catchInTraffic: "Catch in traffic", spectacularCatch: "Spectacular catch", release: "Release",
+        shortRouteRunning: "Short routes", mediumRouteRunning: "Medium routes", deepRouteRunning: "Deep routes", runBlock: "Run block",
+        passBlock: "Pass block", runBlockPower: "Run block power", runBlockFinesse: "Run block finesse", passBlockPower: "Pass block power",
+        passBlockFinesse: "Pass block finesse", leadBlock: "Lead block", impactBlocking: "Impact blocking", tackle: "Tackle", hitPower: "Hit power",
+        pursuit: "Pursuit", playRecognition: "Play recognition", blockShedding: "Block shedding", finesseMoves: "Finesse moves",
+        powerMoves: "Power moves", manCoverage: "Man coverage", zoneCoverage: "Zone coverage", press: "Press", kickPower: "Kick power",
+        kickAccuracy: "Kick accuracy", kickReturn: "Kick return", runningStyle: "Running style"
+      },
+      hideStats: { injury: 1, toughness: 1, stamina: 1, runningStyle: 1 }
+    },
+    nba: {
+      key: "nba", game: "NBA 2K27", icon: "🏀", noun: "NBA",
+      title: "Janafari — NBA 2K27 Ratings", desc: "Your 2K clubhouse · NBA 2K27 ratings",
+      storageKey: "janafari-nba-v1", legacyKey: null, teamKey: "janafari-nba-team",
+      dataUrl: "data/nba/ratings.json", historyUrl: "data/nba/history.json", defsUrl: "data/nba/badges.json?v=1", statsDir: "data/nba/stats/",
+      source: "2K Ratings", sourceLong: "the NBA 2K27 Play Now database at 2K Ratings", sourceLink: "https://www.2kratings.com/",
+      club: { min: 95, label: "rated 95 or better" },
+      sides: ["guard", "forward", "center"],
+      hasFA: false, facts: false, game3: false,
+      // ESPN's logo slugs are not the NBA's abbreviations for six clubs
+      logo: function (abbr) { var s = { GSW: "gs", NOP: "no", NYK: "ny", SAS: "sa", UTA: "utah", WAS: "wsh" }[abbr] || abbr.toLowerCase(); return "https://a.espncdn.com/i/teamlogos/nba/500/" + s + ".png"; },
+      tiers: { x: { short: "HOF", name: "Hall of Fame badge", kicker: "HALL OF FAME" } },   // Gold is too common to be a card badge (227 of 535 players)
+      abilitiesLabel: "Badges", abilitiesQuestion: "What are 2K badges?",
+      abilitiesHelp: ["Badges are the skills 2K gives a player on top of his numbers — each one makes him better at one thing, like hitting threes off the dribble or finishing through contact.",
+                      "They come in levels: Bronze, Silver, Gold, Hall of Fame and Legend. A purple HOF on a card means he has at least one Hall of Fame badge. Tap any badge to see what it does."],
+      abilityFallback: function () { return "One of his 2K badges."; },
+      collegeLabel: "Before the NBA", backupName: "janafari-nba-backup.json",
+      teams: [
+        { abbr: "ATL", name: "Hawks", color: "#c8102e" }, { abbr: "BOS", name: "Celtics", color: "#007a33" }, { abbr: "BKN", name: "Nets", color: "#000000" },
+        { abbr: "CHA", name: "Hornets", color: "#1d1160" }, { abbr: "CHI", name: "Bulls", color: "#ce1141" }, { abbr: "CLE", name: "Cavaliers", color: "#860038" },
+        { abbr: "DAL", name: "Mavericks", color: "#00538c" }, { abbr: "DEN", name: "Nuggets", color: "#0e2240" }, { abbr: "DET", name: "Pistons", color: "#c8102e" },
+        { abbr: "GSW", name: "Warriors", color: "#1d428a" }, { abbr: "HOU", name: "Rockets", color: "#ce1141" }, { abbr: "IND", name: "Pacers", color: "#002d62" },
+        { abbr: "LAC", name: "Clippers", color: "#c8102e" }, { abbr: "LAL", name: "Lakers", color: "#552583" }, { abbr: "MEM", name: "Grizzlies", color: "#5d76a9" },
+        { abbr: "MIA", name: "Heat", color: "#98002e" }, { abbr: "MIL", name: "Bucks", color: "#00471b" }, { abbr: "MIN", name: "Timberwolves", color: "#0c2340" },
+        { abbr: "NOP", name: "Pelicans", color: "#0c2340" }, { abbr: "NYK", name: "Knicks", color: "#006bb6" }, { abbr: "OKC", name: "Thunder", color: "#007ac1" },
+        { abbr: "ORL", name: "Magic", color: "#0077c0" }, { abbr: "PHI", name: "76ers", color: "#006bb6" }, { abbr: "PHX", name: "Suns", color: "#1d1160" },
+        { abbr: "POR", name: "Trail Blazers", color: "#e03a3e" }, { abbr: "SAC", name: "Kings", color: "#5a2d81" }, { abbr: "SAS", name: "Spurs", color: "#000000" },
+        { abbr: "TOR", name: "Raptors", color: "#ce1141" }, { abbr: "UTA", name: "Jazz", color: "#002b5c" }, { abbr: "WAS", name: "Wizards", color: "#002b5c" }
+      ],
+      statLabels: {
+        threePointShot: "Three-point shot", midRangeShot: "Mid-range shot", closeShot: "Close shot", freeThrow: "Free throw", offensiveConsistency: "Offensive consistency",
+        shotIQ: "Shot IQ", speed: "Speed", strength: "Strength", agility: "Agility", vertical: "Vertical", hustle: "Hustle", stamina: "Stamina", overallDurability: "Durability",
+        layup: "Layup", drivingDunk: "Driving dunk", standingDunk: "Standing dunk", postHook: "Post hook", postFade: "Post fade", postControl: "Post control",
+        drawFoul: "Draw foul", hands: "Hands", ballHandle: "Ball handle", speedWithBall: "Speed with ball", passAccuracy: "Pass accuracy", passVision: "Pass vision",
+        passIQ: "Pass IQ", block: "Block", steal: "Steal", passPerception: "Pass perception", interiorDefense: "Interior defense", perimeterDefense: "Perimeter defense",
+        defensiveConsistency: "Defensive consistency", helpDefenseIQ: "Help defense IQ", defensiveRebound: "Defensive rebound", offensiveRebound: "Offensive rebound",
+        intangibles: "Intangibles", potential: "Potential"
+      },
+      hideStats: { overallDurability: 1, stamina: 1, hustle: 1, intangibles: 1, potential: 1 }
+    }
+  };
+  var SPORT_KEY_STORAGE = "janafari-sport";
+  var sport = "nfl";            // "nfl" | "nba" — set once by boot(), changed only by switchSport()
+  var SPORT = SPORTS.nfl;       // the active sport's config; every sport-specific string or list is read from here
+  var ABILITY_DEFS = null;      // {lines:{name:text}, official:{name:{description,imageUrl}}} once loaded (abilities.json / badges.json)
   var LEAGUE_LIMIT = 100;      // league tab with no search: the top 100
   var SEARCH_LIMIT = 120;      // a search never renders more than this (old iPads froze on 3,000)
   var PAGE = 24;               // cards drawn before "Show more" (portraits are ~120 KB each)
@@ -68,44 +158,22 @@
   };
 
 
-  var nflTeams = [
-    { abbr: "ARI", name: "Cardinals", color: "#a40227" },
-    { abbr: "ATL", name: "Falcons", color: "#a71930" },
-    { abbr: "BAL", name: "Ravens", color: "#29126f" },
-    { abbr: "BUF", name: "Bills", color: "#00338d" },
-    { abbr: "CAR", name: "Panthers", color: "#0085ca" },
-    { abbr: "CHI", name: "Bears", color: "#0b1c3a" },
-    { abbr: "CIN", name: "Bengals", color: "#fb4f14" },
-    { abbr: "CLE", name: "Browns", color: "#472a08" },
-    { abbr: "DAL", name: "Cowboys", color: "#002a5c" },
-    { abbr: "DEN", name: "Broncos", color: "#0a2343" },
-    { abbr: "DET", name: "Lions", color: "#0076b6" },
-    { abbr: "GB", name: "Packers", color: "#204e32" },
-    { abbr: "HOU", name: "Texans", color: "#021018" },
-    { abbr: "IND", name: "Colts", color: "#003b75" },
-    { abbr: "JAX", name: "Jaguars", color: "#007487" },
-    { abbr: "KC", name: "Chiefs", color: "#e31837" },
-    { abbr: "LAC", name: "Chargers", color: "#0080c6" },
-    { abbr: "LAR", name: "Rams", color: "#003594" },
-    { abbr: "LV", name: "Raiders", color: "#000000" },
-    { abbr: "MIA", name: "Dolphins", color: "#008e97" },
-    { abbr: "MIN", name: "Vikings", color: "#4f2683" },
-    { abbr: "NE", name: "Patriots", color: "#002a5c" },
-    { abbr: "NO", name: "Saints", color: "#d3bc8d" },
-    { abbr: "NYG", name: "Giants", color: "#003c7f" },
-    { abbr: "NYJ", name: "Jets", color: "#115740" },
-    { abbr: "PHI", name: "Eagles", color: "#06424d" },
-    { abbr: "PIT", name: "Steelers", color: "#000000" },
-    { abbr: "SEA", name: "Seahawks", color: "#002a5c" },
-    { abbr: "SF", name: "49ers", color: "#aa0000" },
-    { abbr: "TB", name: "Buccaneers", color: "#bd1c36" },
-    { abbr: "TEN", name: "Titans", color: "#4495d2" },
-    { abbr: "WSH", name: "Commanders", color: "#5a1414" }
-  ];
-
-
   var teamColors = {}, knownTeam = {};
-  nflTeams.forEach(function (t) { teamColors[t.abbr] = t.color; knownTeam[t.abbr] = true; });
+  // Point the page at one sport: team lookups, the html[data-sport] hook that shows/hides the
+  // other sport's copy, the document title and the League tab's ball. Data is loaded separately.
+  function applySport(which) {
+    sport = SPORTS[which] ? which : "nfl"; SPORT = SPORTS[sport];
+    teamColors = {}; knownTeam = {};
+    SPORT.teams.forEach(function (t) { teamColors[t.abbr] = t.color; knownTeam[t.abbr] = true; });
+    document.documentElement.setAttribute("data-sport", sport);
+    document.title = SPORT.title;
+    var desc = document.querySelector(".brand-desc"); if (desc) { desc.textContent = SPORT.desc; }
+    var ball = document.querySelector("#tab-league .tab-icon"); if (ball) { ball.textContent = SPORT.icon; }
+    Array.prototype.forEach.call(document.querySelectorAll(".sport-btn"), function (b) {
+      var on = b.getAttribute("data-sport-pick") === sport;
+      b.className = "sport-btn" + (on ? " active" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
 
   /* ---------- tiny DOM helpers ---------- */
   function el(id) { return document.getElementById(id); }
@@ -130,26 +198,36 @@
     if (!inches) { return "—"; }
     return Math.floor(inches / 12) + "'" + (inches % 12) + '"';
   }
-  // Only the 32 clubs have a badge; free agents ("FA") get a neutral monogram, never a 404.
-  function logoUrl(abbr) { return knownTeam[abbr] ? "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png" : null; }
+  // Only the clubs have a badge; free agents ("FA") get a neutral monogram, never a 404.
+  function logoUrl(abbr) { return knownTeam[abbr] ? SPORT.logo(abbr) : null; }
   function teamText(p) { return p.team === "FA" ? "Free agent" : p.team + " · " + p.teamName; }
-  // A player's tier from EA's abilities: "x" = has an X-Factor, "star" = Superstar abilities only, "" = none.
+  // The top tier of an ability/badge: "x" for the headline kind, "star" for the next, "" for none.
+  //   Madden: X-Factor → "x", Superstar → "star".   2K: Legend or Hall of Fame → "x", everything else "" (Gold is too common).
+  function abilityTier(a) {
+    var t = String(a.type || "");
+    if (sport === "nba") { return /legend|hall of fame/i.test(t) ? "x" : ""; }
+    return /x-factor/i.test(t) ? "x" : "star";
+  }
+  function isTop(a) { return abilityTier(a) === "x"; }
   function tierOf(p) {
-    var i, list = p.abilities || [], star = false;
-    for (i = 0; i < list.length; i += 1) { if (/x-factor/i.test(list[i].type)) { return "x"; } star = true; }
+    var i, list = p.abilities || [], star = false, t;
+    for (i = 0; i < list.length; i += 1) { t = abilityTier(list[i]); if (t === "x") { return "x"; } if (t === "star") { star = true; } }
     return star ? "star" : "";
   }
   function badgeNode(p) {
     var tier = tierOf(p); if (!tier) { return null; }
-    var b = textNode("span", "tier-badge tier-" + tier, tier === "x" ? "X" : "★");
-    b.title = tier === "x" ? "X-Factor" : "Superstar"; b.setAttribute("aria-label", tier === "x" ? "X-Factor player" : "Superstar player");
+    var b = textNode("span", "tier-badge tier-" + tier, SPORT.tiers[tier].short);
+    b.title = SPORT.tiers[tier].name; b.setAttribute("aria-label", SPORT.tiers[tier].name + " player");
     return b;
   }
+  // Our plain-English line for an ability or badge (abilities.json keeps xfactor/superstar maps; badges.json keeps one "lines" map).
   function abilityText(a) {
     if (!ABILITY_DEFS) { return null; }
-    var x = /x-factor/i.test(a.type);
-    return (x ? ABILITY_DEFS.xfactor : ABILITY_DEFS.superstar)[a.label] || null;
+    var lines = ABILITY_DEFS.lines || (isTop(a) ? ABILITY_DEFS.xfactor : ABILITY_DEFS.superstar) || {};
+    return lines[a.label] || null;
   }
+  function officialDef(a) { var o = ABILITY_DEFS && (ABILITY_DEFS.official || ABILITY_DEFS.ea); return o ? o[a.label] : null; }
+  function isClub(r) { return r !== null && r >= SPORT.club.min; }
 
   /* ---------- state ---------- */
   function makeDefaultState() { return { version: 2, watchlist: [], snapshots: [] }; }
@@ -168,12 +246,12 @@
   }
   function loadState() {
     var raw = null;
-    try { raw = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    try { raw = window.localStorage.getItem(SPORT.storageKey); } catch (e) {}
     try { state = raw ? JSON.parse(raw) : null; } catch (e) { state = null; }
     if (!validState(state)) { state = makeDefaultState(); }
   }
   function saveState() {
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); return true; }
+    try { window.localStorage.setItem(SPORT.storageKey, JSON.stringify(state)); return true; }
     catch (e) { showToast("Could not save on this device"); return false; }
   }
 
@@ -181,9 +259,9 @@
   // watchlist (matched by name against the real feed); its typed numbers are
   // dropped on purpose — the feed is the only source of ratings now.
   function migrateLegacy() {
-    if (state.watchlist.length) { return; }   // only the list matters; snapshots may already exist from history.json
+    if (!SPORT.legacyKey || state.watchlist.length) { return; }   // only the list matters; snapshots may already exist from history.json
     var raw = null, legacy = null;
-    try { raw = window.localStorage.getItem(LEGACY_KEY); } catch (e) {}
+    try { raw = window.localStorage.getItem(SPORT.legacyKey); } catch (e) {}
     if (!raw) { return; }
     try { legacy = JSON.parse(raw); } catch (e) { return; }
     if (!legacy || !legacy.players) { return; }
@@ -383,7 +461,7 @@
     var r = rating(p.id), parts = changeParts(getChange(p.id)), watched = isWatched(p.id);
     var card = document.createElement("button"), body = document.createElement("div"), meta = document.createElement("div"), right = document.createElement("div"), ovr = document.createElement("span");
     card.type = "button";
-    card.className = "pcard" + (r === 99 ? " is-99" : "") + (watched ? " is-watched" : "");
+    card.className = "pcard" + (isClub(r) ? " is-99" : "") + (watched ? " is-watched" : "");
     card.setAttribute("aria-label", p.name + ", " + p.pos + ", " + teamText(p) + ", overall " + (r === null ? "unknown" : r));
     card.appendChild(buildPortrait(p));
     body.className = "pcard-body";
@@ -421,7 +499,7 @@
     var sub = textNode("span", "player-sub", p.pos + " · " + teamText(p)); var rb = badgeNode(p); if (rb) { sub.insertBefore(rb, sub.firstChild); }
     info.appendChild(sub);
     wrap.appendChild(buildPortrait(p)); wrap.appendChild(info); playerCell.appendChild(wrap);
-    ovrCell.className = "center"; ovrCell.appendChild(textNode("span", "ovr-badge" + (r === 99 ? " ovr-99" : ""), r === null ? "—" : String(r)));
+    ovrCell.className = "center"; ovrCell.appendChild(textNode("span", "ovr-badge" + (isClub(r) ? " ovr-99" : ""), r === null ? "—" : String(r)));
     row.appendChild(textNode("td", "rank-col", String(rank))); row.appendChild(playerCell); row.appendChild(ovrCell);
     if (hasHistory()) {
       changeCell.className = "center col-change"; changeCell.appendChild(textNode("span", "change " + parts.cls, parts.text));
@@ -436,10 +514,10 @@
   /* ---------- the one-line stat strip ---------- */
   function renderSummary() {
     var pool = poolForTab();
-    var club = pool.filter(function (p) { return rating(p.id) === 99; });
+    var club = pool.filter(function (p) { return isClub(rating(p.id)); });
     var movers = pool.map(function (p) { return { p: p, c: getChange(p.id) }; }).filter(function (m) { return m.c !== null && m.c !== 0; });
     movers.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
-    el("clubCount").textContent = String(club.length);
+    el("clubCount").textContent = String(club.length); el("clubLabel").textContent = SPORT.club.label;
     el("trackedCount").textContent = String(tab === "watch" ? state.watchlist.length : DATA.count);
     el("trackedLabel").textContent = tab === "watch" ? (state.watchlist.length === 1 ? "player on my list" : "players on my list") : "players rated";
     el("moverStat").hidden = !movers.length;
@@ -447,10 +525,10 @@
       el("moverValue").textContent = (movers[0].c > 0 ? "+" : "") + movers[0].c;
       el("moverName").textContent = movers[0].p.name.split(" ").pop() + " · biggest mover";
     }
-    // "Updated" is when EA's feed was last pulled — never a snapshot date dressed up as the feed date.
+    // "Updated" is when the feed was last pulled — never a snapshot date dressed up as the feed date.
     var snap = state.snapshots[selectedSnapshot];
     el("sourceStamp").textContent = snap.label + " · updated " + formatDate(DATA.fetched);
-    el("footerStamp").textContent = DATA.game + " · EA feed checked " + formatDate(DATA.fetched) + " · " + DATA.count + " players";
+    el("footerStamp").textContent = DATA.game + " · " + SPORT.source + " checked " + formatDate(DATA.fetched) + " · " + DATA.count + " players";
     el("moreStamp").textContent = " Last checked " + formatDate(DATA.fetched) + " (" + snap.label + ").";
   }
 
@@ -482,7 +560,7 @@
 
   function renderFilterCounts() {
     var query = searchTerm.toLowerCase().replace(/^\s+|\s+$/g, "");
-    var counts = { all: 0, offense: 0, defense: 0, special: 0, stars: 0, movers: 0 };
+    var counts = { all: 0, stars: 0, movers: 0 }; SPORT.sides.forEach(function (s) { counts[s] = 0; });
     poolForTab().forEach(function (p) {
       if (!matchesTeam(p) || !matchesSearch(p, query)) { return; }
       var c = getChange(p.id);
@@ -503,13 +581,13 @@
     var box = el("emptyState");
     box.hidden = count > 0;
     if (count > 0) { return; }
-    var icon = "🏈", title = "No players here", hint = "Try a different button up top.", action = null;
+    var icon = SPORT.icon, title = "No players here", hint = "Try a different button up top.", action = null;
     if (tab === "watch" && !state.watchlist.length) {
-      icon = "⭐"; title = "No players on your list yet"; hint = "Find anyone in the league and tap “Add to my players”. His real EA rating comes with him.";
+      icon = "⭐"; title = "No players on your list yet"; hint = "Find anyone in the league and tap “Add to my players”. His real " + SPORT.game + " rating comes with him.";
       action = { label: "Find players", run: openAdd };
     }
     else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = "Every rating stayed the same."; }
-    else if (activeTeam && tab === "watch") { icon = "🏈"; title = "None of your players are on the " + teamLabel(activeTeam); hint = "Try the League tab to see the whole roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
+    else if (activeTeam && tab === "watch") { icon = SPORT.icon; title = "None of your players are on the " + teamLabel(activeTeam); hint = "Try the League tab to see the whole roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
     else if (searchTerm) { icon = "🔍"; title = "No player called “" + searchTerm + "”"; hint = tab === "watch" ? "He may not be on your list yet — try the League tab." : "Check the spelling."; }
     clear(box);
     box.appendChild(textNode("div", "empty-icon", icon));
@@ -556,7 +634,7 @@
   /* ---------- team picker ---------- */
   function teamLabel(abbr) {
     if (abbr === "FA") { return "Free agents"; }
-    var i; for (i = 0; i < nflTeams.length; i += 1) { if (nflTeams[i].abbr === abbr) { return nflTeams[i].name; } }
+    var i; for (i = 0; i < SPORT.teams.length; i += 1) { if (SPORT.teams[i].abbr === abbr) { return SPORT.teams[i].name; } }
     return abbr || "All teams";
   }
   function renderTeamChip() {
@@ -570,7 +648,7 @@
   }
   function setTeam(abbr) {
     activeTeam = abbr || "";
-    try { if (activeTeam) { localStorage.setItem("janafari-team", activeTeam); } else { localStorage.removeItem("janafari-team"); } } catch (e) {}
+    try { if (activeTeam) { localStorage.setItem(SPORT.teamKey, activeTeam); } else { localStorage.removeItem(SPORT.teamKey); } } catch (e) {}
     renderTeamChip(); resetAndRedraw();
   }
   function buildTeamGrid() {
@@ -587,8 +665,8 @@
       return b;
     }
     grid.appendChild(cell("", "All teams", "team-all"));
-    nflTeams.forEach(function (t) { grid.appendChild(cell(t.abbr, t.name)); });
-    grid.appendChild(cell("FA", "Free agents"));
+    SPORT.teams.forEach(function (t) { grid.appendChild(cell(t.abbr, t.name)); });
+    if (SPORT.hasFA) { grid.appendChild(cell("FA", "Free agents")); }
   }
   function openTeams(evt) { buildTeamGrid(); showModal("teamModal", evt && evt.currentTarget ? evt.currentTarget : null); }
 
@@ -600,25 +678,11 @@
   function render() { renderWeekSelect(); renderTeamChip(); redraw(); }
   function resetAndRedraw() { shownLimit = PAGE; redraw(); }
 
-  var STAT_LABELS = {
-    speed: "Speed", acceleration: "Acceleration", agility: "Agility", strength: "Strength", awareness: "Awareness", jumping: "Jumping",
-    stamina: "Stamina", injury: "Injury", toughness: "Toughness", throwPower: "Throw power", throwAccuracyShort: "Short accuracy",
-    throwAccuracyMid: "Mid accuracy", throwAccuracyDeep: "Deep accuracy", throwOnTheRun: "Throw on the run", throwUnderPressure: "Under pressure",
-    playAction: "Play action", breakSack: "Break sack", carrying: "Carrying", bCVision: "Ball carrier vision", trucking: "Trucking",
-    breakTackle: "Break tackle", jukeMove: "Juke", spinMove: "Spin", stiffArm: "Stiff arm", changeOfDirection: "Change of direction",
-    catching: "Catching", catchInTraffic: "Catch in traffic", spectacularCatch: "Spectacular catch", release: "Release",
-    shortRouteRunning: "Short routes", mediumRouteRunning: "Medium routes", deepRouteRunning: "Deep routes", runBlock: "Run block",
-    passBlock: "Pass block", runBlockPower: "Run block power", runBlockFinesse: "Run block finesse", passBlockPower: "Pass block power",
-    passBlockFinesse: "Pass block finesse", leadBlock: "Lead block", impactBlocking: "Impact blocking", tackle: "Tackle", hitPower: "Hit power",
-    pursuit: "Pursuit", playRecognition: "Play recognition", blockShedding: "Block shedding", finesseMoves: "Finesse moves",
-    powerMoves: "Power moves", manCoverage: "Man coverage", zoneCoverage: "Zone coverage", press: "Press", kickPower: "Kick power",
-    kickAccuracy: "Kick accuracy", kickReturn: "Kick return", runningStyle: "Running style"
-  };
-  var HIDE_STATS = { injury: 1, toughness: 1, stamina: 1, runningStyle: 1 };
+  // attribute labels and the ones a kid does not need to see live in SPORTS[...].statLabels / hideStats
 
   function loadStats(team, cb) {
     if (statsCache[team]) { cb(statsCache[team]); return; }
-    fetchJson("data/stats/" + team + ".json", function (sheet) { statsCache[team] = sheet; cb(sheet); }, function () { cb(null); });
+    fetchJson(SPORT.statsDir + team + ".json", function (sheet) { statsCache[team] = sheet; cb(sheet); }, function () { cb(null); });
   }
 
   function infoRow(label, valueNode) {
@@ -635,12 +699,12 @@
 
   function openPlayer(p, opener) {
     var token = ++openRequest;   // any stats response that arrives for an older open is dropped
-    var facts = playerBio[slugify(p.name)] || {};
+    var facts = (SPORT.facts && playerBio[slugify(p.name)]) || {};
     var r = rating(p.id), change = getChange(p.id), parts = changeParts(change);
     var hero = el("bioHero"), list = el("bioList"), statsBox = el("bioStats"), watchBtn = el("watchToggle");
     el("playerTitle").textContent = p.name;
     var tier = tierOf(p);
-    el("playerKicker").textContent = (p.posName || p.pos) + "  ·  " + (p.team === "FA" ? "FREE AGENT" : p.teamFull.toUpperCase()) + (tier === "x" ? "  ·  X-FACTOR" : (tier === "star" ? "  ·  SUPERSTAR" : ""));
+    el("playerKicker").textContent = (p.posName || p.pos) + "  ·  " + (p.team === "FA" ? "FREE AGENT" : p.teamFull.toUpperCase()) + (tier ? "  ·  " + SPORT.tiers[tier].kicker : "");
 
     clear(hero);
     hero.style.background = "linear-gradient(150deg, " + (teamColors[p.team] || "#174a6e") + " 0%, rgba(0,0,0,.55) 140%)";
@@ -654,29 +718,32 @@
 
     clear(list);
     list.appendChild(infoRow("Age", dd(p.age ? String(p.age) : "—")));
-    list.appendChild(infoRow("Size", dd(heightText(p.height) + (p.weight ? ", " + p.weight + " lb" : ""))));
-    list.appendChild(infoRow("College", dd(p.college || facts.college || "—")));
+    list.appendChild(infoRow("Size", dd(heightText(p.height) + (p.weight ? ", " + p.weight + " lb" : "") + (p.wingspan ? " · " + heightText(p.wingspan) + " wingspan" : ""))));
+    list.appendChild(infoRow(SPORT.collegeLabel, dd(p.college || facts.college || "—")));
     list.appendChild(infoRow("Years pro", dd(typeof p.yearsPro === "number" ? (p.yearsPro === 0 ? "Rookie" : String(p.yearsPro)) : "—")));
+    if (p.archetype) { list.appendChild(infoRow("Build", dd(p.archetype))); }
+    if (p.hometown) { list.appendChild(infoRow("Hometown", dd(p.hometown))); }
     if (p.abilities && p.abilities.length) {
       var ab = document.createElement("dd"), row = document.createElement("div"), dt = document.createElement("div"), info = document.createElement("button"), help = document.createElement("div");
       var defBox = document.createElement("div"); defBox.className = "ability-def"; defBox.hidden = true;
       p.abilities.forEach(function (a) {
-        var x = /x-factor/i.test(a.type), chip = document.createElement("button");
-        chip.type = "button"; chip.className = "ability" + (x ? " ability-x" : ""); chip.setAttribute("aria-expanded", "false");
-        chip.appendChild(textNode("span", "ability-icon", x ? "X" : "★")); chip.appendChild(document.createTextNode(a.label));
-        chip.title = (x ? "X-Factor: " : "Superstar: ") + a.label + " — tap for what it means";
+        var x = isTop(a), chip = document.createElement("button"), kind = String(a.type || "");
+        var badgeTier = sport === "nba" ? kind.toLowerCase().replace("hall of fame", "hof") : "";
+        chip.type = "button"; chip.className = "ability" + (x ? " ability-x" : "") + (badgeTier ? " ability-" + badgeTier : ""); chip.setAttribute("aria-expanded", "false");
+        chip.appendChild(textNode("span", "ability-icon", sport === "nba" ? kind.charAt(0).toUpperCase() : (x ? "X" : "★"))); chip.appendChild(document.createTextNode(a.label));
+        chip.title = kind + ": " + a.label + " — tap for what it means";
         chip.addEventListener("click", function () {
           var open = chip.getAttribute("aria-expanded") === "true";
           Array.prototype.forEach.call(ab.querySelectorAll(".ability"), function (c) { c.setAttribute("aria-expanded", "false"); });
           if (open) { defBox.hidden = true; return; }
           chip.setAttribute("aria-expanded", "true");
           clear(defBox);
-          var ea = ABILITY_DEFS && ABILITY_DEFS.ea && ABILITY_DEFS.ea[a.label], head = document.createElement("div"); head.className = "ability-def-head";
+          var ea = officialDef(a), head = document.createElement("div"); head.className = "ability-def-head";
           if (ea && ea.imageUrl) { var art = document.createElement("img"); art.className = "ability-art"; art.src = ea.imageUrl; art.alt = ""; art.addEventListener("error", function () { if (art.parentNode) { art.parentNode.removeChild(art); } }); head.appendChild(art); }
-          head.appendChild(textNode("b", "", (x ? "X-Factor · " : "Superstar · ") + a.label));
+          head.appendChild(textNode("b", "", kind + " · " + a.label + (a.category ? " · " + a.category : "")));
           defBox.appendChild(head);
-          defBox.appendChild(textNode("p", "", abilityText(a) || (ea && ea.description) || "One of his " + (x ? "X-Factor powers." : "Superstar boosts.")));
-          if (ea && ea.description && abilityText(a)) { defBox.appendChild(textNode("p", "ability-ea", "EA says: " + ea.description)); }
+          defBox.appendChild(textNode("p", "", abilityText(a) || (ea && ea.description) || SPORT.abilityFallback(x)));
+          if (ea && ea.description && abilityText(a)) { defBox.appendChild(textNode("p", "ability-ea", SPORT.source + " says: " + ea.description)); }
           defBox.hidden = false;
         });
         ab.appendChild(chip);
@@ -684,13 +751,12 @@
       ab.appendChild(defBox);
       row.className = "bio-row bio-row-abilities";
       dt.className = "bio-dt-with-info";
-      dt.appendChild(document.createTextNode("Abilities"));
-      info.type = "button"; info.className = "info-btn"; info.setAttribute("aria-label", "What are X-Factor and Superstar abilities?"); info.setAttribute("aria-expanded", "false");
+      dt.appendChild(document.createTextNode(SPORT.abilitiesLabel));
+      info.type = "button"; info.className = "info-btn"; info.setAttribute("aria-label", SPORT.abilitiesQuestion); info.setAttribute("aria-expanded", "false");
       info.appendChild(textNode("span", "", "i"));
       dt.appendChild(info);
       help.className = "ability-help"; help.hidden = true;
-      help.appendChild(textNode("p", "", "X (red) = X-Factor: a star's signature power. It switches on once he gets hot in a game — a few big plays — and while it's on he's nearly unstoppable at that one thing."));
-      help.appendChild(textNode("p", "", "★ (grey) = Superstar: always on, a steady boost to one skill. Tap any ability to see what it means. Both come straight from EA's Madden 27 ratings."));
+      SPORT.abilitiesHelp.forEach(function (line) { help.appendChild(textNode("p", "", line)); });
       info.addEventListener("click", function () { var open = help.hidden; help.hidden = !open; info.setAttribute("aria-expanded", open ? "true" : "false"); });
       var ddWrap = document.createElement("dd"); ddWrap.appendChild(ab); ddWrap.appendChild(help);
       row.appendChild(dt); row.appendChild(ddWrap);
@@ -706,21 +772,21 @@
     }
 
     clear(statsBox);
-    statsBox.appendChild(textNode("div", "kicker", "Top attributes · latest EA numbers"));
+    statsBox.appendChild(textNode("div", "kicker", "Top attributes · latest " + SPORT.source + " numbers"));
     statsBox.appendChild(textNode("p", "modal-copy", "Loading attributes…"));
     loadStats(p.team, function (sheet) {
       if (token !== openRequest) { return; }   // the reader has moved on to another player
       clear(statsBox);
-      statsBox.appendChild(textNode("div", "kicker", "Top attributes · latest EA numbers"));
+      statsBox.appendChild(textNode("div", "kicker", "Top attributes · latest " + SPORT.source + " numbers"));
       var entry = sheet && sheet[String(p.id)];
       if (!entry) { statsBox.appendChild(textNode("p", "modal-copy", "Attributes are not available right now.")); return; }
-      var keys = Object.keys(entry.stats).filter(function (k) { return !HIDE_STATS[k]; });
+      var keys = Object.keys(entry.stats).filter(function (k) { return !SPORT.hideStats[k]; });
       keys.sort(function (a, b) { return entry.stats[b] - entry.stats[a]; });
       keys.slice(0, 8).forEach(function (k) {
         var row = document.createElement("div"), bar = document.createElement("div"), fill = document.createElement("span");
         var d = entry.diffs && entry.diffs[k];
         row.className = "stat-row";
-        row.appendChild(textNode("span", "stat-label", STAT_LABELS[k] || k));
+        row.appendChild(textNode("span", "stat-label", SPORT.statLabels[k] || k));
         bar.className = "stat-bar"; fill.className = "stat-fill" + (entry.stats[k] >= 90 ? " stat-elite" : ""); fill.style.width = entry.stats[k] + "%";
         bar.appendChild(fill); row.appendChild(bar);
         row.appendChild(textNode("span", "stat-value", String(entry.stats[k]) + (d ? (d > 0 ? " ▲" + d : " ▼" + Math.abs(d)) : "")));
@@ -749,7 +815,7 @@
     var list = el("addResults"), status = el("addStatus");
     var q = query.toLowerCase().replace(/^\s+|\s+$/g, "");
     clear(list);
-    if (!q) { status.textContent = "Type a name, team or position — every EA-rated player is here."; return; }
+    if (!q) { status.textContent = "Type a name, team or position — every " + SPORT.game + " player is here."; return; }
     var hits = DATA.players.filter(function (p) { return matchesSearch(p, q); }).slice(0, 30);
     status.textContent = hits.length ? hits.length + (hits.length === 30 ? "+" : "") + " player" + (hits.length === 1 ? "" : "s") + " — tap one to see his card" : "No player called “" + query + "”";
     hits.forEach(function (p) {
@@ -761,7 +827,7 @@
       info.appendChild(textNode("small", "", p.pos + " · " + (p.team === "FA" ? "Free agent" : p.teamFull)));
       row.appendChild(info);
       var live = rating(p.id) === null ? p.ovr : rating(p.id);
-      row.appendChild(textNode("span", "ovr-badge" + (live === 99 ? " ovr-99" : ""), String(live)));
+      row.appendChild(textNode("span", "ovr-badge" + (isClub(live) ? " ovr-99" : ""), String(live)));
       row.addEventListener("click", function () { closeModal("addModal"); openPlayer(p, el("addButton")); });
       list.appendChild(row);
     });
@@ -774,14 +840,14 @@
     var btn = el("updateButton");
     btn.disabled = true;
     showToast("Checking for new ratings…");
-    fetchJson(DATA_URL + "?t=" + Date.now(), function (doc) {
+    fetchJson(SPORT.dataUrl + "?t=" + Date.now(), function (doc) {
       btn.disabled = false;
       if (!validFeed(doc)) { showToast("Could not read the ratings file"); return; }
       useData(doc);
       var outcome = ensureSnapshot();
       if (outcome === "new") { selectedSnapshot = state.snapshots.length - 1; saveState(); render(); showToast("New ratings week: " + doc.iteration.label); }
       else if (outcome === "updated") { saveState(); render(); showToast("Ratings updated — " + doc.iteration.label + ", " + formatDate(doc.fetched)); }
-      else { redraw(); showToast("Already up to date — EA checked " + formatDate(doc.fetched)); }
+      else { redraw(); showToast("Already up to date — " + SPORT.source + " checked " + formatDate(doc.fetched)); }
     }, function () { btn.disabled = false; showToast("Could not reach the ratings file. Check the internet."); });
   }
 
@@ -836,11 +902,12 @@
     toastTimer = window.setTimeout(function () { node.className = "toast"; }, 2600);
   }
   function exportBackup() {
+    state.sport = sport;   // a backup says which list it is, so it can never be restored onto the other sport
     var json = JSON.stringify(state, null, 2);
     try {
       var blob = new Blob([json], { type: "application/json" });
       var url = window.URL.createObjectURL(blob), link = document.createElement("a");
-      link.href = url; link.download = "janafari-backup.json";
+      link.href = url; link.download = SPORT.backupName;
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
       window.setTimeout(function () { window.URL.revokeObjectURL(url); }, 1000);
       showToast("Backup ready");
@@ -856,6 +923,9 @@
       var imported;
       try {
         imported = JSON.parse(reader.result);
+        if (imported && imported.sport && SPORTS[imported.sport] && imported.sport !== sport) {
+          showToast("That backup is for " + SPORTS[imported.sport].game + " — switch sports first"); el("importInput").value = ""; return;
+        }
         if (validState(imported)) { state = imported; }
         else if (imported && imported.version === 1 && imported.players) {   // a v1 backup: keep its names only
           state = makeDefaultState();
@@ -888,24 +958,28 @@
      there is never a second sheet stacked under an invisible modal. */
   var TOUR_KEY = "janafari-tour-v1";   // its own key: never the watchlist or history keys
   var tourStep = 0;
-  var TOUR = [
-    { title: "Find a player", copy: "Tap ＋ Add — it's on the bottom bar on a phone, top-right on an iPad or PC — and type a name, a team or a position.",
-      art: '<div class="tour-tabbar"><span><i>★</i>My players</span><span><i>🏈</i>League</span><span class="hot"><i>＋</i>Add</span></div>' },
-    { title: "Add him to My players", copy: "Open his card and tap ☆ Add to my players. He shows up under ★ My players with his real EA rating.",
-      art: '<div class="tour-search"><span class="fake-input">⌕ Search the league…</span><div class="fake-row"><span class="portrait help-portrait" style="width:36px;height:36px"><span class="portrait-mono" style="line-height:32px;font-size:14px">J</span></span><b>Player name</b><span class="tour-pill">☆ Add to my players</span></div></div>' },
-    { title: "Read the rating", copy: "The big number is OVR — overall rating. 99 is the best. Tap any card for the player's position, age, college, abilities and top skills.",
-      art: '<div class="help-card"><span class="portrait help-portrait"><span class="portrait-mono">J</span></span><span class="help-card-body"><b>Player name</b><span><i class="pos-pill">QB</i> Team</span></span><span class="help-card-ovr"><b>OVR</b><small>overall</small></span></div>' }
-  ];
+  function tourSteps() {
+    var nba = sport === "nba";
+    return [
+      { title: "Find a player", copy: "Tap ＋ Add — it's on the bottom bar on a phone, top-right on an iPad or PC — and type a name, a team or a position.",
+        art: '<div class="tour-tabbar"><span><i>★</i>My players</span><span><i>' + SPORT.icon + '</i>League</span><span class="hot"><i>＋</i>Add</span></div>' },
+      { title: "Add him to My players", copy: "Open his card and tap ☆ Add to my players. He shows up under ★ My players with his real " + SPORT.game + " rating.",
+        art: '<div class="tour-search"><span class="fake-input">⌕ Search the league…</span><div class="fake-row"><span class="portrait help-portrait" style="width:36px;height:36px"><span class="portrait-mono" style="line-height:32px;font-size:14px">J</span></span><b>Player name</b><span class="tour-pill">☆ Add to my players</span></div></div>' },
+      { title: "Read the rating", copy: "The big number is OVR — overall rating. 99 is the best. Tap any card for the player's position, age, " + (nba ? "size, badges" : "college, abilities") + " and top skills.",
+        art: '<div class="help-card"><span class="portrait help-portrait"><span class="portrait-mono">J</span></span><span class="help-card-body"><b>Player name</b><span><i class="pos-pill">' + (nba ? "PG" : "QB") + '</i> Team</span></span><span class="help-card-ovr"><b>OVR</b><small>overall</small></span></div>' }
+    ];
+  }
   function tourState() { try { return localStorage.getItem(TOUR_KEY) || ""; } catch (e) { return ""; } }
   function setTourState(v) { try { localStorage.setItem(TOUR_KEY, v); } catch (e) {} }
   function renderTour() {
-    var step = TOUR[tourStep];
+    var TOUR = tourSteps(), step = TOUR[tourStep];
     el("tourStep").textContent = "Step " + (tourStep + 1) + " of " + TOUR.length;
     el("tourTitle").textContent = step.title;
     el("tourCopy").textContent = step.copy;
     el("tourArt").innerHTML = step.art;
     el("tourBack").hidden = tourStep === 0;
     el("tourNext").textContent = tourStep === TOUR.length - 1 ? "Finish" : "Next";
+    el("tourNext").setAttribute("data-last", tourStep === TOUR.length - 1 ? "1" : "0");
   }
   function openTour(opener) {
     tourStep = 0; renderTour();
@@ -936,7 +1010,7 @@
     else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Filters, team and search cleared"); }
     else if (what === "refresh") { checkRatings(); }
     else if (what === "backup") { showModal("moreModal", el("moreButton")); }
-    else if (what === "game") { openGame(el("helpButton").offsetWidth ? el("helpButton") : el("moreButton")); }
+    else if (what === "game") { if (SPORT.game3) { openGame(el("helpButton").offsetWidth ? el("helpButton") : el("moreButton")); } }
   }
 
   /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
@@ -956,7 +1030,7 @@
   // the top bar (3.2 s). Tapping him opens End Zone Run. He never runs over an open sheet or a hidden tab.
   function eggSprint() {
     var egg = el("eggRunner");
-    if (!egg || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
+    if (!egg || !SPORT.game3 || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
     egg.hidden = false; egg.className = "egg-runner";
     window.setTimeout(function () { egg.className = "egg-runner run"; }, 30);
     window.setTimeout(function () { if (egg.className.indexOf("run") !== -1) { egg.hidden = true; egg.className = "egg-runner"; } }, 3600);
@@ -998,6 +1072,9 @@
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
     el("teamChip").addEventListener("click", openTeams);
+    Array.prototype.forEach.call(document.querySelectorAll(".sport-btn"), function (b) {
+      b.addEventListener("click", function () { switchSport(b.getAttribute("data-sport-pick")); });
+    });
     el("helpButton").addEventListener("click", function (e) { openHelp(e.currentTarget); });
     el("playEgg").addEventListener("click", function (e) { openGame(e.currentTarget); });
     el("eggRunner").addEventListener("click", function (e) { var egg = e.currentTarget; egg.hidden = true; egg.className = "egg-runner"; openGame(el("moreButton")); });
@@ -1006,7 +1083,7 @@
     el("helpMore").addEventListener("click", function () { openHelp(el("moreButton")); });
     el("inviteTour").addEventListener("click", function (e) { openTour(e.currentTarget); });
     el("tourStart").addEventListener("click", function () { openTour(el("helpButton")); });
-    el("tourNext").addEventListener("click", function () { if (tourStep < TOUR.length - 1) { tourStep += 1; renderTour(); el("tourNext").focus(); } else { endTour("done"); } });
+    el("tourNext").addEventListener("click", function () { if (el("tourNext").getAttribute("data-last") !== "1") { tourStep += 1; renderTour(); el("tourNext").focus(); } else { endTour("done"); } });
     el("tourBack").addEventListener("click", function () { if (tourStep > 0) { tourStep -= 1; renderTour(); el("tourBack").hidden ? el("tourNext").focus() : el("tourBack").focus(); } });
     el("tourSkip").addEventListener("click", function () { endTour("skipped"); });
     Array.prototype.forEach.call(document.querySelectorAll(".help-go"), function (b) { b.addEventListener("click", function () { helpGo(b.getAttribute("data-go")); }); });
@@ -1061,31 +1138,61 @@
     box.appendChild(textNode("p", "empty-hint", hint));
     var b = textNode("button", "button button-gold", "Try again"); b.type = "button"; b.addEventListener("click", function () { window.location.reload(); }); box.appendChild(b);
   }
-  function boot() {
+  var booted = false;
+  // Load one sport's feed, history and definitions, then draw. Called at boot and on every switch;
+  // events are bound exactly once. The other sport's watchlist and weeks are untouched (separate keys).
+  function loadSport(which) {
+    applySport(which);
+    try { localStorage.setItem(SPORT_KEY_STORAGE, sport); } catch (e) {}
+    DATA = null; byId = {}; statsCache = {}; ABILITY_DEFS = null; searchTerm = ""; activeFilter = "all"; activeTeam = ""; shownLimit = PAGE; selectedSnapshot = 0;
+    el("searchInput").value = "";
+    el("loading").hidden = false; el("loading").className = "empty-state"; clear(el("loading"));
+    el("loading").appendChild(textNode("div", "empty-icon", SPORT.icon)); el("loading").appendChild(textNode("strong", "empty-title", "Loading " + SPORT.game + " ratings…"));
+    clear(el("playerCards")); clear(el("playerRows")); el("emptyState").hidden = true; el("moreRow").hidden = true; el("boardNote").hidden = true;
     loadState();
-    try { var t = localStorage.getItem("janafari-tab"); if (t === "league" || t === "watch") { tab = t; } } catch (e) {}
-    try { var v = localStorage.getItem("janafari-view"); if (v === "list" || v === "cards") { viewMode = v; } } catch (e) {}
-    try { var tm = localStorage.getItem("janafari-team"); if (tm && (knownTeam[tm] || tm === "FA")) { activeTeam = tm; } } catch (e) {}
-    fetchJson(DATA_URL, function (doc) {
-      if (!validFeed(doc)) { failBoot("The ratings file looks wrong", "The page loaded, but EA's ratings file could not be read. Try again in a minute."); return; }
+    try { var tm = localStorage.getItem(SPORT.teamKey); if (tm && (knownTeam[tm] || (SPORT.hasFA && tm === "FA"))) { activeTeam = tm; } } catch (e) {}
+    var loading = sport;   // a second switch while this one is in flight: the late reply is dropped
+    fetchJson(SPORT.dataUrl, function (doc) {
+      if (loading !== sport) { return; }
+      if (!validFeed(doc)) { failBoot("The ratings file looks wrong", "The page loaded, but the " + SPORT.game + " ratings file could not be read. Try again in a minute."); return; }
       useData(doc);
       migrateLegacy();
-      state.watchlist = state.watchlist.filter(function (id, i, arr) { return arr.indexOf(id) === i; });
+      state.watchlist = state.watchlist.filter(function (id, i, arr) { return byId[id] && arr.indexOf(id) === i; });
       var start = function (history) {
+        if (loading !== sport) { return; }
         var dirty = mergeHistory(history);
         if (ensureSnapshot() !== "same") { dirty = true; }
         if (dirty) { saveState(); }
         selectedSnapshot = state.snapshots.length - 1;
         if (!state.watchlist.length && tab === "watch") { tab = "league"; }
-        bindEvents();
+        if (!booted) { bindEvents(); booted = true; }
         render();
         el("loading").hidden = true;
       };
-      fetchJson(HISTORY_URL + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
-      fetchJson(ABILITIES_URL + "?v=2", function (defs) { if (defs && defs.xfactor && defs.superstar) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
+      fetchJson(SPORT.historyUrl + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
+      fetchJson(SPORT.defsUrl, function (defs) { if (loading === sport && defs && (defs.lines || (defs.xfactor && defs.superstar))) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
     }, function () {
+      if (loading !== sport) { return; }
       failBoot("Could not load the ratings", "Check the internet and try again. The ratings file lives with this page.");
     });
+  }
+  function switchSport(which) {
+    if (!SPORTS[which] || which === sport) { return; }
+    ["gameModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal);
+    loadSport(which);
+    // a ?sport= in the address would win again on reload, so drop it: the switch is now the choice
+    try { if (window.history && window.history.replaceState && /[?&]sport=/.test(window.location.search)) { window.history.replaceState(null, "", window.location.pathname + window.location.hash); } } catch (e) {}
+    window.scrollTo(0, 0);
+    showToast(SPORTS[which].icon + " " + SPORTS[which].game);
+  }
+  function boot() {
+    try { var t = localStorage.getItem("janafari-tab"); if (t === "league" || t === "watch") { tab = t; } } catch (e) {}
+    try { var v = localStorage.getItem("janafari-view"); if (v === "list" || v === "cards") { viewMode = v; } } catch (e) {}
+    // ?sport=nba in the address wins (a link straight to basketball); otherwise the last sport used; otherwise football
+    var pick = null, m = /[?&]sport=(nfl|nba)\b/.exec(window.location.search || "");
+    if (m) { pick = m[1]; }
+    if (!pick) { try { pick = localStorage.getItem(SPORT_KEY_STORAGE); } catch (e) {} }
+    loadSport(SPORTS[pick] ? pick : "nfl");
   }
 
   boot();

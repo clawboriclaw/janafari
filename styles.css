@@ -1,6 +1,8 @@
 /* ==========================================================================
-   Janafari — Madden 27 ratings tracker
+   Janafari — Madden 27 + NBA 2K27 ratings tracker
    v3 (2026-09-12): one stylesheet, three breakpoints, no overlap.
+   v4 (2026-09-19): a sport switch in the masthead; html[data-sport] shows one
+   sport's copy and hides the other's (elements tagged data-sport="nfl|nba").
      phone   ≤ 600px   one column of row-cards, bottom tab bar, sticky search
      tablet  601–1024  header in one row, search on its own row, 2–3 columns
      desktop > 1024    one-row toolbar, 4 columns, 1240px wrap
@@ -89,6 +91,21 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .header-actions { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-flex: 0 0 auto; flex: 0 0 auto; }
 .header-actions > * + * { margin-left: 8px; }
+
+/* ---------- sport switch: 🏈 Madden | 🏀 NBA 2K ----------
+   Sits between the brand and the buttons from 601px up; on a phone it drops to its own full-width
+   row under the brand (the masthead wraps), so nothing crowds the wordmark. */
+html[data-sport="nba"] [data-sport="nfl"], html[data-sport="nfl"] [data-sport="nba"] { display: none !important; }
+.sport-switch { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-flex: 0 0 auto; flex: 0 0 auto; margin: 0 12px; padding: 3px; border-radius: 14px; background: rgba(255,255,255,.1); }
+.sport-btn {
+  display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center;
+  min-height: 38px; padding: 0 12px; border: 0; border-radius: 11px; background: transparent;
+  color: rgba(255,255,255,.75); font-weight: 800; font-size: 14px; white-space: nowrap;
+}
+.sport-btn .sport-icon { font-size: 18px; line-height: 1; }
+.sport-btn .sport-label { margin-left: 6px; }
+.sport-btn.active { background: #fdbb30; background: var(--gold); color: #0b1f3a; color: var(--gold-ink); }
+.sport-btn:active { -webkit-transform: scale(.97); transform: scale(.97); }
 
 .button {
   display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex;
@@ -379,6 +396,7 @@ body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
 .tier-badge { -webkit-flex: 0 0 auto; flex: 0 0 auto; display: inline-block; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; font: 900 11px/18px "Arial Narrow", Arial, sans-serif; text-align: center; letter-spacing: 0; }
 .tier-x { background: #ba0c2f; background: var(--scarlet); color: #fff; }
 .tier-star { background: #6b7a8c; color: #fff; }
+html[data-sport="nba"] .tier-x { background: #5a2d81; }   /* a Hall of Fame badge is purple in 2K, not red */
 .player-sub .tier-badge { margin-right: 6px; vertical-align: middle; }
 .ability { border: 0; cursor: pointer; text-align: left; min-height: 44px; display: -webkit-inline-box; display: -webkit-inline-flex; display: inline-flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; }   /* every control is 44px, chips included */
 .ability .ability-icon { display: inline-block; min-width: 14px; margin-right: 5px; border-radius: 4px; background: rgba(0,0,0,.12); color: inherit; font-size: 10px; line-height: 14px; text-align: center; }
@@ -393,6 +411,12 @@ body.modal-open { position: fixed; left: 0; right: 0; overflow: hidden; }
 .bio-year, .bio-ring, .ability { display: inline-block; margin: 0 6px 6px 0; padding: 3px 8px; border-radius: 6px; background: #f4f6f9; background: var(--surface-2); font-size: 12px; font-weight: 700; }
 .bio-ring { background: #fdbb30; background: var(--gold); color: #0b1f3a; }
 .ability-x { background: #ba0c2f; background: var(--scarlet); color: #fff; }
+/* 2K badge levels, coloured the way the game colours them */
+.ability-bronze { background: #b8763a; color: #fff; }
+.ability-silver { background: #9aa5b1; color: #0b1f3a; }
+.ability-gold { background: #d4a017; color: #0b1f3a; }
+.ability-hof { background: #5a2d81; color: #fff; }
+.ability-legend { background: #1b1b1b; color: #fdbb30; }
 .bio-stats { margin-top: 16px; }
 .bio-stats .kicker { margin-bottom: 8px; }
 .stat-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; padding: 6px 0; }
@@ -523,7 +547,9 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
   .header-actions .label { display: none; }
   .header-actions .button { width: 44px; padding: 0; }
   .header-actions #addButton, .header-actions #updateButton { display: none; }   /* Add is in the tab bar; Refresh is in More */
-  .masthead { min-height: 52px; padding: 2px 0; }
+  .masthead { min-height: 52px; padding: 2px 0; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+  .sport-switch { -webkit-box-ordinal-group: 4; -webkit-order: 3; order: 3; -webkit-flex: 1 1 100%; flex: 1 1 100%; margin: 2px 0 6px; }
+  .sport-btn { -webkit-box-flex: 1; -webkit-flex: 1 1 0; flex: 1 1 0; }
   .statline { padding-bottom: 4px; }
   .board { padding-top: 2px; }
   .tabs {
@@ -552,6 +578,10 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
 }
 
 /* ---------- tablet ---------- */
+/* The switch shows just its balls until desktop; Add/Refresh keep only their icons below 860px so the
+   masthead stays one line (at 820px the labelled switch ran into the wordmark). */
+@media (min-width: 601px) and (max-width: 1024px) { .sport-btn .sport-label { display: none; } .sport-btn { padding: 0 11px; } }
+@media (min-width: 601px) and (max-width: 860px) { .header-actions .label { display: none; } .header-actions .button { width: 44px; padding: 0; } }
 @media (min-width: 601px) {
   :root { --gutter: 20px; }
   .masthead { min-height: 60px; }

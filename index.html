@@ -6,10 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#041c38">
-  <title>Janafari — Madden 27 Ratings</title>
+  <title>Janafari — Madden 27 &amp; NBA 2K27 Ratings</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 role=%22img%22 aria-label=%22Janafari J%22%3E%3Crect x=%222%22 y=%222%22 width=%2260%22 height=%2260%22 rx=%2212%22 fill=%22%23041c38%22 stroke=%22%23fdbb30%22 stroke-width=%224%22/%3E%3Crect x=%229%22 y=%229%22 width=%2246%22 height=%2246%22 rx=%228%22 fill=%22none%22 stroke=%22%23fdbb30%22 stroke-width=%221.5%22 stroke-dasharray=%223 3%22 opacity=%22.7%22/%3E%3Cpath d=%22M22 13 H48 V22 H43 V39 Q43 51 30 51 Q16 51 16 39 V33 H25 V39 Q25 44 30 44 Q34 44 34 39 V22 H22 Z%22 fill=%22%23fff%22/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=30">
+  <link rel="stylesheet" href="styles.css?v=31">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -37,6 +37,10 @@
             <span class="brand-desc">Your Madden clubhouse · Madden 27 ratings</span>
           </span>
         </a>
+        <div class="sport-switch" role="group" aria-label="Sport">
+          <button class="sport-btn active" type="button" data-sport-pick="nfl" aria-pressed="true" title="Madden 27 ratings"><span class="sport-icon" aria-hidden="true">🏈</span><span class="sport-label">Madden</span></button>
+          <button class="sport-btn" type="button" data-sport-pick="nba" aria-pressed="false" title="NBA 2K27 ratings"><span class="sport-icon" aria-hidden="true">🏀</span><span class="sport-label">NBA 2K</span></button>
+        </div>
         <nav class="header-actions" aria-label="Actions">
           <button class="button button-gold" id="addButton" type="button"><span class="icon" aria-hidden="true">＋</span><span class="label">Add player</span></button>
           <button class="button" id="updateButton" type="button" title="Refresh ratings"><span class="icon" aria-hidden="true">↻</span><span class="label">Refresh</span><span class="sr-only">ratings</span></button>
@@ -49,9 +53,9 @@
       <button class="egg-runner" id="eggRunner" type="button" aria-label="Play End Zone Run" title="Catch him!" hidden><span aria-hidden="true">🏃</span></button>
       <div class="statline" id="statline" aria-live="polite">
         <span class="stat"><b id="trackedCount">–</b><span id="trackedLabel">players rated</span></span>
-        <span class="stat gold"><b id="clubCount">–</b>in the 99 Club</span>
+        <span class="stat gold"><b id="clubCount">–</b><span id="clubLabel">in the 99 Club</span></span>
         <span class="stat" id="moverStat" hidden><b id="moverValue">–</b><span id="moverName">biggest mover</span></span>
-        <span class="stat-source" id="sourceStamp">Loading EA's ratings…</span>
+        <span class="stat-source" id="sourceStamp">Loading ratings…</span>
       </div>
 
       <div class="tabs">
@@ -77,9 +81,12 @@
         <div class="chips" role="group" aria-label="Filter players" id="filterChips">
           <button class="chip chip-team" type="button" id="teamChip" aria-haspopup="dialog" title="Pick a team"><span class="team-chip-label">All teams</span><span class="chip-caret" aria-hidden="true">▾</span></button>
           <button class="chip active" type="button" data-filter="all">All</button>
-          <button class="chip" type="button" data-filter="offense">Offense</button>
-          <button class="chip" type="button" data-filter="defense">Defense</button>
-          <button class="chip" type="button" data-filter="special">Special teams</button>
+          <button class="chip" type="button" data-filter="offense" data-sport="nfl">Offense</button>
+          <button class="chip" type="button" data-filter="defense" data-sport="nfl">Defense</button>
+          <button class="chip" type="button" data-filter="special" data-sport="nfl">Special teams</button>
+          <button class="chip" type="button" data-filter="guard" data-sport="nba">Guards</button>
+          <button class="chip" type="button" data-filter="forward" data-sport="nba">Forwards</button>
+          <button class="chip" type="button" data-filter="center" data-sport="nba">Centers</button>
           <button class="chip" type="button" data-filter="stars">⭐ Stars</button>
           <button class="chip" type="button" data-filter="movers" id="moversChip" hidden>Movers</button>
         </div>
@@ -96,13 +103,13 @@
     </div>
 
     <div class="invite" id="invite" hidden>
-      <div class="invite-text"><b>Make this your team.</b> Pick a few favorite players — they show up under ★ My players with their real EA ratings.</div>
+      <div class="invite-text"><b>Make this your team.</b> Pick a few favorite players — they show up under ★ My players with their real ratings.</div>
       <button class="button button-gold" id="inviteButton" type="button">Pick players</button>
       <button class="button button-quiet invite-tour" id="inviteTour" type="button">Quick tour</button>
       <button class="invite-close" id="inviteClose" type="button" aria-label="Dismiss">&times;</button>
     </div>
     <p class="board-note" id="boardNote" hidden></p>
-    <div class="empty-state" id="loading"><div class="empty-icon">🏈</div><strong class="empty-title">Loading EA's ratings…</strong></div>
+    <div class="empty-state" id="loading"><div class="empty-icon">🏈</div><strong class="empty-title">Loading ratings…</strong></div>
     <div id="boardPanel" role="tabpanel" aria-labelledby="tab-watch">
     <div class="card-grid" id="playerCards"></div>
 
@@ -128,7 +135,7 @@
   <footer class="wrap">
     <span>Janafari · built for our house</span><br>
     <span id="footerStamp"></span><br>
-    <button class="button button-icon footer-egg" id="playEgg" type="button" aria-label="Play End Zone Run" title="End Zone Run"><span aria-hidden="true">🏈</span></button>
+    <button class="button button-icon footer-egg" id="playEgg" type="button" aria-label="Play End Zone Run" title="End Zone Run" data-sport="nfl"><span aria-hidden="true">🏈</span></button>
   </footer>
 
   <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addTitle" hidden>
@@ -144,7 +151,7 @@
           <span class="sr-only">Search the league</span>
           <input id="addSearch" type="search" placeholder="Name, team or position" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         </label>
-        <p class="modal-copy" id="addStatus" style="margin-top:12px">Type a name, team or position — every EA-rated player is here.</p>
+        <p class="modal-copy" id="addStatus" style="margin-top:12px">Type a name, team or position — every rated player is here.</p>
         <div class="roster-list" id="addResults"></div>
       </div>
     </div>
@@ -190,15 +197,18 @@
       </div>
       <div class="modal-body">
         <button class="backup-action" id="helpMore" type="button"><b>? Help · Janafari Playbook</b><span>What to tap, what the numbers mean, where your players go</span></button>
-        <button class="backup-action" id="playMore" type="button"><b>🏈 Play End Zone Run</b><span>Tap to jump. Reach the end zone.</span></button>
-        <button class="backup-action" id="refreshMore" type="button"><b>↻ Refresh ratings</b><span>Get what today's EA check found</span></button>
+        <button class="backup-action" id="playMore" type="button" data-sport="nfl"><b>🏈 Play End Zone Run</b><span>Tap to jump. Reach the end zone.</span></button>
+        <button class="backup-action" id="refreshMore" type="button"><b>↻ Refresh ratings</b><span>Get what today's check found</span></button>
         <p class="modal-copy" style="margin-top:16px">Your players and the saved weeks live on this device. Save a backup once in a while in case Safari clears its website data.</p>
         <button class="backup-action" id="exportButton" type="button"><b>Save a backup file</b><span>Downloads your players and saved weeks</span></button>
         <label class="backup-action file-action"><b>Restore a backup file</b><span>Choose a previously saved .json file</span><input id="importInput" type="file" accept="application/json,.json"></label>
         <div class="more-info">
-          <b>Where the numbers come from.</b> Every rating and attribute is EA's official Madden 27 data, saved with this page and checked for updates every day. Nobody types a rating in here.
+          <b>Where the numbers come from.</b>
+          <span data-sport="nfl">Every rating and attribute is EA's official Madden 27 data, saved with this page and checked for updates every day. Nobody types a rating in here.</span>
+          <span data-sport="nba">Every rating, attribute and badge is NBA 2K27 data from 2K Ratings, the Play Now database — saved with this page and checked for updates every day. 2K's own site only shows a top 100. Nobody types a rating in here.</span>
           <span id="moreStamp"></span><br>
-          <a href="https://www.ea.com/games/madden-nfl/ratings" target="_blank" rel="noopener">See EA's ratings page ↗</a>
+          <a href="https://www.ea.com/games/madden-nfl/ratings" target="_blank" rel="noopener" data-sport="nfl">See EA's ratings page ↗</a>
+          <a href="https://www.2kratings.com/" target="_blank" rel="noopener" data-sport="nba">See 2K Ratings ↗</a>
         </div>
         <div class="danger-zone">
           <button id="resetButton" type="button">Clear my players</button>
@@ -216,7 +226,7 @@
       </div>
       <div class="modal-body help-body">
         <nav class="help-nav" aria-label="Jump to a section">
-          <a class="chip" href="#help-find">Find a player</a><a class="chip" href="#help-mine">My players</a><a class="chip" href="#help-team">Find a team</a><a class="chip" href="#help-card">Player cards</a><a class="chip" href="#help-changes">Rating changes</a><a class="chip" href="#help-filters">Filters</a><a class="chip" href="#help-refresh">Refresh</a><a class="chip" href="#help-keep">Keep your list</a><a class="chip" href="#help-game">End Zone Run</a>
+          <a class="chip" href="#help-find">Find a player</a><a class="chip" href="#help-mine">My players</a><a class="chip" href="#help-team">Find a team</a><a class="chip" href="#help-card">Player cards</a><a class="chip" href="#help-changes">Rating changes</a><a class="chip" href="#help-filters">Filters</a><a class="chip" href="#help-refresh">Refresh</a><a class="chip" href="#help-keep">Keep your list</a><a class="chip" href="#help-game" data-sport="nfl">End Zone Run</a>
         </nav>
         <div class="help-intro">
           <p>Three things to know, then you're playing.</p>
@@ -231,7 +241,7 @@
 
         <section class="help-section" id="help-mine">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">★</span></div>
-          <div class="help-text"><h3>My players</h3><p>Tap <b>★ My players</b> to see your players. Tap <b>🏈 League</b> to see every player in the NFL.</p>
+          <div class="help-text"><h3>My players</h3><p>Tap <b>★ My players</b> to see your players. Tap <b>League</b> to see every player in the <span data-sport="nfl">NFL</span><span data-sport="nba">NBA</span>. The <b>🏈 / 🏀</b> switch at the top flips the whole page between Madden and NBA 2K — each sport keeps its own list.</p>
             <button class="button button-quiet help-go" type="button" data-go="mine">See my players</button></div>
         </section>
 
@@ -245,13 +255,15 @@
           <div class="help-icon help-icon-wide" aria-hidden="true">
             <div class="help-card">
               <span class="portrait help-portrait"><span class="portrait-mono">J</span></span>
-              <span class="help-card-body"><b>Player name</b><span><i class="pos-pill">QB</i> Team</span></span>
+              <span class="help-card-body"><b>Player name</b><span><i class="pos-pill" data-sport="nfl">QB</i><i class="pos-pill" data-sport="nba">PG</i> Team</span></span>
               <span class="help-card-ovr"><b>OVR</b><small>overall</small></span>
             </div>
           </div>
           <div class="help-text"><h3>Player cards</h3><p><b>OVR</b> means <b>overall rating</b> — higher is better, and 99 is the best there is.</p>
-            <p>The blue pill is his position — like QB, DT or WILL. Open his card and it says the whole word, plus his age, college, abilities and top skills.</p>
-            <p class="help-note"><b>Badges:</b> a red <b>X</b> means he has an <b>X-Factor</b> — a signature power that switches on once he gets hot in a game, and while it's on he's nearly unstoppable at that one thing. A grey <b>★</b> means <b>Superstar</b> abilities — always on, a steady boost. On his card, tap any ability name (like "Double Me") to see what it means. The <b>⭐ Stars</b> filter shows only players with a badge.</p></div>
+            <p data-sport="nfl">The blue pill is his position — like QB, DT or WILL. Open his card and it says the whole word, plus his age, college, abilities and top skills.</p>
+            <p data-sport="nba">The blue pill is his position — PG, SG, SF, PF or C. Open his card and it says the whole word, plus his age, size, build, badges and top skills.</p>
+            <p class="help-note" data-sport="nfl"><b>Badges:</b> a red <b>X</b> means he has an <b>X-Factor</b> — a signature power that switches on once he gets hot in a game, and while it's on he's nearly unstoppable at that one thing. A grey <b>★</b> means <b>Superstar</b> abilities — always on, a steady boost. On his card, tap any ability name (like "Double Me") to see what it means. The <b>⭐ Stars</b> filter shows only players with a badge.</p>
+            <p class="help-note" data-sport="nba"><b>Badges:</b> a purple <b>HOF</b> on a card means he has a <b>Hall of Fame</b> badge — the top level of a 2K skill, like Deadeye or Posterizer. Every badge comes in Bronze, Silver, Gold or Hall of Fame. On his card, tap any badge name to see what it does. The <b>⭐ Stars</b> filter shows only the Hall of Fame players.</p></div>
         </section>
 
         <section class="help-section" id="help-changes">
@@ -262,13 +274,13 @@
 
         <section class="help-section" id="help-filters">
           <div class="help-icon" aria-hidden="true"><span class="help-chip dark">Defense</span></div>
-          <div class="help-text"><h3>Filters</h3><p><b>Offense</b>, <b>Defense</b> and <b>Special teams</b> narrow the list. <b>All</b> shows every position. Picking a team or typing a name still hides some players — this button clears all three.</p>
+          <div class="help-text"><h3>Filters</h3><p><span data-sport="nfl"><b>Offense</b>, <b>Defense</b> and <b>Special teams</b></span><span data-sport="nba"><b>Guards</b>, <b>Forwards</b> and <b>Centers</b></span> narrow the list. <b>All</b> shows every position. Picking a team or typing a name still hides some players — this button clears all three.</p>
             <button class="button button-quiet help-go" type="button" data-go="reset">Clear filters and search</button></div>
         </section>
 
         <section class="help-section" id="help-refresh">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">↻</span></div>
-          <div class="help-text"><h3>Refresh</h3><p><b>↻ Refresh</b> gets the latest ratings saved for this page. On a phone: tap <b>⋯ More</b>, then <b>↻ Refresh ratings</b>. "Last checked …" under it is the day this page got EA's numbers.</p>
+          <div class="help-text"><h3>Refresh</h3><p><b>↻ Refresh</b> gets the latest ratings saved for this page. On a phone: tap <b>⋯ More</b>, then <b>↻ Refresh ratings</b>. "Last checked …" under it is the day this page got the numbers.</p>
             <button class="button button-quiet help-go" type="button" data-go="refresh">Refresh now</button></div>
         </section>
 
@@ -278,7 +290,7 @@
             <button class="button button-quiet help-go" type="button" data-go="backup">Open backup options</button></div>
         </section>
 
-        <section class="help-section" id="help-game">
+        <section class="help-section" id="help-game" data-sport="nfl">
           <div class="help-icon" aria-hidden="true"><span class="help-btn">🏈</span></div>
           <div class="help-text"><h3>End Zone Run</h3><p>You're Jonathan Taylor, #28. Tap <b>JUMP</b> (or the field, or press <b>Space</b>) to hurdle the defenders. Every <b>100 yards</b> is a touchdown — arms up, fireworks — and the next drive is against a new team in a new city, a little faster. One tackle and the run is over — then your initials go on the board. Grab a floating football for two seconds of turbo. Seven points a touchdown; the score is on the scoreboard at the top right.</p>
             <p class="help-note">The big button starts a run and then jumps. Pause (<b>P</b>) · Restart · Exit (<b>Esc</b>) · Sound switch (off until you turn it on). Find it under ⋯ More or the 🏈 at the bottom of the page.</p>
@@ -350,7 +362,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=29"></script>
   <script>
     (function () {
       var root = document.documentElement;

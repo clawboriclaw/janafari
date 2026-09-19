@@ -1,0 +1,71 @@
+name: Refresh NBA 2K ratings
+
+# The basketball twin of refresh-ratings.yml. 2K Ratings posts roster updates every two weeks or so
+# in season (the dates are on every player's season chart); we check daily. A normal day opens the
+# 30 team pages and only the player pages whose overall moved; Sundays open every player page so an
+# attribute or badge that changed without moving the overall is caught too. The fetcher exits 3 on a
+# quiet day (nothing committed), 0 when it wrote files, 2 when the site or a sanity check broke.
+on:
+  schedule:
+    - cron: "41 15 * * *"      # every day 15:41 UTC (11:41 ET), after the Madden run
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Open every player page (attributes and badges), not just the ones whose overall moved"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-nba-ratings
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install a real browser (the site refuses plain HTTP clients)
+        run: |
+          pip install --quiet playwright==1.60.0
+          python3 -m playwright install --with-deps chromium
+      - name: Fetch the ratings
+        id: fetch
+        run: |
+          set +e
+          FULL=""
+          if [ "${{ inputs.full }}" = "true" ] || [ "$(date -u +%u)" = "7" ]; then FULL="--full"; fi
+          python3 tools/fetch_nba_ratings.py $FULL
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+      - name: Commit the snapshot
+        if: steps.fetch.outputs.rc == '0'
+        run: |
+          git config user.name "ratings-bot"
+          git config user.email "ratings-bot@users.noreply.github.com"
+          git add data/nba
+          git commit -m "NBA 2K ratings snapshot: $(python3 -c "import json;d=json.load(open('data/nba/ratings.json'));print(d['iteration']['label'],'·',d['count'],'players')")"
+          git pull --rebase
+          git push
+      - name: Fail loudly if the fetch broke (rc 2 = fetch/sanity failure; 3 = unchanged, fine)
+        if: steps.fetch.outputs.rc != '0' && steps.fetch.outputs.rc != '3'
+        run: |
+          echo "fetch_nba_ratings.py exited ${{ steps.fetch.outputs.rc }}"
+          exit 1
+      - name: Tell the owner on Telegram if anything failed
+        if: failure()
+        env:
+          BOT: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RC: ${{ steps.fetch.outputs.rc }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$BOT" ] && [ -n "$CHAT" ] || { echo "no Telegram secrets; skipping alert"; exit 0; }
+          TEXT="🏀 Janafari NBA 2K ratings refresh FAILED (fetch rc=${RC:-?}). 2K Ratings or the commit step broke — the page keeps its last good numbers. ${RUN_URL}"
+          curl -fsS -X POST "https://api.telegram.org/bot${BOT}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT}" --data-urlencode "text=${TEXT}" -o /dev/null \
+            || echo "Telegram alert could not be sent"

@@ -1,10 +1,24 @@
 # Janafari
 
-A private, no-account Madden 27 ratings tracker built for a 10-year-old on an iPad, a phone or a PC.
-It is a static site: no build step, framework, analytics, ads, or webfonts. Every rating comes from
-EA's official Madden 27 ratings feed; nobody types a rating in here.
+A private, no-account ratings tracker built for a 10-year-old on an iPad, a phone or a PC — **Madden 27**
+and, since 2026-09-19, **NBA 2K27** on the same page. It is a static site: no build step, framework,
+analytics, ads, or webfonts. Every rating comes from a feed a script snapshots into `data/`; nobody
+types a rating in here.
 
-Live site: <https://clawboriclaw.github.io/janafari/>
+Live site: <https://clawboriclaw.github.io/janafari/> (basketball straight away: `?sport=nba`)
+
+## Two sports, one page
+
+The **🏈 Madden | 🏀 NBA 2K** switch in the header flips the whole page: the league, the team picker (30
+NBA clubs, ESPN logos), the filters (Guards / Forwards / Centers instead of Offense / Defense / Special
+teams), the ⭐ Stars filter (Hall of Fame / Gold **badges** instead of X-Factor / Superstar abilities), the
+player card (size with wingspan, build, hometown, badges by level, top 2K attributes) and the Playbook's
+copy. Each sport has its **own watchlist and saved weeks** (`janafari-v2` for Madden, `janafari-nba-v1`
+for NBA 2K) — switching never touches the other list, and a backup file says which sport it belongs to.
+The last sport used is remembered (`janafari-sport`). End Zone Run stays on the football side until the
+basketball game exists. In the code, everything sport-specific is one `SPORTS` object at the top of
+`app.js`; the rest reads `SPORT` and never says "football" itself. Elements that belong to one sport carry
+`data-sport="nfl|nba"` and `html[data-sport]` hides the other's.
 
 ## What is on the page
 
@@ -50,6 +64,25 @@ the favicon is the same mark as a data URI. `brand/compare.html` shows the treat
 
 ## Where the data comes from, and how it stays fresh
 
+### NBA 2K27 (`data/nba/`)
+
+2K publishes no ratings feed — nba.2k.com shows only a top 100 — so the whole league comes from
+[2K Ratings](https://www.2kratings.com/), the NBA 2K Play Now database (every current team, every player,
+35 attributes, badges with 2K's descriptions, and each player's overall on every roster update of the
+season). The site sits behind Cloudflare and refuses plain HTTP clients, so `tools/fetch_nba_ratings.py`
+drives a real headless Chromium through Playwright (`pip install playwright && python3 -m playwright
+install chromium`; on the WSL box `CHROME_PATH=/usr/bin/google-chrome`). It writes the same shape as the
+Madden files: `data/nba/ratings.json` (core fields), `data/nba/stats/<TEAM>.json` (attributes, diffs,
+badges with descriptions, loaded when a card opens), `data/nba/history.json` (one map per roster update —
+the site's own labels, "NBA 2K27 Launch Rating", "Nov. 5, 2026", …), plus `movement.json` (the raw
+per-player series), `badges.json` (2K's text and art for every badge seen + our plain-English lines) and
+`photos.json` (headshots from ESPN's public roster API; 2K Ratings' own images refuse hotlinks).
+`.github/workflows/refresh-nba-ratings.yml` runs it **every day** (team pages + only the players whose
+overall moved; Sundays every player page) and commits only when something changed. Same exit codes
+(0 changed · 3 unchanged · 2 failed → red run + Telegram).
+
+### Madden 27 (`data/`)
+
 - `tools/fetch_ratings.py` reads EA's feed (it needs EA's own `x-feature` header or it serves last
   season; the script refuses a wrong-season file) and writes `data/ratings.json` (core fields),
   `data/stats/<TEAM>.json` (attributes, loaded when a card opens) and `data/history.json` (every
@@ -77,4 +110,4 @@ backup file** now and then, because Safari can clear website data. Separate devi
 ES5 only in `app.js`; no flex `gap` (margins instead; grids carry a `grid-gap` twin); a plain colour
 before every `var()`; no webfonts; XHR not fetch. CSS Grid needs iOS 10.3+.
 
-Official source: <https://www.ea.com/games/madden-nfl/ratings>
+Official sources: <https://www.ea.com/games/madden-nfl/ratings> · NBA 2K27 via <https://www.2kratings.com/>
