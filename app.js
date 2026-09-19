@@ -169,6 +169,7 @@
     document.title = SPORT.title;
     var desc = document.querySelector(".brand-desc"); if (desc) { desc.textContent = SPORT.desc; }
     var ball = document.querySelector("#tab-league .tab-icon"); if (ball) { ball.textContent = SPORT.icon; }
+    var sw = el("sportSwitch"); if (sw) { sw.setAttribute("data-on", sport); }   // slides the gold patch
     Array.prototype.forEach.call(document.querySelectorAll(".sport-btn"), function (b) {
       var on = b.getAttribute("data-sport-pick") === sport;
       b.className = "sport-btn" + (on ? " active" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
