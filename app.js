@@ -30,7 +30,8 @@
       source: "EA", sourceLong: "EA's official Madden 27 ratings feed", sourceLink: "https://www.ea.com/games/madden-nfl/ratings",
       club: { min: 99, label: "in the 99 Club" },
       sides: ["offense", "defense", "special"],
-      hasFA: true, facts: true, game3: true,      // free agents in the feed · draft/Super Bowl facts · End Zone Run
+      hasFA: true, facts: true,                    // free agents in the feed · draft/Super Bowl facts
+      game: { url: "game.js?v=8", api: "JanafariGame", modal: "gameModal", name: "End Zone Run", egg: "eggRunner" },
       logo: function (abbr) { return "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png"; },
       tiers: { x: { short: "X", name: "X-Factor", kicker: "X-FACTOR" }, star: { short: "★", name: "Superstar", kicker: "SUPERSTAR" } },
       abilitiesLabel: "Abilities", abilitiesQuestion: "What are X-Factor and Superstar abilities?",
@@ -75,7 +76,8 @@
       source: "2K Ratings", sourceLong: "the NBA 2K27 Play Now database at 2K Ratings", sourceLink: "https://www.2kratings.com/",
       club: { min: 95, label: "rated 95 or better" },
       sides: ["guard", "forward", "center"],
-      hasFA: false, facts: false, game3: false,
+      hasFA: false, facts: false,
+      game: { url: "hoops.js?v=1", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
       // ESPN's logo slugs are not the NBA's abbreviations for six clubs
       logo: function (abbr) { var s = { GSW: "gs", NOP: "no", NYK: "ny", SAS: "sa", UTA: "utah", WAS: "wsh" }[abbr] || abbr.toLowerCase(); return "https://a.espncdn.com/i/teamlogos/nba/500/" + s + ".png"; },
       tiers: { x: { short: "HOF", name: "Hall of Fame badge", kicker: "HALL OF FAME" } },   // Gold is too common to be a card badge (227 of 535 players)
@@ -871,7 +873,7 @@
     }
     modal.hidden = false;
     window.setTimeout(function () {
-      var f = id === "addModal" ? el("addSearch") : (id === "helpModal" ? modal.querySelector(".help-nav a") : (id === "gameModal" ? el("gameOverlayBtn") : (firstFocusable(modal) || modal.querySelector(".close-button"))));
+      var f = id === "addModal" ? el("addSearch") : (id === "helpModal" ? modal.querySelector(".help-nav a") : (id === "gameModal" ? el("gameOverlayBtn") : (id === "hoopsModal" ? el("hoopsOverlayBtn") : (firstFocusable(modal) || modal.querySelector(".close-button")))));
       try { if (f) { f.focus(); } } catch (e) {}
     }, 30);
   }
@@ -880,6 +882,7 @@
     if (modal.hidden) { return; }
     modal.hidden = true;
     if (id === "gameModal" && window.JanafariGame) { window.JanafariGame.stop(); }   // no loop, no sound after Exit/Escape/backdrop
+    if (id === "hoopsModal" && window.JanafariHoops) { window.JanafariHoops.stop(); }
     if (!document.querySelector(".modal:not([hidden])")) {
       document.body.className = "";
       document.body.style.top = "";
@@ -1015,27 +1018,31 @@
     else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Filters, team and search cleared"); }
     else if (what === "refresh") { checkRatings(); }
     else if (what === "backup") { showModal("moreModal", el("moreButton")); }
-    else if (what === "game") { if (SPORT.game3) { openGame(el("helpButton").offsetWidth ? el("helpButton") : el("moreButton")); } }
+    else if (what === "game") { openGame(el("helpButton").offsetWidth ? el("helpButton") : el("moreButton")); }
   }
 
-  /* ---------- End Zone Run: loaded only when someone asks to play ---------- */
-  var GAME_URL = "game.js?v=8", gameLoading = false;
-  var modalApi = { show: showModal, close: closeModal, toast: showToast };
+  /* ---------- the sport's game (End Zone Run · Janafari Jam): loaded only when someone asks to play ----------
+     Each sport names its script, its global, its sheet and its easter egg in SPORT.game. The bridge hands the
+     game the page's modal helpers plus the loaded roster and logo URLs, so Janafari Jam can field real players. */
+  var gameLoading = false;
+  var modalApi = { show: showModal, close: closeModal, toast: showToast, players: function () { return DATA ? DATA.players : []; }, logo: function (abbr) { return SPORT.logo(abbr); } };
   function openGame(opener) {
-    if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); return; }
+    var g = SPORT.game;
+    if (window[g.api]) { window[g.api].open(opener || el("moreButton"), modalApi); return; }
     if (gameLoading) { return; }
-    gameLoading = true; showToast("Loading End Zone Run…");
-    var sc = document.createElement("script"); sc.src = GAME_URL;
-    sc.onload = function () { gameLoading = false; if (window.JanafariGame) { window.JanafariGame.open(opener || el("moreButton"), modalApi); } };
+    gameLoading = true; showToast("Loading " + g.name + "…");
+    var sc = document.createElement("script"); sc.src = g.url;
+    sc.onload = function () { gameLoading = false; if (window[g.api]) { window[g.api].open(opener || el("moreButton"), modalApi); } };
     sc.onerror = function () { gameLoading = false; showToast("The game could not load. Check the internet and try again."); };
     document.body.appendChild(sc);
   }
 
-  // Easter egg: every so often, while the page is visible and no sheet is open, a tiny runner sprints across
-  // the top bar (3.2 s). Tapping him opens End Zone Run. He never runs over an open sheet or a hidden tab.
+  // Easter egg: every so often, while the page is visible and no sheet is open, something crosses the top bar
+  // (3.2 s) — a tiny runner on the football side, a bouncing ball on the basketball side. Tapping it opens the
+  // game. It never runs over an open sheet or a hidden tab.
   function eggSprint() {
-    var egg = el("eggRunner");
-    if (!egg || !SPORT.game3 || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
+    var egg = el(SPORT.game.egg);
+    if (!egg || document.hidden || document.querySelector(".modal:not([hidden])")) { return; }
     egg.hidden = false; egg.className = "egg-runner";
     window.setTimeout(function () { egg.className = "egg-runner run"; }, 30);
     window.setTimeout(function () { if (egg.className.indexOf("run") !== -1) { egg.hidden = true; egg.className = "egg-runner"; } }, 3600);
@@ -1082,9 +1089,13 @@
     });
     el("helpButton").addEventListener("click", function (e) { openHelp(e.currentTarget); });
     el("playEgg").addEventListener("click", function (e) { openGame(e.currentTarget); });
-    el("eggRunner").addEventListener("click", function (e) { var egg = e.currentTarget; egg.hidden = true; egg.className = "egg-runner"; openGame(el("moreButton")); });
+    el("playEggNba").addEventListener("click", function (e) { openGame(e.currentTarget); });
+    Array.prototype.forEach.call(document.querySelectorAll(".egg-runner"), function (egg) {
+      egg.addEventListener("click", function () { egg.hidden = true; egg.className = "egg-runner"; openGame(el("moreButton")); });
+    });
     scheduleEgg(true);
     el("playMore").addEventListener("click", function () { closeModal("moreModal"); openGame(el("moreButton")); });
+    el("playMoreNba").addEventListener("click", function () { closeModal("moreModal"); openGame(el("moreButton")); });
     el("helpMore").addEventListener("click", function () { openHelp(el("moreButton")); });
     el("inviteTour").addEventListener("click", function (e) { openTour(e.currentTarget); });
     el("tourStart").addEventListener("click", function () { openTour(el("helpButton")); });
@@ -1123,7 +1134,7 @@
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { ["gameModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
+      if (event.keyCode === 27) { ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
       trapFocus(event);
     });
     var lastPhone = window.innerWidth <= 600, resizeTimer;
@@ -1183,7 +1194,7 @@
   }
   function switchSport(which) {
     if (!SPORTS[which] || which === sport) { return; }
-    ["gameModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal);
+    ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal);
     loadSport(which);
     // a ?sport= in the address would win again on reload, so drop it: the switch is now the choice
     try { if (window.history && window.history.replaceState && /[?&]sport=/.test(window.location.search)) { window.history.replaceState(null, "", window.location.pathname + window.location.hash); } } catch (e) {}

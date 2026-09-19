@@ -564,6 +564,16 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
   -webkit-transition: left 3.2s linear; transition: left 3.2s linear;
 }
 .egg-runner.run { left: 100%; }
+/* the basketball egg: a line-drawn ball that bounces its way across the bar */
+.egg-ball { -webkit-transform: none; transform: none; padding: 0; }
+.egg-ball .mark-ball { width: 22px; height: 22px; fill: #e8792b; stroke: #1b1006; stroke-width: 1.6; stroke-linecap: round; display: block; margin: 11px auto 0; }
+.egg-ball .mark-ball path { fill: none; }
+.egg-ball.run .mark-ball { -webkit-animation: eggBounce .5s ease-in-out infinite alternate; animation: eggBounce .5s ease-in-out infinite alternate; }
+@-webkit-keyframes eggBounce { from { -webkit-transform: translateY(0) rotate(0deg); } to { -webkit-transform: translateY(-14px) rotate(180deg); } }
+@keyframes eggBounce { from { transform: translateY(0) rotate(0deg); } to { transform: translateY(-14px) rotate(180deg); } }
+.footer-egg-hoop .mark-hoop, .help-btn .mark-hoop { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.help-btn .mark-hoop { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .egg-ball.run .mark-ball { -webkit-animation: none; animation: none; } }
 .topbar .wrap { position: relative; }
 .topbar { overflow: hidden; }   /* the runner waits off-screen, not over the emblem */
 

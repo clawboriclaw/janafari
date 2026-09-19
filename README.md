@@ -15,8 +15,8 @@ teams), the ⭐ Stars filter (Hall of Fame / Gold **badges** instead of X-Factor
 player card (size with wingspan, build, hometown, badges by level, top 2K attributes) and the Playbook's
 copy. Each sport has its **own watchlist and saved weeks** (`janafari-v2` for Madden, `janafari-nba-v1`
 for NBA 2K) — switching never touches the other list, and a backup file says which sport it belongs to.
-The last sport used is remembered (`janafari-sport`). End Zone Run stays on the football side until the
-basketball game exists. In the code, everything sport-specific is one `SPORTS` object at the top of
+The last sport used is remembered (`janafari-sport`). Each sport has its own easter-egg game: End Zone Run on
+the football side, **Janafari Jam** on the basketball side (below). In the code, everything sport-specific is one `SPORTS` object at the top of
 `app.js`; the rest reads `SPORT` and never says "football" itself. Elements that belong to one sport carry
 `data-sport="nfl|nba"` and `html[data-sport]` hides the other's.
 
@@ -52,6 +52,17 @@ basketball game exists. In the code, everything sport-specific is one `SPORTS` o
   `janafari-ezr-v2` (best) and `janafari-ezr-scores-v1` (board). `game.js` loads only on Play; the loop runs
   only while the sheet is open and running; backgrounding pauses; Exit stops loop and sound; sound off until
   switched on; reduced motion → no fireworks. Everything scales with the canvas width.
+- **Janafari Jam** (`hoops.js`, NBA side; the hoop button in the footer, More → Play, the Playbook, or catch the
+  ball that bounces across the top bar) — two-on-two, one button, everything random. Your two Pacers run on their
+  own; you tap to jump and tap with the ball to shoot. Every basket rerolls the rules: the ball (basketball, beach
+  ball, bowling ball, mini ball, a football), gravity (moon, heavy), the bodies (giants, shorties, big heads, one of
+  each), the sky (snow, rain, lights out). First to 5. Beat a team and the next one comes to town in its own colours,
+  with its two best-rated players from `data/nba/ratings.json` wearing their real names and numbers — their 2K
+  three-point rating steers how straight they shoot, dunk rating how they finish at the rim, height is height.
+  Lose once and your win streak goes on the retro board (`janafari-jam-v1`, `janafari-jam-scores-v1`). An 8-second
+  shot clock, a jump ball after 25 s without a basket, the scored-on team brings it in. **2 players** puts a friend on
+  the ↑ key or the right half of the court. Same house rules as End Zone Run (loop only while open, hidden → pause,
+  sound off until switched on, reduced motion → no confetti). `JanafariHoops.peek()` is a read-only snapshot for tests.
 - **⋯ More** holds backup & restore, "where the numbers come from" and the EA link — the things a kid
   should not press by accident.
 
