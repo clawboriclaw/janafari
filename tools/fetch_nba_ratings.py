@@ -368,7 +368,13 @@ async def run(argv):
             if html is None:
                 log("  %s: page missing, keeping the roster row only" % p["id"])
                 continue
-            detail[p["id"]] = parse_player_page(html)
+            d = parse_player_page(html)
+            # Zero badges is real (41 players at launch); zero attributes, no overall or no season chart is a broken
+            # parse — publishing that would blank a player's card and bio (Codex, 2026-09-19). Fail loudly instead.
+            if d["ovr"] is None or len(d["stats"]) < 20 or not d["labels"]:
+                raise RuntimeError("player page %s parsed to ovr=%s, %d attributes, %d chart labels — the page layout changed?"
+                                   % (p["id"], d["ovr"], len(d["stats"]), len(d["labels"])))
+            detail[p["id"]] = d
             if (i + 1) % 25 == 0:
                 log("  %d/%d" % (i + 1, len(need)))
     try:
@@ -425,35 +431,43 @@ async def run(argv):
     if limit is None and old and len(core) < len(old_players) * 0.9:
         raise RuntimeError("refusing to write: %d players, had %d" % (len(core), len(old_players)))
 
-    # ---- stat sheets: diffs are against the previous committed numbers whenever a page was re-read and something moved
+    # ---- stat sheets. `diffs` = this roster update's attributes minus the PREVIOUS update's, like EA's week-over-week
+    # diffs. Each entry records the update (`iter`) its numbers were read under, so a page re-read inside the same
+    # update diffs against the same base (base = stats − diffs), and a player whose page was not re-opened under a new
+    # update carries no diff at all — never last update's arrows (Codex hypothesis, 2026-09-19, confirmed).
     new_stats = {}
     for p in core:
         d = detail.get(p["id"])
         prev = old_stats.get(p["id"])
         if d and d["stats"]:
-            diffs = {}
+            base = {}
             if prev and prev.get("stats"):
-                for k, v in d["stats"].items():
-                    if k in prev["stats"] and prev["stats"][k] != v:
-                        diffs[k] = v - prev["stats"][k]
-                if not diffs and not iteration_changed:
-                    diffs = prev.get("diffs") or {}
-            new_stats[p["id"]] = {"stats": d["stats"], "diffs": diffs, "groups": d["groups"]}   # badges live in ratings.json + badges.json
+                base = dict(prev["stats"])
+                if prev.get("iter") == iteration["id"]:
+                    for k, dv in (prev.get("diffs") or {}).items():
+                        if k in base:
+                            base[k] -= dv
+            diffs = {k: v - base[k] for k, v in d["stats"].items() if k in base and base[k] != v}
+            new_stats[p["id"]] = {"stats": d["stats"], "diffs": diffs, "groups": d["groups"], "iter": iteration["id"]}   # badges live in ratings.json + badges.json
         elif prev:
-            new_stats[p["id"]] = prev
+            new_stats[p["id"]] = prev if prev.get("iter") == iteration["id"] else dict(prev, diffs={}, iter=iteration["id"])
 
-    # ---- history: the current update carries everyone's live OVR; older updates come from the season charts
+    # ---- history: one {id: ovr} map per roster update. The COMMITTED map is the base (a day that re-read only three
+    # player pages must not shrink last month's update to three players — Codex, 2026-09-19); the season charts of
+    # every page ever read overlay it, and the current update carries everyone's live OVR from the team pages.
+    old_history = load_json(HISTORY, [])
+    committed = {h.get("id"): h for h in old_history if isinstance(h, dict)}
     history = []
     for i, it in enumerate(iterations):
-        ratings = {}
+        prior = committed.get(it["id"]) or {}
+        ratings = dict(prior.get("ratings") or {})
+        for pid, s in series.items():
+            if i < len(s) and s[i] is not None:
+                ratings[pid] = s[i]
         if i == current_index:
-            ratings = {p["id"]: p["ovr"] for p in core}
-        else:
-            for pid, s in series.items():
-                if i < len(s) and s[i] is not None:
-                    ratings[pid] = s[i]
+            ratings.update({p["id"]: p["ovr"] for p in core})
         if ratings:
-            history.append({"id": it["id"], "label": it["label"], "date": (old_hist_date(it["id"]) or time.strftime("%Y-%m-%d", now)), "ratings": ratings})
+            history.append({"id": it["id"], "label": it["label"], "date": prior.get("date") or time.strftime("%Y-%m-%d", now), "ratings": ratings})
     # ---- badge definitions: 2K's text and art for every badge seen; our lines are never overwritten
     official = badge_defs.setdefault("official", {})
     for d in detail.values():
@@ -468,20 +482,21 @@ async def run(argv):
         "iteration": iteration, "iterations": iterations,
         "fetched": time.strftime("%Y-%m-%dT%H:%M:%SZ", now), "count": len(core), "players": core,
     }
-    core_keys = ("id", "name", "team", "pos", "ovr", "age", "college", "jersey", "yearsPro", "avatar", "abilities", "archetype")
-    same_players = old and [{k: p.get(k) for k in core_keys} for p in old.get("players", [])] == [{k: p.get(k) for k in core_keys} for p in core]
+    # "Unchanged" means every published field of every player, every sheet, the history AND the side files
+    # (movement/photos/badges) are byte-for-byte what is committed — the workflow commits only on rc 0, so anything
+    # written here on an rc 3 would be lost (Codex, 2026-09-19). `fetched` alone never counts as a change.
+    same_players = bool(old) and old.get("players", []) == core
     same_stats = old_stats == new_stats
-    old_history = load_json(HISTORY, [])
     same_history = old_history == history
     movement_doc = {"labels": labels, "series": series}
-    dump_json(MOVEMENT, movement_doc)          # the raw series are worth keeping even on a quiet day
-    dump_json(PHOTOS, photos, indent=0)
-    dump_json(BADGES, badge_defs, indent=2)
-    if same_players and same_stats and same_history and not iteration_changed:
+    same_side = (load_json(MOVEMENT, None) == movement_doc and load_json(PHOTOS, None) == photos and load_json(BADGES, None) == badge_defs)
+    if same_players and same_stats and same_history and same_side and not iteration_changed:
         log("unchanged: %s, %d players" % (iteration["label"], len(core)))
         return 3
-    if not same_history or iteration_changed:
-        dump_json(HISTORY, history)
+    dump_json(MOVEMENT, movement_doc)
+    dump_json(PHOTOS, photos, indent=0)
+    dump_json(BADGES, badge_defs, indent=2)
+    dump_json(HISTORY, history)
     by_team = {}
     for p in core:
         if p["id"] in new_stats:
@@ -491,13 +506,6 @@ async def run(argv):
     dump_json(OUT, doc)
     log("wrote data/nba/ratings.json: %s, %d players, %d team sheets, %d updates in history" % (iteration["label"], len(core), len(by_team), len(history)))
     return 0
-
-
-def old_hist_date(iteration_id):
-    for h in load_json(HISTORY, []):
-        if h.get("id") == iteration_id:
-            return h.get("date")
-    return None
 
 
 if __name__ == "__main__":

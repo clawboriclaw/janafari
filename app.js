@@ -111,6 +111,8 @@
   var SPORT_KEY_STORAGE = "janafari-sport";
   var sport = "nfl";            // "nfl" | "nba" — set once by boot(), changed only by switchSport()
   var SPORT = SPORTS.nfl;       // the active sport's config; every sport-specific string or list is read from here
+  var loadGen = 0;              // bumped by every loadSport(); any XHR reply carrying an older number is dropped (Codex, 2026-09-19:
+                                // a late NBA refresh landed in Madden's storage, a late NBA stats sheet was cached for Madden's IND)
   var ABILITY_DEFS = null;      // {lines:{name:text}, official:{name:{description,imageUrl}}} once loaded (abilities.json / badges.json)
   var LEAGUE_LIMIT = 100;      // league tab with no search: the top 100
   var SEARCH_LIMIT = 120;      // a search never renders more than this (old iPads froze on 3,000)
@@ -683,7 +685,8 @@
 
   function loadStats(team, cb) {
     if (statsCache[team]) { cb(statsCache[team]); return; }
-    fetchJson(SPORT.statsDir + team + ".json", function (sheet) { statsCache[team] = sheet; cb(sheet); }, function () { cb(null); });
+    var gen = loadGen;   // a sheet requested under one sport must never be cached under another
+    fetchJson(SPORT.statsDir + team + ".json", function (sheet) { if (gen !== loadGen) { return; } statsCache[team] = sheet; cb(sheet); }, function () { if (gen === loadGen) { cb(null); } });
   }
 
   function infoRow(label, valueNode) {
@@ -838,18 +841,19 @@
      This does not contact EA directly (a browser cannot; the feed has no CORS header).
      The Action checks EA every day and commits a new file when the numbers change. */
   function checkRatings() {
-    var btn = el("updateButton");
+    var btn = el("updateButton"), gen = loadGen;
     btn.disabled = true;
     showToast("Checking for new ratings…");
     fetchJson(SPORT.dataUrl + "?t=" + Date.now(), function (doc) {
       btn.disabled = false;
+      if (gen !== loadGen) { return; }   // the sport changed while this was in flight: not our file any more
       if (!validFeed(doc)) { showToast("Could not read the ratings file"); return; }
       useData(doc);
       var outcome = ensureSnapshot();
       if (outcome === "new") { selectedSnapshot = state.snapshots.length - 1; saveState(); render(); showToast("New ratings week: " + doc.iteration.label); }
       else if (outcome === "updated") { saveState(); render(); showToast("Ratings updated — " + doc.iteration.label + ", " + formatDate(doc.fetched)); }
       else { redraw(); showToast("Already up to date — " + SPORT.source + " checked " + formatDate(doc.fetched)); }
-    }, function () { btn.disabled = false; showToast("Could not reach the ratings file. Check the internet."); });
+    }, function () { btn.disabled = false; if (gen === loadGen) { showToast("Could not reach the ratings file. Check the internet."); } });
   }
 
   /* ---------- modals, toast, backup ---------- */
@@ -1146,21 +1150,21 @@
     applySport(which);
     try { localStorage.setItem(SPORT_KEY_STORAGE, sport); } catch (e) {}
     DATA = null; byId = {}; statsCache = {}; ABILITY_DEFS = null; searchTerm = ""; activeFilter = "all"; activeTeam = ""; shownLimit = PAGE; selectedSnapshot = 0;
-    el("searchInput").value = "";
+    el("searchInput").value = ""; el("updateButton").disabled = false;
     el("loading").hidden = false; el("loading").className = "empty-state"; clear(el("loading"));
     el("loading").appendChild(textNode("div", "empty-icon", SPORT.icon)); el("loading").appendChild(textNode("strong", "empty-title", "Loading " + SPORT.game + " ratings…"));
     clear(el("playerCards")); clear(el("playerRows")); el("emptyState").hidden = true; el("moreRow").hidden = true; el("boardNote").hidden = true;
     loadState();
     try { var tm = localStorage.getItem(SPORT.teamKey); if (tm && (knownTeam[tm] || (SPORT.hasFA && tm === "FA"))) { activeTeam = tm; } } catch (e) {}
-    var loading = sport;   // a second switch while this one is in flight: the late reply is dropped
+    var gen = ++loadGen;   // a second switch while this one is in flight: the late reply is dropped — even A→B→A, which a sport-name check let through
     fetchJson(SPORT.dataUrl, function (doc) {
-      if (loading !== sport) { return; }
+      if (gen !== loadGen) { return; }
       if (!validFeed(doc)) { failBoot("The ratings file looks wrong", "The page loaded, but the " + SPORT.game + " ratings file could not be read. Try again in a minute."); return; }
       useData(doc);
       migrateLegacy();
       state.watchlist = state.watchlist.filter(function (id, i, arr) { return byId[id] && arr.indexOf(id) === i; });
       var start = function (history) {
-        if (loading !== sport) { return; }
+        if (gen !== loadGen) { return; }
         var dirty = mergeHistory(history);
         if (ensureSnapshot() !== "same") { dirty = true; }
         if (dirty) { saveState(); }
@@ -1171,9 +1175,9 @@
         el("loading").hidden = true;
       };
       fetchJson(SPORT.historyUrl + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
-      fetchJson(SPORT.defsUrl, function (defs) { if (loading === sport && defs && (defs.lines || (defs.xfactor && defs.superstar))) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
+      fetchJson(SPORT.defsUrl, function (defs) { if (gen === loadGen && defs && (defs.lines || (defs.xfactor && defs.superstar))) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
     }, function () {
-      if (loading !== sport) { return; }
+      if (gen !== loadGen) { return; }
       failBoot("Could not load the ratings", "Check the internet and try again. The ratings file lives with this page.");
     });
   }

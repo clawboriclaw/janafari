@@ -17,9 +17,11 @@ on:
 permissions:
   contents: write
 
-# One run at a time: a scheduled and a manual run must never race each other's git push.
+# One ratings push at a time: this workflow and refresh-nba-ratings.yml share the group, so the two
+# bots can never race each other's push to main (Codex, 2026-09-19); a scheduled and a manual run of
+# the same workflow queue behind each other for the same reason.
 concurrency:
-  group: refresh-ratings
+  group: ratings-push
   cancel-in-progress: false
 
 jobs:
@@ -43,6 +45,7 @@ jobs:
           git config user.email "ratings-bot@users.noreply.github.com"
           git add data/ratings.json data/stats data/history.json
           git commit -m "Ratings snapshot: $(python3 -c "import json;d=json.load(open('data/ratings.json'));print(d['iteration']['label'],'·',d['count'],'players')")"
+          git pull --rebase
           git push
       - name: Fail loudly if the fetch broke (rc 2 = fetch/sanity failure; 3 = unchanged, fine)
         if: steps.fetch.outputs.rc != '0' && steps.fetch.outputs.rc != '3'

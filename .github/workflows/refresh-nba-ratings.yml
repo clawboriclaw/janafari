@@ -18,8 +18,9 @@ on:
 permissions:
   contents: write
 
+# Shared with refresh-ratings.yml: the two bots never push to main at the same time.
 concurrency:
-  group: refresh-nba-ratings
+  group: ratings-push
   cancel-in-progress: false
 
 jobs:
