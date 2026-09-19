@@ -9,7 +9,7 @@
   <title>Janafari — Madden 27 &amp; NBA 2K27 Ratings</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 role=%22img%22 aria-label=%22Janafari J%22%3E%3Crect x=%222%22 y=%222%22 width=%2260%22 height=%2260%22 rx=%2212%22 fill=%22%23041c38%22 stroke=%22%23fdbb30%22 stroke-width=%224%22/%3E%3Crect x=%229%22 y=%229%22 width=%2246%22 height=%2246%22 rx=%228%22 fill=%22none%22 stroke=%22%23fdbb30%22 stroke-width=%221.5%22 stroke-dasharray=%223 3%22 opacity=%22.7%22/%3E%3Cpath d=%22M22 13 H48 V22 H43 V39 Q43 51 30 51 Q16 51 16 39 V33 H25 V39 Q25 44 30 44 Q34 44 34 39 V22 H22 Z%22 fill=%22%23fff%22/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=32">
+  <link rel="stylesheet" href="styles.css?v=33">
   <script>
     // Set the theme BEFORE first paint so a dark-mode visitor never sees a white flash.
     (function () {
@@ -37,13 +37,13 @@
             <span class="brand-desc">Your Madden clubhouse · Madden 27 ratings</span>
           </span>
         </a>
-        <!-- Sport switch: two jersey patches on a scoreboard track. The ball icons are SVG paths (no emoji,
-             no fonts — they render the same on every device, like the brand mark); the gold patch slides
-             between them and the chosen ball fills with colour. app.js sets data-on + aria-pressed. -->
+        <!-- Sport switch: two jersey patches on a scoreboard track. The marks are single-weight line drawings
+             (goalposts · a hoop) as SVG paths — no emoji, no fonts, no cartoon balls — drawn in one colour so
+             they read like the wordmark; the gold patch slides between them. app.js sets data-on + aria-pressed. -->
         <div class="sport-switch" role="group" aria-label="Sport" id="sportSwitch" data-on="nfl">
           <span class="sport-thumb" aria-hidden="true"></span>
-          <button class="sport-btn active" type="button" data-sport-pick="nfl" aria-pressed="true" title="Madden 27 — football ratings"><svg class="sport-ic" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><g transform="rotate(-32 16 16)"><ellipse class="ic-body" cx="16" cy="16" rx="14.5" ry="9"/><path class="ic-band" d="M4.6 12.2 Q8.4 8.6 12 7.6 M4.6 19.8 Q8.4 23.4 12 24.4 M27.4 12.2 Q23.6 8.6 20 7.6 M27.4 19.8 Q23.6 23.4 20 24.4"/><path class="ic-lace" d="M9.5 16 H22.5 M12 13.6 V18.4 M14.7 13.6 V18.4 M17.3 13.6 V18.4 M20 13.6 V18.4"/></g></svg><span class="sport-label"><b>Madden</b><small>Football</small></span></button>
-          <button class="sport-btn" type="button" data-sport-pick="nba" aria-pressed="false" title="NBA 2K27 — basketball ratings"><svg class="sport-ic" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle class="ic-body" cx="16" cy="16" r="13.5"/><path class="ic-seam" d="M16 2.5 V29.5 M2.5 16 H29.5 M6.4 6.4 Q16 14.5 25.6 6.4 M6.4 25.6 Q16 17.5 25.6 25.6"/></svg><span class="sport-label"><b>NBA 2K</b><small>Basketball</small></span></button>
+          <button class="sport-btn active" type="button" data-sport-pick="nfl" aria-pressed="true" title="Madden 27 — football ratings"><svg class="sport-ic" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="ic-line" d="M16 29.5 V17 M7 17 H25 M7 17 V4.5 M25 17 V4.5 M11.5 29.5 H20.5"/><path class="ic-line ic-thin" d="M4 25 H10 M22 25 H28"/></svg><span class="sport-label"><b>Madden</b><small>Football</small></span></button>
+          <button class="sport-btn" type="button" data-sport-pick="nba" aria-pressed="false" title="NBA 2K27 — basketball ratings"><svg class="sport-ic" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="ic-line" d="M7 3.5 H25 V13 H7 Z M12.5 8 H19.5 V13 H12.5"/><ellipse class="ic-line" cx="16" cy="15.5" rx="8.5" ry="2.6"/><path class="ic-line ic-thin" d="M7.8 16.4 L11 27 M12 18 L13.5 27 M16 18.1 V27 M20 18 L18.5 27 M24.2 16.4 L21 27 M11 27 Q16 29.2 21 27 M9.4 21.5 H22.6"/></svg><span class="sport-label"><b>NBA 2K</b><small>Basketball</small></span></button>
         </div>
         <nav class="header-actions" aria-label="Actions">
           <button class="button button-gold" id="addButton" type="button"><span class="icon" aria-hidden="true">＋</span><span class="label">Add player</span></button>
