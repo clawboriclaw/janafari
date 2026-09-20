@@ -211,6 +211,12 @@ def parse_player_page(html):
     return doc
 
 
+def page_is_broken(d):
+    """A player page we must not publish: no overall or no season chart means the layout changed.
+    A thin sheet (few numeric attributes, zero badges) is a real player, not a broken page."""
+    return d.get("ovr") is None or not d.get("labels")
+
+
 def age_from(birthdate, today=None):
     try:
         b = time.strptime(birthdate, "%B %d, %Y")
@@ -373,7 +379,7 @@ async def run(argv):
             # most attributes (Tyler Nickel had 9 numbers on 2026-09-20, which tripped an over-strict "< 20" guard and
             # killed the whole Sunday run). What is NOT real is a page with no overall or no season chart: that is a
             # layout change. One such page is skipped (the player keeps his last sheet); many mean the site changed.
-            if d["ovr"] is None or not d["labels"]:
+            if page_is_broken(d):
                 broken.append(p["id"])
                 log("  %s: parsed to ovr=%s, %d attributes, %d chart labels — skipped" % (p["id"], d["ovr"], len(d["stats"]), len(d["labels"])))
                 if len(broken) > max(3, len(need) // 30):

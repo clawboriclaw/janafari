@@ -88,7 +88,9 @@ badges with descriptions, loaded when a card opens), `data/nba/history.json` (on
 the site's own labels, "NBA 2K27 Launch Rating", "Nov. 5, 2026", …), plus `movement.json` (the raw
 per-player series), `badges.json` (2K's text and art for every badge seen + our plain-English lines) and
 `photos.json` (headshots from ESPN's public roster API; 2K Ratings' own images refuse hotlinks).
-`.github/workflows/refresh-nba-ratings.yml` runs it **every day** (team pages + only the players whose
+`tools/test_fetch_nba.py` pins what a thin sheet, a full sheet, a team page and a broken page parse to (real
+pages saved gzipped in `tools/fixtures/`) — it runs offline before every fetch, so a parser change fails in CI
+before a request goes out. `.github/workflows/refresh-nba-ratings.yml` runs it **every day** (team pages + only the players whose
 overall moved; Sundays every player page) and commits only when something changed. Same exit codes
 (0 changed · 3 unchanged · 2 failed → red run + Telegram).
 
