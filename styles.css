@@ -255,6 +255,9 @@ html[data-theme="dark"] .chips-wrap:after { background: -webkit-linear-gradient(
 .view-btn:first-child { border-radius: 12px 0 0 12px; }
 .view-btn:last-child { border-radius: 0 12px 12px 0; margin-left: -1px; }
 .view-btn.active { background: #041c38; background: var(--navy); border-color: #041c38; border-color: var(--navy); color: #fff; }
+/* the cards/list marks are drawn (same one-weight line style as the sport switch), not unicode glyphs */
+.view-btn .view-ic { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.view-btn.active .view-ic rect { fill: currentColor; stroke: none; }
 
 .week-row .chip { -webkit-box-flex: 1; -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; width: 100%; max-width: 360px; }   /* a select must shrink on a 320px phone */
 .invite {

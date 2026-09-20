@@ -77,7 +77,7 @@
       club: { min: 95, label: "rated 95 or better" },
       sides: ["guard", "forward", "center"],
       hasFA: false, facts: false,
-      arcade: { url: "hoops.js?v=2", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
+      arcade: { url: "hoops.js?v=3", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
       // ESPN's logo slugs are not the NBA's abbreviations for six clubs
       logo: function (abbr) { var s = { GSW: "gs", NOP: "no", NYK: "ny", SAS: "sa", UTA: "utah", WAS: "wsh" }[abbr] || abbr.toLowerCase(); return "https://a.espncdn.com/i/teamlogos/nba/500/" + s + ".png"; },
       tiers: { x: { short: "HOF", name: "Hall of Fame badge", kicker: "HALL OF FAME" } },   // Gold is too common to be a card badge (227 of 535 players)
