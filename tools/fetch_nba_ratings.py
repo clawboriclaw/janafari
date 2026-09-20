@@ -362,18 +362,23 @@ async def run(argv):
         if not need:
             need.append(max(unique, key=lambda p: p["ovr"]))
         log("opening %d player pages (%s)" % (len(need), "full" if full else "changed/new + sentinel"))
-        detail = {}
+        detail, broken = {}, []
         for i, p in enumerate(need):
             html = await bro.html(SITE + "/" + p["id"])
             if html is None:
                 log("  %s: page missing, keeping the roster row only" % p["id"])
                 continue
             d = parse_player_page(html)
-            # Zero badges is real (41 players at launch); zero attributes, no overall or no season chart is a broken
-            # parse — publishing that would blank a player's card and bio (Codex, 2026-09-19). Fail loudly instead.
-            if d["ovr"] is None or len(d["stats"]) < 20 or not d["labels"]:
-                raise RuntimeError("player page %s parsed to ovr=%s, %d attributes, %d chart labels — the page layout changed?"
-                                   % (p["id"], d["ovr"], len(d["stats"]), len(d["labels"])))
+            # Zero badges is real (41 players at launch) and so is a thin sheet — a two-way player can carry "--" for
+            # most attributes (Tyler Nickel had 9 numbers on 2026-09-20, which tripped an over-strict "< 20" guard and
+            # killed the whole Sunday run). What is NOT real is a page with no overall or no season chart: that is a
+            # layout change. One such page is skipped (the player keeps his last sheet); many mean the site changed.
+            if d["ovr"] is None or not d["labels"]:
+                broken.append(p["id"])
+                log("  %s: parsed to ovr=%s, %d attributes, %d chart labels — skipped" % (p["id"], d["ovr"], len(d["stats"]), len(d["labels"])))
+                if len(broken) > max(3, len(need) // 30):
+                    raise RuntimeError("%d player pages failed to parse (%s …) — the page layout changed?" % (len(broken), ", ".join(broken[:5])))
+                continue
             detail[p["id"]] = d
             if (i + 1) % 25 == 0:
                 log("  %d/%d" % (i + 1, len(need)))
