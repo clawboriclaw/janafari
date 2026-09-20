@@ -158,8 +158,8 @@
     if (rules) { gravity = 1500 * U * rules.grav.k; if (ball) { ball.r = 10 * U * rules.ball.r; } }
   }
   function placeAll(giveTo) {
-    var i; for (i = 0; i < teams[0].length; i += 1) { var p = teams[0][i]; p.x = W * (0.28 + i * 0.12); p.y = floorY - p.r * p.bodyK; p.vy = 0; p.ground = true; p.hold = false; p.shootAt = -1; }
-    for (i = 0; i < teams[1].length; i += 1) { var q = teams[1][i]; q.x = W * (0.72 - i * 0.12); q.y = floorY - q.r * q.bodyK; q.vy = 0; q.ground = true; q.hold = false; q.shootAt = -1; }
+    var i; for (i = 0; i < teams[0].length; i += 1) { var p = teams[0][i]; p.x = W * (0.28 + i * 0.12); p.px = p.x; p.flop = 0; p.y = floorY - p.r * p.bodyK; p.vy = 0; p.ground = true; p.hold = false; p.shootAt = -1; }
+    for (i = 0; i < teams[1].length; i += 1) { var q = teams[1][i]; q.x = W * (0.72 - i * 0.12); q.px = q.x; q.flop = 0; q.y = floorY - q.r * q.bodyK; q.vy = 0; q.ground = true; q.hold = false; q.shootAt = -1; }
     ball.x = W / 2; ball.y = H * 0.25; ball.vx = 0; ball.vy = 0; ball.holder = null; ball.spin = 0; ball.lastThrow = -9; ball.thrower = null;
     if (giveTo === 0 || giveTo === 1) { ball.x = teams[giveTo][0].x; ball.y = H * 0.2; }   // the team that was scored on brings it in
   }
@@ -188,8 +188,8 @@
     var team = teams[side], i;
     for (i = 0; i < team.length; i += 1) {
       var p = team[i];
-      if (p.ground) { p.vy = -jumpVelocity(p); p.ground = false; }
-      if (p.hold && p.shootAt < 0) { p.shootAt = t + 0.2; }   // the ball leaves near the top of the jump
+      if (p.ground) { p.vy = -jumpVelocity(p); p.ground = false; if (p.hold && p.shootAt < 0) { p.shootAt = t + 0.2; } }   // the ball leaves near the top of the jump
+      else if (p.hold && p.shootAt < 0) { release(p); }   // already in the air with the ball: it leaves right now
     }
   }
   function release(p) {
@@ -212,7 +212,11 @@
     beep(520, 50, "triangle", 0.03);
   }
   function giveBall(p) { ball.holder = p; p.hold = true; ball.vx = 0; ball.vy = 0; lastTouch = p.side; clock = SHOT_CLOCK; }
-  function loose(vx, vy) { if (ball.holder) { ball.holder.hold = false; ball.holder.shootAt = -1; ball.holder = null; } ball.vx = vx; ball.vy = vy; ball.lastThrow = t; ball.thrower = null; }
+  function loose(vx, vy) {
+    var who = ball.holder;
+    if (who) { if (who.shootAt >= 0) { banner = "STRIPPED!"; bannerT = 0.7; } who.hold = false; who.shootAt = -1; ball.holder = null; }
+    ball.vx = vx; ball.vy = vy; ball.lastThrow = -9; ball.thrower = null; ball.lostBy = who; ball.lostAt = t;   // no shot protection: it is a loose ball
+  }
 
   /* ---------- CPU ---------- */
   function think(p, dt) {
@@ -245,7 +249,8 @@
     t += dt;
     if (ruleCard > 0) { ruleCard -= dt; }
     if (bannerT > 0) { bannerT -= dt; }
-    if (freeze > 0) { freeze -= dt; if (freeze <= 0) { if (matchOver === "win") { nextOpponent(); } else if (matchOver === "loss") { endRun(); return; } else { placeAll(1 - lastScorer); } } draw(); raf = window.requestAnimationFrame(frame); return; }
+    if (freeze > 0) { var pi; for (pi = particles.length - 1; pi >= 0; pi -= 1) { var pq = particles[pi]; pq.vy += 700 * U * dt; pq.x += pq.vx * dt; pq.y += pq.vy * dt; pq.life -= dt; if (pq.life <= 0) { particles.splice(pi, 1); } }
+      freeze -= dt; if (freeze <= 0) { if (matchOver === "win") { nextOpponent(); } else if (matchOver === "loss") { endRun(); return; } else { placeAll(1 - lastScorer); } } draw(); raf = window.requestAnimationFrame(frame); return; }
     step(dt);
     draw();
     raf = window.requestAnimationFrame(frame);
@@ -273,10 +278,11 @@
         var gy = floorY - p.r * p.bodyK;
         if (p.y >= gy) { if (!p.ground && p.vy > 200 * U) { p.landT = 0.18; } p.y = gy; p.vy = 0; p.ground = true; } else { p.ground = false; }
         if (p.landT > 0) { p.landT -= dt; }
-        p.flop = lerp(p.flop || 0, (p.x - (p.px || p.x)) / dt * 0.02, 0.2); p.px = p.x;   // arms trail the run
+        if (dt > 0) { p.flop = lerp(p.flop || 0, (p.x - (p.px === undefined ? p.x : p.px)) / dt * 0.02, 0.2); }   // arms trail the run (dt is 0 on the first frame after Resume)
+        p.px = p.x;
         p.tilt = lerp(p.tilt, (p.ground ? 0 : p.vy * 0.0004) + (p.hold ? 0.08 * p.facing : 0), 0.15);
         if (p.hold && p.shootAt >= 0 && t >= p.shootAt) { release(p); }
-        if (p.hold) { ball.x = p.x + p.facing * p.r * 0.7; ball.y = p.y - p.r * p.bodyK * 0.55; }
+        if (p.hold) { ball.x = p.x + p.facing * p.r * 0.4; ball.y = p.y - p.r * p.bodyK - ball.r; }   // held overhead — exactly where release() lets it go
       }
     }
     // nobody stands inside anybody: overlapping players on the floor are nudged apart
@@ -284,7 +290,7 @@
     for (a = 0; a < everyone.length; a += 1) {
       for (b = a + 1; b < everyone.length; b += 1) {
         var pa = everyone[a], pb = everyone[b], sep = (pa.r + pb.r) * 0.95, ox = pb.x - pa.x;
-        if (Math.abs(ox) < sep && Math.abs(pa.y - pb.y) < pa.r * 1.5) { var push = (sep - Math.abs(ox)) / 2 * (ox < 0 ? -1 : 1); if (ox === 0) { push = sep / 2; } pa.x -= push; pb.x += push; }
+        if (Math.abs(ox) < sep && Math.abs(pa.y - pb.y) < pa.r * 1.5) { var push = (sep - Math.abs(ox)) / 2 * (ox < 0 ? -1 : 1); if (ox === 0) { push = sep / 2; } pa.x -= push; pb.x += push; pa.px -= push; pb.px += push; }   // a nudge is not a run: the arms do not flop for it
       }
     }
     // 25 s without a basket (a bowling ball parked on the rim, a football nobody can hold): jump ball, new rules
@@ -323,7 +329,8 @@
           var cx = p.x, cy = p.y - p.r * p.bodyK * 0.5, rr = p.r * 1.15 + ball.r, ddx = ball.x - cx, ddy = ball.y - cy;   // arms up: the reach is a little above the body
           if (ddx * ddx + ddy * ddy < rr * rr) {
             if (ball.thrower === p && t - ball.lastThrow < 0.5) { continue; }   // your own shot does not come back into your hands
-            if (t - ball.lastThrow < 0.4) { continue; }                           // a shot just released is in flight for everyone
+            if (ball.thrower && t - ball.lastThrow < 0.4) { continue; }           // a shot just released is in flight for everyone
+            if (ball.lostBy === p && t - ball.lostAt < 0.3) { continue; }         // the one who just lost it does not get it straight back
             if (ball.vy < -140 * U && t - ball.lastThrow < 1.2) { continue; }    // nobody plucks a rising shot out of the air
             giveBall(p); break;
           }
@@ -373,7 +380,7 @@
   function basket(side) {
     // side = whose hoop it is (the side that ATTACKS it scores); an own-basket counts for the other team, like real life
     var scorer = side, pts = 1;
-    if (ball.thrower && ball.thrower.side === side && Math.abs(ball.thrower.x - hoopX(side)) > W * 0.42) { pts = 2; }   // from way downtown
+    if (ball.thrower && ball.thrower.side === side && ball.shot && ball.shot.dist * U > W * 0.42) { pts = 2; }   // from way downtown (measured where the shot LEFT, not where he ran to)
     score[scorer] += pts; if (scorer === 0) { totalPts += pts; } makes[scorer] += 1; lastScorer = scorer; sinceBasket = 0; if (ball.shot) { ball.shot.result = "in"; } freeze = 1.3; matchOver = "";
     banner = scorer === 0 ? (pts === 2 ? "FROM DOWNTOWN!" : (ball.thrower && Math.abs(ball.thrower.x - hoopX(0)) < 70 * U ? "SLAM!" : "SWISH!")) : opp.name + " SCORE";
     bannerT = 1.3; swish(); confetti(hoopX(side), rimY, scorer === 0 ? HOME.colors[1] : opp.colors[0]);
@@ -559,12 +566,12 @@
     var hx = hoopX(side), dir = side === 0 ? 1 : -1, bx = hx + dir * (rimHalf + 4 * U), bw = 5 * U;
     var left = dir === 1 ? bx : bx - bw;
     // pole and arm
-    ctx.fillStyle = "#6f7a88"; ctx.fillRect(left + (dir === 1 ? bw + 6 * U : -8 * U), rimY - 8 * U, 3 * U, floorY - rimY + 8 * U);
+    ctx.fillStyle = "#6f7a88"; ctx.fillRect(left + (dir === 1 ? bw + 6 * U : -8 * U), 0, 3 * U, floorY);
     ctx.fillRect(dir === 1 ? left + bw : left - 8 * U, rimY - 8 * U, 8 * U, 3 * U);
     ctx.fillStyle = "#4b5563"; ctx.fillRect(left + (dir === 1 ? bw + 3 * U : -12 * U), floorY - 4 * U, 9 * U, 4 * U);
     // the board: glass with a white frame and the shooter's square
-    ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(left, rimY - 60 * U, bw, 72 * U);
-    ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 1.2 * U; ctx.strokeRect(left, rimY - 60 * U, bw, 72 * U);
+    ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.fillRect(left, 0, bw, rimY + 12 * U);   // glass all the way up: the ball bounces off exactly what is drawn
+    ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 1.2 * U; ctx.strokeRect(left, -2 * U, bw, rimY + 14 * U);
     ctx.strokeStyle = side === 0 ? HOME.colors[1] : opp.colors[1]; ctx.lineWidth = 1.5 * U; ctx.strokeRect(left + 1 * U, rimY - 20 * U, bw - 2 * U, 20 * U);
     // rim, its bracket, and the net
     ctx.fillStyle = "#ff6a2b"; ctx.fillRect(hx - rimHalf, rimY - 1.5 * U, rimHalf * 2, 3 * U);
