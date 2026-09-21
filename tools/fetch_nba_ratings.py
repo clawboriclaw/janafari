@@ -88,9 +88,10 @@ def _jev_change_review(old, core, old_stats, new_stats, iteration_changed):
              "review_before_publish": {"type": "noul", "instructions": "Should a human look at this before it is published to the site?"}}
         a = J.ask(state, q, caller="janafari.nba_change_review", timeout=2.0)
         k, c = J.choice(a, "kind"); r = J.noul(a, "review_before_publish")
-        if k: log(f"jev(shadow) change review: {k} ({c:.2f}) · review-before-publish {r:.2f} · +{len(added)}/-{len(removed)} players, {len(ovr_moves)} OVR moves ({len(big)} ≥5), {stat_changed} sheets")
+        if k: log(f"jev change review: {k} ({c:.2f}) · review-before-publish {r:.2f} · +{len(added)}/-{len(removed)} players, {len(ovr_moves)} OVR moves ({len(big)} ≥5), {stat_changed} sheets")
+        return (k, c, r) if k else None
     except Exception:
-        pass
+        return None
 
 
 def log(msg):
@@ -527,7 +528,11 @@ async def run(argv):
     if same_players and same_stats and same_history and same_side and not iteration_changed:
         log("unchanged: %s, %d players" % (iteration["label"], len(core)))
         return 3
-    _jev_change_review(old, core, old_stats, new_stats, iteration_changed)   # SHADOW (round-2: Codex #9): scraper layout change vs real roster/rating move — log only
+    verdict = _jev_change_review(old, core, old_stats, new_stats, iteration_changed)
+    # ACTING (owner 2026-09-21 "deploy jev already", pt578): a CONFIDENT source-layout change is not published — the previous data
+    # stays, rc 2 (the workflow treats it like a parse failure and commits nothing). JEV_ACT_NBA=0 disables; a real update at worst waits a day.
+    if os.environ.get("JEV_ACT_NBA", "1") == "1" and verdict and verdict[0] == "source_layout_change" and verdict[1] >= 0.95 and (verdict[2] or 0) >= 0.90:
+        log("jev: confident source-layout change (%.2f) — NOT writing; previous data left in place (rc 2)" % verdict[1]); return 2
     dump_json(MOVEMENT, movement_doc)
     dump_json(PHOTOS, photos, indent=0)
     dump_json(BADGES, badge_defs, indent=2)
