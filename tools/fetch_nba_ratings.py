@@ -70,6 +70,29 @@ BADGE_TIERS = ("legend", "hof", "gold", "silver", "bronze")
 TIER_LABEL = {"legend": "Legend", "hof": "Hall of Fame", "gold": "Gold", "silver": "Silver", "bronze": "Bronze"}
 
 
+def _jev_change_review(old, core, old_stats, new_stats, iteration_changed):
+    """advisory: summarise this update's changes as COUNTS (never player data beyond public name/OVR deltas) and ask Jev whether the
+    change looks like a real roster/rating update or a scraper/source-layout anomaly. Logged only; the write proceeds as before.
+    A GitHub Action runs this — the client fails open when the key is absent there. Fail-open = nothing."""
+    try:
+        import sys as _s; _s.path.insert(0, os.path.expanduser("~/.openclaw/bin")); import jev_client as J
+        prev = {p["id"]: p for p in (old or {}).get("players", [])}; cur = {p["id"]: p for p in core}
+        added = [cur[i]["name"] for i in cur if i not in prev][:8]; removed = [prev[i]["name"] for i in prev if i not in cur][:8]
+        ovr_moves = [(cur[i]["name"], prev[i]["ovr"], cur[i]["ovr"]) for i in cur if i in prev and prev[i].get("ovr") != cur[i].get("ovr")]
+        big = [m for m in ovr_moves if abs(m[2] - m[1]) >= 5]
+        stat_changed = sum(1 for i in new_stats if i in old_stats and old_stats[i].get("stats") != new_stats[i].get("stats"))
+        state = {"players_before": len(prev), "players_after": len(cur), "added": added, "removed": removed, "ovr_changes": len(ovr_moves),
+                 "big_ovr_moves_ge5": big[:8], "stat_sheets_changed": stat_changed, "roster_update_label_changed": bool(iteration_changed),
+                 "source": "2kratings.com team + player pages, scraped headlessly; a source layout change shows up as mass removals, zeroed fields or hundreds of identical moves"}
+        q = {"kind": {"type": "choice", "instructions": "What does this change set most likely represent?", "criteria": {"real_roster_or_rating_update": None, "source_layout_change": None, "value_anomaly": None, "unknown": None}},
+             "review_before_publish": {"type": "noul", "instructions": "Should a human look at this before it is published to the site?"}}
+        a = J.ask(state, q, caller="janafari.nba_change_review", timeout=2.0)
+        k, c = J.choice(a, "kind"); r = J.noul(a, "review_before_publish")
+        if k: log(f"jev(shadow) change review: {k} ({c:.2f}) · review-before-publish {r:.2f} · +{len(added)}/-{len(removed)} players, {len(ovr_moves)} OVR moves ({len(big)} ≥5), {stat_changed} sheets")
+    except Exception:
+        pass
+
+
 def log(msg):
     print(msg, flush=True)
 
@@ -504,6 +527,7 @@ async def run(argv):
     if same_players and same_stats and same_history and same_side and not iteration_changed:
         log("unchanged: %s, %d players" % (iteration["label"], len(core)))
         return 3
+    _jev_change_review(old, core, old_stats, new_stats, iteration_changed)   # SHADOW (round-2: Codex #9): scraper layout change vs real roster/rating move — log only
     dump_json(MOVEMENT, movement_doc)
     dump_json(PHOTOS, photos, indent=0)
     dump_json(BADGES, badge_defs, indent=2)
