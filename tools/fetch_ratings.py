@@ -8,6 +8,9 @@ committed snapshot means the iPad gets one cached file instead of 24 API calls. 
     python3 tools/fetch_ratings.py            # writes data/ratings.json, exit 0 when changed
     python3 tools/fetch_ratings.py --check    # print the live iteration and count, write nothing
 
+Writes data/ratings.json, data/stats/<TEAM>.json, data/history.json, data/abilities.json and
+data/free-agents.json (everyone EA has stopped rating — see free_agent_pool).
+
 Exit codes (the workflow keys off them, so they must stay distinct — review finding 2026-09-12):
     0  changed, files written        3  unchanged, nothing written
     2  the fetch or a sanity check failed (any exception lands here too, never on 1)
@@ -26,6 +29,7 @@ HEADERS = {
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "ratings.json")
 HISTORY = os.path.join(os.path.dirname(OUT), "history.json")   # every iteration's {id: ovr}, so a missed week is never lost
 ABILITIES = os.path.join(os.path.dirname(OUT), "abilities.json")   # EA's own ability descriptions + art, plus our kid-friendly lines
+FREE = os.path.join(os.path.dirname(OUT), "free-agents.json")      # players EA rated once and no longer rates (see free_agent_pool)
 SEASON_MARK = "madden-nfl-27"   # the feed has no season field; EA's portrait URLs carry the game name
 LIMIT = 100
 
@@ -91,6 +95,59 @@ def compact(p):
     }
 
 
+def read_json(path, default):
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except Exception:
+        return default
+
+
+def free_agent_pool(old, unique):
+    """Players an earlier iteration rated and this one does not.
+
+    EA only rates players who are on a roster: "Week 1 Ratings" dropped 1,215 of the 1,240 free agents
+    that "Launch Ratings" carried (3,111 players -> 1,891). Without this file they simply vanish from the
+    page — and the watchlist quietly deleted anyone who was on it. Here they are kept with the numbers
+    from the last week EA DID rate them, which `lastSeen` names so the page can say so on the card.
+    A player who signs again comes back in the feed, so he drops out of the pool on that day's run."""
+    live = set(str(p["id"]) for p in unique)
+    pool = {}
+    for p in read_json(FREE, {}).get("players", []):
+        if str(p.get("id")) not in live:
+            pool[str(p["id"])] = p
+    it = (old or {}).get("iteration") or {}
+    for p in (old or {}).get("players", []):
+        pid = str(p.get("id"))
+        if pid in live or pid in pool:
+            continue
+        q = dict(p)
+        if q.get("team") != "FA":                      # cut, not a free agent at his last rating: remember where he was
+            q["lastTeam"], q["lastTeamFull"] = q.get("team"), q.get("teamFull")
+        q["team"], q["teamName"], q["teamFull"] = "FA", "Free agent", "Free agent"
+        q["lastSeen"] = {"id": it.get("id"), "label": it.get("label")}
+        pool[pid] = q
+    return sorted(pool.values(), key=lambda p: (-(p.get("ovr") or 0), p.get("name") or ""))
+
+
+def write_free_agents(free_doc, stats_dir, old_stats):
+    """free-agents.json plus data/stats/FA.json, the attribute sheet the page asks for when a card with
+    team "FA" is opened. A player cut this week brings his attributes across from his old club's sheet —
+    that sheet is about to be rewritten with the new roster and his row would otherwise be lost."""
+    ids = set(str(p["id"]) for p in free_doc["players"])
+    sheet = dict((k, v) for k, v in read_json(os.path.join(stats_dir, "FA.json"), {}).items() if k in ids)
+    for pid in ids:
+        if pid not in sheet and pid in old_stats:
+            sheet[pid] = old_stats[pid]
+    os.makedirs(stats_dir, exist_ok=True)
+    with open(os.path.join(stats_dir, "FA.json"), "w") as fh:
+        json.dump(sheet, fh, separators=(",", ":"))
+    with open(FREE, "w") as fh:
+        json.dump(free_doc, fh, separators=(",", ":"), ensure_ascii=False)
+    print("wrote %s: %d players EA no longer rates (%d with attributes)"
+          % (os.path.relpath(FREE), free_doc["count"], len(sheet)))
+
+
 def main(argv):
     first = get({"locale": "en", "limit": 1, "offset": 0})
     it0 = first["items"][0]
@@ -133,12 +190,16 @@ def main(argv):
         "count": len(unique),
         "players": unique,
     }
-    old = None
-    try:
-        with open(OUT) as fh:
-            old = json.load(fh)
-    except Exception:
-        pass
+    old = read_json(OUT, None)
+    # data/free-agents.json: everyone EA stopped rating, carried at his last numbers. Written whenever it
+    # changes — including on a week where ratings.json itself is unchanged, the same rule history.json follows.
+    free = free_agent_pool(old, unique)
+    free_doc = {"game": doc["game"], "source": doc["source"],
+                "note": "Players EA no longer rates: free agents, and anyone off every roster. Their numbers are "
+                        "from the week named in each player's lastSeen, not from the current week.",
+                "fetched": doc["fetched"], "count": len(free), "players": free}
+    old_free = read_json(FREE, None)
+    free_changed = not old_free or old_free.get("players") != free
     # data/history.json: one {id: ovr} map per iteration, replaced in place when EA edits an iteration
     # under the same id. The page seeds its week-over-week trends from this, so a device that did not
     # open the page during a week still gets that week. Written even when ratings.json is unchanged.
@@ -163,7 +224,9 @@ def main(argv):
     old_stats = {}
     try:
         for name in os.listdir(stats_dir):
-            if name.endswith(".json"):
+            # FA.json holds players EA no longer rates, so it has no counterpart in `new_stats`: reading it
+            # here would make every run look like an attribute change and rewrite all 32 club sheets.
+            if name.endswith(".json") and name != "FA.json":
                 with open(os.path.join(stats_dir, name)) as fh:
                     old_stats.update(json.load(fh))
     except Exception:
@@ -171,8 +234,11 @@ def main(argv):
     new_stats = {str(p["id"]): {"stats": p["stats"], "diffs": p["diffs"]} for p in unique}
     if old and old.get("iteration") == iteration and old_stats == new_stats and \
             [{k: p.get(k) for k in core_keys_cmp} for p in old.get("players", [])] == [{k: p.get(k) for k in core_keys_cmp} for p in unique]:
-        if history_changed:
-            print("ratings unchanged; wrote %s for %s" % (os.path.relpath(HISTORY), iteration.get("label")))
+        if free_changed:
+            write_free_agents(free_doc, stats_dir, old_stats)
+        if history_changed or free_changed:
+            print("ratings unchanged; wrote %s for %s" % (", ".join(
+                [os.path.relpath(p) for p, c in ((HISTORY, history_changed), (FREE, free_changed)) if c]), iteration.get("label")))
             return 0
         print("unchanged: %s, %d players" % (iteration.get("label"), len(unique)))
         return 3                                     # nothing to commit (3, not 1: 1 is Python's crash code)
@@ -188,6 +254,9 @@ def main(argv):
     for team, sheet in by_team.items():
         with open(os.path.join(stats_dir, team + ".json"), "w") as fh:
             json.dump(sheet, fh, separators=(",", ":"))
+    # `old_stats` was read off disk above, before the club sheets were rewritten, so a player cut this week
+    # can still be found there and moved into FA.json.
+    write_free_agents(free_doc, stats_dir, old_stats)
     # data/abilities.json: EA's official description and artwork for every ability name seen this week ("ea"),
     # merged with the kid-friendly lines the page shows first ("xfactor" / "superstar"); our lines are never overwritten.
     defs = {}

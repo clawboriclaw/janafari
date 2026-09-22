@@ -27,10 +27,11 @@
       title: "Janafari — Madden 27 Ratings", desc: "Your Madden clubhouse · Madden 27 ratings",
       storageKey: "janafari-v2", legacyKey: "our-madden-27-board-v1", teamKey: "janafari-team",
       dataUrl: "data/ratings.json", historyUrl: "data/history.json", defsUrl: "data/abilities.json?v=2", statsDir: "data/stats/",
+      freeUrl: "data/free-agents.json",   // everyone EA has stopped rating; see loadFree()
       source: "EA", sourceLong: "EA's official Madden 27 ratings feed", sourceLink: "https://www.ea.com/games/madden-nfl/ratings",
       club: { min: 99, label: "in the 99 Club" },
       sides: ["offense", "defense", "special"],
-      hasFA: true, facts: true,                    // free agents in the feed · draft/Super Bowl facts
+      facts: true,                                 // draft/Super Bowl facts
       arcade: { url: "game.js?v=8", api: "JanafariGame", modal: "gameModal", name: "End Zone Run", egg: "eggRunner" },   // `game` is the ratings title; the mini-game is `arcade`
       logo: function (abbr) { return "https://a.espncdn.com/i/teamlogos/nfl/500/" + abbr.toLowerCase() + ".png"; },
       tiers: { x: { short: "X", name: "X-Factor", kicker: "X-FACTOR" }, star: { short: "★", name: "Superstar", kicker: "SUPERSTAR" } },
@@ -73,10 +74,11 @@
       title: "Janafari — NBA 2K27 Ratings", desc: "Your 2K clubhouse · NBA 2K27 ratings",
       storageKey: "janafari-nba-v1", legacyKey: null, teamKey: "janafari-nba-team",
       dataUrl: "data/nba/ratings.json", historyUrl: "data/nba/history.json", defsUrl: "data/nba/badges.json?v=1", statsDir: "data/nba/stats/",
+      freeUrl: "data/nba/free-agents.json",   // 2K's free agency list, plus anyone off every roster
       source: "2K Ratings", sourceLong: "the NBA 2K27 Play Now database at 2K Ratings", sourceLink: "https://www.2kratings.com/",
       club: { min: 95, label: "rated 95 or better" },
       sides: ["guard", "forward", "center"],
-      hasFA: false, facts: false,
+      facts: false,
       arcade: { url: "hoops.js?v=4", api: "JanafariHoops", modal: "hoopsModal", name: "Janafari Jam", egg: "eggBall" },
       // ESPN's logo slugs are not the NBA's abbreviations for six clubs
       logo: function (abbr) { var s = { GSW: "gs", NOP: "no", NYK: "ny", SAS: "sa", UTA: "utah", WAS: "wsh" }[abbr] || abbr.toLowerCase(); return "https://a.espncdn.com/i/teamlogos/nba/500/" + s + ".png"; },
@@ -122,7 +124,8 @@
   var SVG_NS = "http://www.w3.org/2000/svg";
 
   var DATA = null;          // {game, iteration, iterations, fetched, count, players:[...]}
-  var byId = {};            // id -> player
+  var FREE = null;          // free agents: null = the file has not been read yet, [] = read and empty
+  var byId = {};            // id -> player (the feed, plus any free agent once FREE is loaded)
   var statsCache = {};      // team -> {id: {stats, diffs}}
   var state;                // {version:2, watchlist:[ids], snapshots:[{id,label,date,ratings}]}
   var selectedSnapshot = 0;
@@ -235,7 +238,7 @@
   function isClub(r) { return r !== null && r >= SPORT.club.min; }
 
   /* ---------- state ---------- */
-  function makeDefaultState() { return { version: 2, watchlist: [], snapshots: [] }; }
+  function makeDefaultState() { return { version: 2, watchlist: [], snapshots: [], faSeen: {} }; }
   function isArray(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function validState(v) {
     if (!v || v.version !== 2 || !isArray(v.watchlist) || !isArray(v.snapshots)) { return false; }
@@ -254,6 +257,7 @@
     try { raw = window.localStorage.getItem(SPORT.storageKey); } catch (e) {}
     try { state = raw ? JSON.parse(raw) : null; } catch (e) { state = null; }
     if (!validState(state)) { state = makeDefaultState(); }
+    if (!state.faSeen || typeof state.faSeen !== "object" || isArray(state.faSeen)) { state.faSeen = {}; }
   }
   function saveState() {
     try { window.localStorage.setItem(SPORT.storageKey, JSON.stringify(state)); return true; }
@@ -335,25 +339,58 @@
   }
   function useData(doc) {
     DATA = doc;
+    FREE = null;       // the other sport's free agents are not this sport's
     byId = {};
     statsCache = {};   // attributes belong to a dataset; a new one invalidates them
     DATA.players.forEach(function (p) { byId[p.id] = p; });
   }
   function player(id) { return byId[id]; }
 
+  /* ---------- free agents ----------
+     Neither source rates a player who is not on a roster. EA dropped 1,215 of its 1,240 free agents
+     the week the real season started; 2K keeps its unsigned players on a page of their own. Either way
+     they are NOT in ratings.json, and the page used to react by deleting them — off the board, and
+     silently off someone's list of players. They live in their own file instead, marked `gone`, and are
+     read on demand: the boot only waits for them when a watched player is missing from the feed. */
+  function loadFree(cb) {
+    if (FREE) { if (cb) { cb(FREE); } return; }
+    var gen = loadGen;
+    var done = function (list) {
+      if (gen !== loadGen) { return; }   // a sport switch while this was in flight
+      FREE = list;
+      FREE.forEach(function (p) { p.gone = true; if (!byId[p.id]) { byId[p.id] = p; } });
+      if (cb) { cb(FREE); }
+    };
+    if (!SPORT.freeUrl) { done([]); return; }
+    fetchJson(SPORT.freeUrl, function (doc) { done(doc && isArray(doc.players) ? doc.players : []); }, function () { done([]); });
+  }
+  function hasFreeAgents() { return !!(FREE && FREE.length); }
+  // "Free agent" on its own when the source still rates him (2K's free agency page); the week his
+  // numbers are frozen at when it does not (everyone EA stopped rating).
+  function lastRatedIn(p) { return (p.gone && p.lastSeen && p.lastSeen.label) || ""; }
+
   /* ---------- ratings & changes ---------- */
-  function rating(id, snapIndex) {
+  function snapRating(id, snapIndex) {
     var snap = state.snapshots[snapIndex === undefined ? selectedSnapshot : snapIndex];
     return snap && typeof snap.ratings[id] === "number" ? snap.ratings[id] : null;
   }
+  // A free agent is in no week's snapshot, so his own record carries the last rating he was given.
+  function rating(id, snapIndex) {
+    var v = snapRating(id, snapIndex), p;
+    if (v !== null) { return v; }
+    p = byId[id];
+    return p && p.gone && typeof p.ovr === "number" ? p.ovr : null;
+  }
   function getChange(id, snapIndex) {
     var i = snapIndex === undefined ? selectedSnapshot : snapIndex;
+    if (byId[id] && byId[id].gone) { return null; }   // nothing to compare: he was not rated this week
     if (i === 0) { return null; }
-    var now = rating(id, i), before = rating(id, i - 1);
+    var now = snapRating(id, i), before = snapRating(id, i - 1);
     if (now === null || before === null) { return null; }
     return now - before;
   }
   function hasHistory() { return state.snapshots.length > 1; }
+  function changeFor(p) { return p.gone ? { text: "FA", cls: "change-fa" } : changeParts(getChange(p.id)); }
   function changeParts(change) {
     if (change === null && !hasHistory()) { return { text: "", cls: "change-none" }; }
     if (change === null) { return { text: "NEW", cls: "change-new" }; }
@@ -378,6 +415,10 @@
     if (tab === "watch") {
       return state.watchlist.map(player).filter(function (p) { return p; });
     }
+    if (activeTeam === "FA") { return FREE || []; }
+    // Searchable, so a free agent can still be found and added — but kept out of the plain league board,
+    // where his frozen rating would sit among this week's numbers as though it were one of them.
+    if (searchTerm && FREE) { return DATA.players.concat(FREE); }
     return DATA.players;
   }
   function sortByRating(list) {
@@ -445,7 +486,7 @@
     svg.setAttribute("class", "sparkline"); svg.setAttribute("viewBox", "0 0 95 30"); svg.setAttribute("aria-label", "Rating history");
     guide.setAttribute("x1", "2"); guide.setAttribute("x2", "93"); guide.setAttribute("y1", "25"); guide.setAttribute("y2", "25");
     svg.appendChild(guide);
-    for (i = 0; i <= selectedSnapshot; i += 1) { if (rating(id, i) !== null) { values.push(rating(id, i)); } }
+    for (i = 0; i <= selectedSnapshot; i += 1) { if (snapRating(id, i) !== null) { values.push(snapRating(id, i)); } }
     if (!values.length) { return svg; }
     min = Math.min.apply(Math, values); max = Math.max.apply(Math, values); range = Math.max(max - min, 2);
     for (i = 0; i < values.length; i += 1) {
@@ -463,7 +504,7 @@
      A card is one flex row: portrait · name + position/team/badge · OVR.
      Nothing is absolutely positioned over anything else, so nothing can overlap. */
   function buildCard(p, rank) {
-    var r = rating(p.id), parts = changeParts(getChange(p.id)), watched = isWatched(p.id);
+    var r = rating(p.id), parts = changeFor(p), watched = isWatched(p.id);
     var card = document.createElement("button"), body = document.createElement("div"), meta = document.createElement("div"), right = document.createElement("div"), ovr = document.createElement("span");
     card.type = "button";
     card.className = "pcard" + (isClub(r) ? " is-99" : "") + (watched ? " is-watched" : "");
@@ -493,7 +534,7 @@
   }
 
   function buildRow(p, rank) {
-    var r = rating(p.id), parts = changeParts(getChange(p.id));
+    var r = rating(p.id), parts = changeFor(p);
     var row = document.createElement("tr");
     var playerCell = document.createElement("td"), ovrCell = document.createElement("td"), changeCell = document.createElement("td"), trendCell = document.createElement("td");
     var wrap = document.createElement("div"), info = document.createElement("span");
@@ -523,8 +564,11 @@
     var movers = pool.map(function (p) { return { p: p, c: getChange(p.id) }; }).filter(function (m) { return m.c !== null && m.c !== 0; });
     movers.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
     el("clubCount").textContent = String(club.length); el("clubLabel").textContent = SPORT.club.label;
-    el("trackedCount").textContent = String(tab === "watch" ? state.watchlist.length : DATA.count);
-    el("trackedLabel").textContent = tab === "watch" ? (state.watchlist.length === 1 ? "player on my list" : "players on my list") : "players rated";
+    // On the watch tab, count what is actually on the board: an id no source carries any more is kept
+    // in storage (it costs nothing, and comes back if he does) but it is not a player anyone can see.
+    var mine = tab === "watch" ? pool.length : DATA.count;
+    el("trackedCount").textContent = String(mine);
+    el("trackedLabel").textContent = tab === "watch" ? (mine === 1 ? "player on my list" : "players on my list") : "players rated";
     el("moverStat").hidden = !movers.length;
     if (movers.length) {
       el("moverValue").textContent = (movers[0].c > 0 ? "+" : "") + movers[0].c;
@@ -559,7 +603,7 @@
       btn.setAttribute("tabindex", on ? "0" : "-1");   // roving tabindex: one tab stop, arrows move inside
     });
     var panel = el("boardPanel"); if (panel) { panel.setAttribute("aria-labelledby", "tab-" + tab); }
-    el("watchTabCount").textContent = String(state.watchlist.length);
+    el("watchTabCount").textContent = String(state.watchlist.filter(function (id) { return player(id); }).length);
     el("searchInput").placeholder = tab === "watch" ? "Search my players" : "Search any player or team";
   }
 
@@ -591,7 +635,8 @@
       icon = "⭐"; title = "No players on your list yet"; hint = "Find anyone in the league and tap “Add to my players”. His real " + SPORT.game + " rating comes with him.";
       action = { label: "Find players", run: openAdd };
     }
-    else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = "Every rating stayed the same."; }
+    else if (activeTeam === "FA" && tab === "league" && !searchTerm && activeFilter !== "movers") { icon = SPORT.icon; title = "No free agents right now"; hint = "Everyone " + SPORT.source + " rates is on a roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
+    else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = activeTeam === "FA" ? "Free agents are not rated week to week, so they never move." : "Every rating stayed the same."; }
     else if (activeTeam && tab === "watch") { icon = SPORT.icon; title = "None of your players are on the " + teamLabel(activeTeam); hint = "Try the League tab to see the whole roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
     else if (searchTerm) { icon = "🔍"; title = "No player called “" + searchTerm + "”"; hint = tab === "watch" ? "He may not be on your list yet — try the League tab." : "Check the spelling."; }
     clear(box);
@@ -628,7 +673,8 @@
     renderEmptyState(visible.length);
     el("moreRow").hidden = drawn.length >= visible.length;
     el("moreButtonList").textContent = "Show " + Math.min(PAGE, visible.length - drawn.length) + " more";
-    if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
+    if (activeTeam === "FA" && !res.query) { note = res.total + " free agents — nobody has them on a roster, so " + SPORT.source + " is not rating them this week. These are the numbers each of them last had" + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
+    else if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
     else if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
     else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
     el("boardNote").textContent = note; el("boardNote").hidden = !note;
@@ -671,9 +717,60 @@
     }
     grid.appendChild(cell("", "All teams", "team-all"));
     SPORT.teams.forEach(function (t) { grid.appendChild(cell(t.abbr, t.name)); });
-    if (SPORT.hasFA) { grid.appendChild(cell("FA", "Free agents")); }
+    if (hasFreeAgents()) { grid.appendChild(cell("FA", "Free agents")); }
   }
-  function openTeams(evt) { buildTeamGrid(); showModal("teamModal", evt && evt.currentTarget ? evt.currentTarget : null); }
+  function openTeams(evt) {
+    var opener = evt && evt.currentTarget ? evt.currentTarget : null;
+    // Usually already in hand (the boot prefetches it once the board is painted); on a slow connection
+    // the picker simply opens without the Free agents tile rather than making anyone wait for it.
+    loadFree(function () { if (!el("teamModal").hidden) { buildTeamGrid(); } });
+    buildTeamGrid(); showModal("teamModal", opener);
+  }
+
+  /* ---------- "he is a free agent now" ----------
+     Asked once per player, the first time someone on the list stops being rated. Keeping him is the
+     default: Escape, the backdrop and the close button all keep, because a list of favourite players
+     is not something to delete on a shrug. */
+  function askAboutFreeAgents() {
+    var box = el("faList"), asked;
+    if (!box) { return; }
+    asked = state.watchlist.map(player).filter(function (p) { return p && p.gone && !state.faSeen[p.id]; });
+    if (!asked.length) { return; }
+    clear(box);
+    asked.forEach(function (p) {
+      var row = document.createElement("div"), info = document.createElement("div");
+      row.className = "fa-row";
+      info.className = "fa-info";
+      info.appendChild(textNode("strong", "", p.name));
+      info.appendChild(textNode("span", "", (p.lastTeamFull ? "Was with the " + p.lastTeamFull + ". " : "")
+        + (lastRatedIn(p) ? "Last rated " + lastRatedIn(p) + " · " + p.ovr + " OVR" : "Free agent · " + p.ovr + " OVR")));
+      row.appendChild(buildPortrait(p));
+      row.appendChild(info);
+      var drop = textNode("button", "button button-quiet", "Remove");
+      drop.type = "button";
+      drop.addEventListener("click", function () {
+        state.watchlist = state.watchlist.filter(function (id) { return id !== p.id; });
+        state.faSeen[p.id] = 1; saveState();
+        row.parentNode.removeChild(row);
+        showToast(p.name + " removed from your players");
+        if (!box.firstChild) { closeModal("faModal"); }
+        render();
+      });
+      row.appendChild(drop);
+      box.appendChild(row);
+    });
+    el("faTitle").textContent = asked.length === 1 ? asked[0].name + " is a free agent" : asked.length + " of your players are free agents";
+    el("faNote").textContent = SPORT.source + " only rates players who are on a roster, so " + (asked.length === 1 ? "he keeps his" : "they keep their")
+      + " last numbers until " + (asked.length === 1 ? "he signs" : "they sign") + " again. Keeping " + (asked.length === 1 ? "him" : "them") + " changes nothing else.";
+    showModal("faModal");
+  }
+  // Every way out of the sheet — the button, the close cross, the backdrop, Escape — is "keep". The
+  // question is not asked again about these players; the answer is recorded, not the dismissal.
+  function markFreeAgentsSeen() {
+    var changed = false;
+    state.watchlist.forEach(function (id) { var p = player(id); if (p && p.gone && !state.faSeen[id]) { state.faSeen[id] = 1; changed = true; } });
+    if (changed) { saveState(); }
+  }
 
   // First use: an invitation to make the page personal — only while the list is empty, only until dismissed.
   function renderInvite() {
@@ -706,7 +803,7 @@
   function openPlayer(p, opener) {
     var token = ++openRequest;   // any stats response that arrives for an older open is dropped
     var facts = (SPORT.facts && playerBio[slugify(p.name)]) || {};
-    var r = rating(p.id), change = getChange(p.id), parts = changeParts(change);
+    var r = rating(p.id), change = getChange(p.id), parts = changeFor(p);
     var hero = el("bioHero"), list = el("bioList"), statsBox = el("bioStats"), watchBtn = el("watchToggle");
     el("playerTitle").textContent = p.name;
     var tier = tierOf(p);
@@ -719,6 +816,9 @@
     head.appendChild(textNode("b", "", p.name));
     head.appendChild(textNode("span", "", teamText(p) + " · " + (p.posName || p.pos) + (p.jersey ? " · #" + p.jersey : "")));
     if (change !== null) { head.appendChild(textNode("span", "change " + parts.cls, parts.text + " vs " + (state.snapshots[selectedSnapshot - 1] ? state.snapshots[selectedSnapshot - 1].label : "last week"))); }
+    if (p.gone) {
+      head.appendChild(textNode("span", "change change-fa", lastRatedIn(p) ? "Last rated " + lastRatedIn(p) : "Free agent"));
+    }
     hero.appendChild(head);
     var big = textNode("div", "bio-ovr", r === null ? "—" : String(r)); big.appendChild(textNode("small", "", "Overall rating")); hero.appendChild(big);
 
@@ -822,7 +922,10 @@
     var q = query.toLowerCase().replace(/^\s+|\s+$/g, "");
     clear(list);
     if (!q) { status.textContent = "Type a name, team or position — every " + SPORT.game + " player is here."; return; }
-    var hits = DATA.players.filter(function (p) { return matchesSearch(p, q); }).slice(0, 30);
+    // Free agents are searchable here too, or a player who has just left a roster could never be added
+    // back — but they come after everyone on a roster, whose numbers are this week's.
+    var hits = DATA.players.filter(function (p) { return matchesSearch(p, q); })
+      .concat((FREE || []).filter(function (p) { return matchesSearch(p, q); })).slice(0, 30);
     status.textContent = hits.length ? hits.length + (hits.length === 30 ? "+" : "") + " player" + (hits.length === 1 ? "" : "s") + " — tap one to see his card" : "No player called “" + query + "”";
     hits.forEach(function (p) {
       var row = document.createElement("button"), info = document.createElement("span");
@@ -830,7 +933,7 @@
       row.appendChild(buildPortrait(p));
       info.className = "roster-info";
       info.appendChild(textNode("b", "", p.name + (isWatched(p.id) ? " ★" : "")));
-      info.appendChild(textNode("small", "", p.pos + " · " + (p.team === "FA" ? "Free agent" : p.teamFull)));
+      info.appendChild(textNode("small", "", p.pos + " · " + (p.team === "FA" ? "Free agent" + (lastRatedIn(p) ? " · last rated " + lastRatedIn(p) : "") : p.teamFull)));
       row.appendChild(info);
       var live = rating(p.id) === null ? p.ovr : rating(p.id);
       row.appendChild(textNode("span", "ovr-badge" + (isClub(live) ? " ovr-99" : ""), String(live)));
@@ -881,6 +984,7 @@
     var modal = el(id);
     if (modal.hidden) { return; }
     modal.hidden = true;
+    if (id === "faModal") { markFreeAgentsSeen(); render(); }
     if (id === "gameModal" && window.JanafariGame) { window.JanafariGame.stop(); }   // no loop, no sound after Exit/Escape/backdrop
     if (id === "hoopsModal" && window.JanafariHoops) { window.JanafariHoops.stop(); }
     if (!document.querySelector(".modal:not([hidden])")) {
@@ -940,7 +1044,8 @@
           var index = {}; DATA.players.forEach(function (p) { index[slugify(p.name)] = p.id; });
           imported.players.forEach(function (p) { var id = index[slugify(p.name)]; if (id && state.watchlist.indexOf(id) === -1) { state.watchlist.push(id); } });
         } else { throw new Error("invalid"); }
-        state.watchlist = state.watchlist.filter(function (id, i, arr) { return byId[id] && arr.indexOf(id) === i; });
+        state.watchlist = state.watchlist.filter(function (id, i, arr) { return arr.indexOf(id) === i; });
+        if (!state.faSeen || typeof state.faSeen !== "object" || isArray(state.faSeen)) { state.faSeen = {}; }
         ensureSnapshot();
         selectedSnapshot = state.snapshots.length - 1;
         saveState(); closeModal("moreModal"); render(); showToast("Backup restored");
@@ -1133,8 +1238,11 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-close]"), function (button) {
       button.addEventListener("click", function () { closeModal(this.getAttribute("data-close") + "Modal"); });
     });
+    // Closing the free-agent sheet any way at all means "keep them" — the destructive choice is only
+    // ever the explicit Remove next to a name.
+    el("faKeep").addEventListener("click", function () { closeModal("faModal"); });
     document.addEventListener("keydown", function (event) {
-      if (event.keyCode === 27) { ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal); }
+      if (event.keyCode === 27) { ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal", "faModal"].forEach(closeModal); }
       trapFocus(event);
     });
     var lastPhone = window.innerWidth <= 600, resizeTimer;
@@ -1166,14 +1274,17 @@
     el("loading").appendChild(textNode("div", "empty-icon", SPORT.icon)); el("loading").appendChild(textNode("strong", "empty-title", "Loading " + SPORT.game + " ratings…"));
     clear(el("playerCards")); clear(el("playerRows")); el("emptyState").hidden = true; el("moreRow").hidden = true; el("boardNote").hidden = true;
     loadState();
-    try { var tm = localStorage.getItem(SPORT.teamKey); if (tm && (knownTeam[tm] || (SPORT.hasFA && tm === "FA"))) { activeTeam = tm; } } catch (e) {}
+    try { var tm = localStorage.getItem(SPORT.teamKey); if (tm && (knownTeam[tm] || tm === "FA")) { activeTeam = tm; } } catch (e) {}
     var gen = ++loadGen;   // a second switch while this one is in flight: the late reply is dropped — even A→B→A, which a sport-name check let through
     fetchJson(SPORT.dataUrl, function (doc) {
       if (gen !== loadGen) { return; }
       if (!validFeed(doc)) { failBoot("The ratings file looks wrong", "The page loaded, but the " + SPORT.game + " ratings file could not be read. Try again in a minute."); return; }
       useData(doc);
       migrateLegacy();
-      state.watchlist = state.watchlist.filter(function (id, i, arr) { return byId[id] && arr.indexOf(id) === i; });
+      // Duplicates go; NOBODY is dropped. This line used to delete every id the feed no longer carried,
+      // which is exactly what happens to a player the week he stops being on a roster.
+      state.watchlist = state.watchlist.filter(function (id, i, arr) { return arr.indexOf(id) === i; });
+      var missing = state.watchlist.filter(function (id) { return !byId[id]; }).length;
       var start = function (history) {
         if (gen !== loadGen) { return; }
         var dirty = mergeHistory(history);
@@ -1184,8 +1295,13 @@
         if (!booted) { bindEvents(); booted = true; }
         render();
         el("loading").hidden = true;
+        // The board is on screen; fetch the free agents now so the team picker has them, and ask about
+        // any watched player who has just become one.
+        loadFree(function () { render(); askAboutFreeAgents(); });
       };
-      fetchJson(SPORT.historyUrl + "?t=" + Date.now(), start, function () { start(null); });   // history is optional
+      // A watched player who is not in the feed is waited for: he must not blink off the list first.
+      var withFree = function (history) { if (missing) { loadFree(function () { start(history); }); } else { start(history); } };
+      fetchJson(SPORT.historyUrl + "?t=" + Date.now(), withFree, function () { withFree(null); });   // history is optional
       fetchJson(SPORT.defsUrl, function (defs) { if (gen === loadGen && defs && (defs.lines || (defs.xfactor && defs.superstar))) { ABILITY_DEFS = defs; } }, function () {});   // definitions are optional too
     }, function () {
       if (gen !== loadGen) { return; }
@@ -1194,7 +1310,7 @@
   }
   function switchSport(which) {
     if (!SPORTS[which] || which === sport) { return; }
-    ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal"].forEach(closeModal);
+    ["gameModal", "hoopsModal", "tourModal", "helpModal", "moreModal", "playerModal", "addModal", "teamModal", "faModal"].forEach(closeModal);
     loadSport(which);
     // a ?sport= in the address would win again on reload, so drop it: the switch is now the choice
     try { if (window.history && window.history.replaceState && /[?&]sport=/.test(window.location.search)) { window.history.replaceState(null, "", window.location.pathname + window.location.hash); } } catch (e) {}

@@ -87,7 +87,8 @@ Madden files: `data/nba/ratings.json` (core fields), `data/nba/stats/<TEAM>.json
 badges with descriptions, loaded when a card opens), `data/nba/history.json` (one map per roster update —
 the site's own labels, "NBA 2K27 Launch Rating", "Nov. 5, 2026", …), plus `movement.json` (the raw
 per-player series), `badges.json` (2K's text and art for every badge seen + our plain-English lines) and
-`photos.json` (headshots from ESPN's public roster API; 2K Ratings' own images refuse hotlinks).
+`photos.json` (headshots from ESPN's public roster API; 2K Ratings' own images refuse hotlinks), and
+`data/nba/free-agents.json` (2K's own free agency page — see **Free agents** below).
 `tools/test_fetch_nba.py` pins what a thin sheet, a full sheet, a team page and a broken page parse to (real
 pages saved gzipped in `tools/fixtures/`) — it runs offline before every fetch, so a parser change fails in CI
 before a request goes out. `.github/workflows/refresh-nba-ratings.yml` runs it **every day** (team pages + only the players whose
@@ -98,8 +99,9 @@ overall moved; Sundays every player page) and commits only when something change
 
 - `tools/fetch_ratings.py` reads EA's feed (it needs EA's own `x-feature` header or it serves last
   season; the script refuses a wrong-season file) and writes `data/ratings.json` (core fields),
-  `data/stats/<TEAM>.json` (attributes, loaded when a card opens) and `data/history.json` (every
-  iteration's overall ratings, so a week the page was not opened is never lost).
+  `data/stats/<TEAM>.json` (attributes, loaded when a card opens), `data/history.json` (every
+  iteration's overall ratings, so a week the page was not opened is never lost) and
+  `data/free-agents.json` (see **Free agents** below).
 - `.github/workflows/refresh-ratings.yml` runs the script **every day** and commits only when EA's
   numbers changed; GitHub Pages redeploys from the commit. Exit codes: 0 changed · 3 unchanged ·
   2 failed (the workflow goes red on 2).
@@ -107,6 +109,29 @@ overall moved; Sundays every player page) and commits only when something change
   header), so "Refresh" is "get what the daily check found", and the stat strip says when that was.
 - Weeks are EA's own iterations (Launch Ratings, Week 1, …). Week-over-week arrows, the Movers filter,
   the week picker and the trend sparklines appear once a second iteration exists.
+
+### Free agents
+
+Neither source rates a player who is not on a roster. EA's Week 1 Ratings simply stopped carrying
+1,215 of the 1,240 free agents that Launch Ratings had — Bobby Wagner, Tyreek Hill, Joey Bosa, Joe
+Mixon — dropping the feed from 3,111 players to 1,891. The page used to react by deleting them: off
+the board, and silently off someone's list of favourite players, with nothing said and no way back.
+
+They live in `free-agents.json` now, one file per sport, and the page reads it on demand — only when
+a watched player is missing from the feed, otherwise in the background once the board is painted.
+
+- **Madden** carries them forward itself: anyone an earlier iteration rated and this one does not,
+  frozen at his last numbers, with `lastSeen` naming the week they came from. He leaves the file the
+  day EA carries him again. `tools/test_free_agent_pool.py` pins that rule and runs offline in CI.
+- **NBA 2K** has a real source — 2K's own free agency page, read like a 31st team — so those numbers
+  are current and carry no `lastSeen`. A player who leaves every roster *and* that page is carried
+  forward the Madden way.
+- On the page: a **Free agents** tile in the team picker (shown only when there are any), an `FA`
+  chip where a week-over-week arrow would be, a line on the card sheet saying when he was last rated,
+  and, the first time someone on your list becomes one, a sheet that asks whether to keep him. Every
+  way out of that sheet keeps him; removing is a deliberate tap next to his name.
+- `tools/test_free_agents.py` drives all of that in a real browser against the committed data files
+  (30 checks, both sports, phone and desktop) and runs in the NBA workflow.
 
 ## Run it locally
 

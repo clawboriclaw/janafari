@@ -40,6 +40,10 @@ jobs:
       # single request goes out — and long before it can page the owner (2026-09-20).
       - name: Parser regression tests (offline)
         run: python3 tools/test_fetch_nba.py
+      # What the page does with a player nobody has on a roster — driven in the browser Playwright
+      # already installed above, against the committed data files.
+      - name: Free-agent page tests (offline)
+        run: python3 tools/test_free_agents.py
       - name: Fetch the ratings
         id: fetch
         run: |

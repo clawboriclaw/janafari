@@ -23,6 +23,7 @@ Files (all under data/nba/):
     history.json        one {id: ovr} map per roster update — the page seeds its week list from it
     movement.json       per-player OVR series from the site's season chart (the raw material of history.json)
     badges.json         2K's own badge descriptions ("official") + our plain-English lines ("lines")
+    free-agents.json    2K's free agency page + anyone off every roster, same shape as ratings.json
     photos.json         player slug -> headshot URL (NBA's own CDN, keyed by the id in nba.com's player index;
                         2kratings' images refuse hotlinks)
 
@@ -38,6 +39,7 @@ HISTORY = os.path.join(ROOT, "history.json")
 MOVEMENT = os.path.join(ROOT, "movement.json")
 BADGES = os.path.join(ROOT, "badges.json")
 PHOTOS = os.path.join(ROOT, "photos.json")
+FREE = os.path.join(ROOT, "free-agents.json")   # 2K's free agency page, plus anyone who has left every roster
 STATS_DIR = os.path.join(ROOT, "stats")
 GAME = "NBA 2K27"
 SEASON_MARK = "NBA 2K27"      # the site's title says which game it is serving; refuse another season
@@ -64,6 +66,9 @@ TEAMS = [
     ("san-antonio-spurs", "SAS", "Spurs", "San Antonio Spurs", 24), ("toronto-raptors", "TOR", "Raptors", "Toronto Raptors", 28),
     ("utah-jazz", "UTA", "Jazz", "Utah Jazz", 26), ("washington-wizards", "WAS", "Wizards", "Washington Wizards", 27),
 ]
+# 2K keeps the unsigned players on one more page in exactly the same table layout. They are not on a roster,
+# so they stay out of ratings.json, the history and the team sheets — they get their own file (see FREE).
+FREE_AGENCY = ("free-agency", "FA", "Free agent", "Free agent", 0)
 POS_NAME = {"PG": "Point Guard", "SG": "Shooting Guard", "SF": "Small Forward", "PF": "Power Forward", "C": "Center"}
 SIDE = {"PG": "guard", "SG": "guard", "SF": "forward", "PF": "forward", "C": "center"}
 BADGE_TIERS = ("legend", "hof", "gold", "silver", "bronze")
@@ -250,6 +255,25 @@ def age_from(birthdate, today=None):
     return t.tm_year - b.tm_year - (1 if (t.tm_mon, t.tm_mday) < (b.tm_mon, b.tm_mday) else 0)
 
 
+def build_entry(p, d, o, photos, now):
+    """One published player: the roster row, plus his player page (`d`) or, when it was not opened
+    this run, whatever the last snapshot (`o`) knew about him."""
+    pos = p["positions"][0]
+    return {
+        "id": p["id"], "name": p["name"], "team": p["team"], "teamName": p["teamName"], "teamFull": p["teamFull"],
+        "pos": pos, "posName": " / ".join(POS_NAME.get(x, x) for x in p["positions"]), "positions": p["positions"],
+        "side": SIDE.get(pos, "guard"), "ovr": p["ovr"], "archetype": (d or {}).get("archetype") or p["archetype"] or o.get("archetype", ""),
+        "age": age_from(d["birthdate"], now) if d else o.get("age"),
+        "college": d["college"] if d else o.get("college"), "hometown": d["hometown"] if d else o.get("hometown"),
+        "jersey": d["jersey"] if d else o.get("jersey"), "yearsPro": d["yearsPro"] if d else o.get("yearsPro"),
+        "height": (d["height"] if d else None) or p["height"] or o.get("height"), "weight": d["weight"] if d else o.get("weight"),
+        "wingspan": d["wingspan"] if d else o.get("wingspan"), "nationality": d["nationality"] if d else o.get("nationality"),
+        "avatar": photos.get(p["id"]),
+        "abilities": [{"label": b["label"], "type": b["type"], "category": b["category"]} for b in d["badges"]] if d else o.get("abilities", []),
+        "badgeCount": p["badgeCount"], "threePt": p["threePt"], "dunk": p["dunk"],
+    }
+
+
 # ---------------------------------------------------------------- browser
 
 class Browser:
@@ -353,6 +377,8 @@ async def run(argv):
     teams = TEAMS[:limit] if limit else TEAMS
     old = load_json(OUT, None)
     old_players = {p["id"]: p for p in (old or {}).get("players", [])}
+    old_free_doc = load_json(FREE, None)
+    old_free = {p["id"]: p for p in (old_free_doc or {}).get("players", [])}
     old_stats = {}
     for name in (os.listdir(STATS_DIR) if os.path.isdir(STATS_DIR) else []):
         if name.endswith(".json"):
@@ -379,14 +405,28 @@ async def run(argv):
         for p in players:
             if p["id"] not in seen:
                 seen.add(p["id"]); unique.append(p)
+        # Free agency: the same table on one more page. A thin or missing page here must NOT fail the
+        # ratings run — the last free-agents.json stays and the roster side of the site is unaffected.
+        fa_rows = []
+        if not limit:
+            try:
+                fa_html = await bro.html(SITE + "/teams/" + FREE_AGENCY[0])
+                fa_rows = [p for p in parse_team_page(fa_html or "", FREE_AGENCY) if p["id"] not in seen]
+                if len(fa_rows) < 5:
+                    log("free agency: only %d rows parsed — keeping the committed file" % len(fa_rows))
+                    fa_rows = []
+                else:
+                    log("FA: %d free agents" % len(fa_rows))
+            except Exception as exc:
+                log("free agency: %s (keeping the committed file)" % exc)
         if check:
             log("live: %d players on %d teams; top: %s" % (len(unique), len(teams), ", ".join("%s %d" % (p["name"], p["ovr"]) for p in sorted(unique, key=lambda p: -p["ovr"])[:3])))
             return 0
         # Which player pages to open: every one on --full; otherwise new players, moved OVRs, anyone with no sheet yet,
         # plus one sentinel so a roster update that changed nobody on the board is still dated.
         need = []
-        for p in unique:
-            o = old_players.get(p["id"])
+        for p in unique + fa_rows:
+            o = old_players.get(p["id"]) or old_free.get(p["id"])
             if full or not o or o.get("ovr") != p["ovr"] or p["id"] not in old_stats:
                 need.append(p)
         if not need:
@@ -427,8 +467,11 @@ async def run(argv):
     if not labels:
         raise RuntimeError("no season chart found on any player page")
     series = movement.get("series") or {}
+    fa_ids = set(p["id"] for p in fa_rows)
+    # A free agent's own season chart is real, but he is not part of a roster update: keeping him out of
+    # `series` keeps him out of history.json, and so out of the page's week-over-week movers.
     for pid, d in detail.items():
-        if d["series"]:
+        if d["series"] and pid not in fa_ids:
             series[pid] = d["series"]
     current_index = 0
     for s in series.values():
@@ -440,38 +483,40 @@ async def run(argv):
     iteration_changed = not old or (old.get("iteration") or {}).get("id") != iteration["id"]
 
     # ---- assemble players (roster row + detail, or the previous snapshot's detail when the page was not opened)
-    core = []
     now = time.gmtime()
-    for p in unique:
-        d = detail.get(p["id"])
-        o = old_players.get(p["id"], {})
-        pos = p["positions"][0]
-        entry = {
-            "id": p["id"], "name": p["name"], "team": p["team"], "teamName": p["teamName"], "teamFull": p["teamFull"],
-            "pos": pos, "posName": " / ".join(POS_NAME.get(x, x) for x in p["positions"]), "positions": p["positions"],
-            "side": SIDE.get(pos, "guard"), "ovr": p["ovr"], "archetype": (d or {}).get("archetype") or p["archetype"] or o.get("archetype", ""),
-            "age": age_from(d["birthdate"], now) if d else o.get("age"),
-            "college": d["college"] if d else o.get("college"), "hometown": d["hometown"] if d else o.get("hometown"),
-            "jersey": d["jersey"] if d else o.get("jersey"), "yearsPro": d["yearsPro"] if d else o.get("yearsPro"),
-            "height": (d["height"] if d else None) or p["height"] or o.get("height"), "weight": d["weight"] if d else o.get("weight"),
-            "wingspan": d["wingspan"] if d else o.get("wingspan"), "nationality": d["nationality"] if d else o.get("nationality"),
-            "avatar": photos.get(p["id"]),
-            "abilities": [{"label": b["label"], "type": b["type"], "category": b["category"]} for b in d["badges"]] if d else o.get("abilities", []),
-            "badgeCount": p["badgeCount"], "threePt": p["threePt"], "dunk": p["dunk"],
-        }
-        core.append(entry)
+    core = [build_entry(p, detail.get(p["id"]), old_players.get(p["id"], {}), photos, now) for p in unique]
     core.sort(key=lambda p: (-p["ovr"], p["name"]))
     if limit is None and len(core) < 400:
         raise RuntimeError("refusing to write: only %d players" % len(core))
     if limit is None and old and len(core) < len(old_players) * 0.9:
         raise RuntimeError("refusing to write: %d players, had %d" % (len(core), len(old_players)))
 
+    # ---- free agents: 2K's free agency page, plus anyone the rosters have dropped since the last run.
+    # Nobody who is on a roster is in here, and nobody in here is in ratings.json, the history or a team sheet.
+    live = set(p["id"] for p in core)
+    fa_core = {}
+    for p in fa_rows:                                            # today's free agency page (empty if it could not be read)
+        fa_core[p["id"]] = build_entry(p, detail.get(p["id"]), old_free.get(p["id"], {}), photos, now)
+    # Off every roster and not on the free agency page either: 2K is no longer rating him at all, so his
+    # numbers freeze at the update `lastSeen` names and the page says so. (A player who IS on that page
+    # carries no lastSeen: those ratings are current.)
+    for pid, p in old_players.items():
+        if pid not in live and pid not in fa_core:
+            fa_core[pid] = dict(p, team="FA", teamName="Free agent", teamFull="Free agent",
+                                lastTeam=p.get("team"), lastTeamFull=p.get("teamFull"),
+                                lastSeen={"id": (old.get("iteration") or {}).get("id"),
+                                          "label": (old.get("iteration") or {}).get("label")})
+    for p in (old_free_doc or {}).get("players", []):            # carried before and still not on a roster
+        if p["id"] not in live and p["id"] not in fa_core:
+            fa_core[p["id"]] = p
+    fa_core = sorted(fa_core.values(), key=lambda p: (-(p.get("ovr") or 0), p.get("name") or ""))
+
     # ---- stat sheets. `diffs` = this roster update's attributes minus the PREVIOUS update's, like EA's week-over-week
     # diffs. Each entry records the update (`iter`) its numbers were read under, so a page re-read inside the same
     # update diffs against the same base (base = stats − diffs), and a player whose page was not re-opened under a new
     # update carries no diff at all — never last update's arrows (Codex hypothesis, 2026-09-19, confirmed).
     new_stats = {}
-    for p in core:
+    for p in core + fa_core:
         d = detail.get(p["id"])
         prev = old_stats.get(p["id"])
         if d and d["stats"]:
@@ -523,9 +568,10 @@ async def run(argv):
     same_players = bool(old) and old.get("players", []) == core
     same_stats = old_stats == new_stats
     same_history = old_history == history
+    same_free = bool(old_free_doc) and old_free_doc.get("players", []) == fa_core
     movement_doc = {"labels": labels, "series": series}
     same_side = (load_json(MOVEMENT, None) == movement_doc and load_json(PHOTOS, None) == photos and load_json(BADGES, None) == badge_defs)
-    if same_players and same_stats and same_history and same_side and not iteration_changed:
+    if same_players and same_stats and same_history and same_side and same_free and not iteration_changed:
         log("unchanged: %s, %d players" % (iteration["label"], len(core)))
         return 3
     verdict = _jev_change_review(old, core, old_stats, new_stats, iteration_changed)
@@ -538,12 +584,17 @@ async def run(argv):
     dump_json(BADGES, badge_defs, indent=2)
     dump_json(HISTORY, history)
     by_team = {}
-    for p in core:
+    for p in core + fa_core:
         if p["id"] in new_stats:
             by_team.setdefault(p["team"], {})[p["id"]] = new_stats[p["id"]]
     for team, sheet in by_team.items():
         dump_json(os.path.join(STATS_DIR, team + ".json"), sheet)
     dump_json(OUT, doc)
+    dump_json(FREE, {"game": GAME, "source": SITE + "/teams/" + FREE_AGENCY[0], "sourceName": "2K Ratings",
+                     "note": "Players 2K does not have on a roster: the free agency list, and anyone the rosters have "
+                             "dropped since. They carry the numbers from the last time they were rated.",
+                     "fetched": doc["fetched"], "count": len(fa_core), "players": fa_core})
+    log("wrote data/nba/free-agents.json: %d free agents" % len(fa_core))
     log("wrote data/nba/ratings.json: %s, %d players, %d team sheets, %d updates in history" % (iteration["label"], len(core), len(by_team), len(history)))
     return 0
 
