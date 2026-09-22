@@ -368,6 +368,12 @@
   // "Free agent" on its own when the source still rates him (2K's free agency page); the week his
   // numbers are frozen at when it does not (everyone EA stopped rating).
   function lastRatedIn(p) { return (p.gone && p.lastSeen && p.lastSeen.label) || ""; }
+  // Madden's free agents are frozen at the week EA last rated them; 2K rates its own free agency page,
+  // so those numbers are today's. Saying "these are old numbers" about the second kind would be untrue.
+  function frozen(list) {
+    var i; for (i = 0; i < list.length; i += 1) { if (lastRatedIn(list[i])) { return true; } }
+    return false;
+  }
 
   /* ---------- ratings & changes ---------- */
   function snapRating(id, snapIndex) {
@@ -636,7 +642,7 @@
       action = { label: "Find players", run: openAdd };
     }
     else if (activeTeam === "FA" && tab === "league" && !searchTerm && activeFilter !== "movers") { icon = SPORT.icon; title = "No free agents right now"; hint = "Everyone " + SPORT.source + " rates is on a roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
-    else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = activeTeam === "FA" ? "Free agents are not rated week to week, so they never move." : "Every rating stayed the same."; }
+    else if (activeFilter === "movers") { icon = "😴"; title = "Nobody moved this week"; hint = activeTeam === "FA" ? "Free agents are not part of a weekly roster update, so they never show a move." : "Every rating stayed the same."; }
     else if (activeTeam && tab === "watch") { icon = SPORT.icon; title = "None of your players are on the " + teamLabel(activeTeam); hint = "Try the League tab to see the whole roster."; action = { label: "Show all teams", run: function () { setTeam(""); } }; }
     else if (searchTerm) { icon = "🔍"; title = "No player called “" + searchTerm + "”"; hint = tab === "watch" ? "He may not be on your list yet — try the League tab." : "Check the spelling."; }
     clear(box);
@@ -673,7 +679,12 @@
     renderEmptyState(visible.length);
     el("moreRow").hidden = drawn.length >= visible.length;
     el("moreButtonList").textContent = "Show " + Math.min(PAGE, visible.length - drawn.length) + " more";
-    if (activeTeam === "FA" && !res.query) { note = res.total + " free agents — nobody has them on a roster, so " + SPORT.source + " is not rating them this week. These are the numbers each of them last had" + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
+    if (activeTeam === "FA" && !res.query) {
+      note = res.total + " free agents — nobody has them on a roster"
+        + (frozen(FREE || []) ? ", so " + SPORT.source + " has stopped rating them. These are the numbers each of them last had"
+                              : ". " + SPORT.source + " still rates them, so these numbers are current")
+        + (visible.length < res.total ? ", showing the top " + visible.length : "") + ".";
+    }
     else if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
     else if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
     else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
@@ -760,8 +771,12 @@
       box.appendChild(row);
     });
     el("faTitle").textContent = asked.length === 1 ? asked[0].name + " is a free agent" : asked.length + " of your players are free agents";
-    el("faNote").textContent = SPORT.source + " only rates players who are on a roster, so " + (asked.length === 1 ? "he keeps his" : "they keep their")
-      + " last numbers until " + (asked.length === 1 ? "he signs" : "they sign") + " again. Keeping " + (asked.length === 1 ? "him" : "them") + " changes nothing else.";
+    var one = asked.length === 1;
+    el("faNote").textContent = "Nobody has " + (one ? "him" : "them") + " on a roster. "
+      + (frozen(asked) ? SPORT.source + " only rates players who are on a roster, so " + (one ? "he keeps his" : "they keep their")
+                         + " last numbers until " + (one ? "he signs" : "they sign") + " again."
+                       : SPORT.source + " still rates " + (one ? "him" : "them") + ", so " + (one ? "his" : "their") + " numbers stay up to date.")
+      + " Keeping " + (one ? "him" : "them") + " on your list changes nothing else.";
     showModal("faModal");
   }
   // Every way out of the sheet — the button, the close cross, the backdrop, Escape — is "keep". The

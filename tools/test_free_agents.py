@@ -73,7 +73,8 @@ with sync_playwright() as pw:
     names=pg.eval_on_selector_all(".pcard-name","e=>e.map(x=>x.innerText)")
     ck("Bobby Wagner on the free agent board", "Bobby Wagner" in names, names[:3])
     note=pg.inner_text("#boardNote")
-    ck("board note explains", "free agents" in note and "not rating them" in note, note[:120])
+    ck("board note explains", "free agents" in note and "stopped rating them" in note, note[:120])
+    ck("and says the numbers are old", "last had" in note, note[:120])
     ck("FA chip instead of an arrow", pg.locator(".change-fa").count()>0)
     ck("no up/down arrow on a free agent", pg.locator(".pcard .change-up, .pcard .change-down").count()==0)
 
@@ -140,6 +141,10 @@ with sync_playwright() as pw:
     ck("Jonas Valanciunas there", any("Valan" in n for n in names), names[:3])
     pg.locator(".pcard").first.click(); pg.wait_for_selector("#playerModal:not([hidden])"); pg.wait_for_timeout(600)
     ck("NBA free agent sheet has attributes", "Close shot" in pg.inner_text("#bioStats") or "Strength" in pg.inner_text("#bioStats"), pg.inner_text("#bioStats")[:80])
+    pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
+    nbanote=pg.inner_text("#boardNote")
+    # 2K rates its own free agency page, so the NBA note must NOT claim these numbers are stale
+    ck("NBA note says the numbers are current", "current" in nbanote and "last had" not in nbanote, nbanote[:130])
     ck("no 'last rated' on a currently-rated free agent", "Last rated" not in pg.inner_text("#bioHero"))
 
     print("G. searching finds a free agent")
