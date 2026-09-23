@@ -23,8 +23,30 @@ concurrency:
   group: ratings-push
   cancel-in-progress: false
 
+# Owner 2026-09-23: "2K ratings don't need to start updating until the season starts".
+# Scheduled runs are skipped before opening night (2026-27 regular season opens Tue 2026-10-20);
+# a manual "Run workflow" always goes through. After opening night this gate is a no-op.
+env:
+  SEASON_START: "2026-10-20"
+
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$(date -u +%F)" \> "$(date -u -d "$SEASON_START - 1 day" +%F)" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Off-season: scheduled 2K refresh skipped until $SEASON_START"
+          fi
+
   refresh:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
