@@ -195,6 +195,9 @@
   function initials(name) {
     return String(name || "").split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join("") || "?";
   }
+  // Counts get thousands separators (1,911, not 1911) and changes a true minus sign (−3, not -3) — UI library R10.
+  function fmtInt(n) { try { return Number(n).toLocaleString("en-US"); } catch (e) { return String(n); } }
+  function fmtSigned(n) { return n > 0 ? "+" + fmtInt(n) : n < 0 ? "\u2212" + fmtInt(-n) : "0"; }
   function slugify(name) { return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
   function formatDate(value) {
     if (!value) { return "—"; }
@@ -569,21 +572,21 @@
     var club = pool.filter(function (p) { return isClub(rating(p.id)); });
     var movers = pool.map(function (p) { return { p: p, c: getChange(p.id) }; }).filter(function (m) { return m.c !== null && m.c !== 0; });
     movers.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
-    el("clubCount").textContent = String(club.length); el("clubLabel").textContent = SPORT.club.label;
+    el("clubCount").textContent = fmtInt(club.length); el("clubLabel").textContent = SPORT.club.label;
     // On the watch tab, count what is actually on the board: an id no source carries any more is kept
     // in storage (it costs nothing, and comes back if he does) but it is not a player anyone can see.
     var mine = tab === "watch" ? pool.length : DATA.count;
-    el("trackedCount").textContent = String(mine);
+    el("trackedCount").textContent = fmtInt(mine);
     el("trackedLabel").textContent = tab === "watch" ? (mine === 1 ? "player on my list" : "players on my list") : "players rated";
     el("moverStat").hidden = !movers.length;
     if (movers.length) {
-      el("moverValue").textContent = (movers[0].c > 0 ? "+" : "") + movers[0].c;
+      el("moverValue").textContent = fmtSigned(movers[0].c);
       el("moverName").textContent = movers[0].p.name.split(" ").pop() + " · biggest mover";
     }
     // "Updated" is when the feed was last pulled — never a snapshot date dressed up as the feed date.
     var snap = state.snapshots[selectedSnapshot];
     el("sourceStamp").textContent = snap.label + " · updated " + formatDate(DATA.fetched);
-    el("footerStamp").textContent = DATA.game + " · " + SPORT.source + " checked " + formatDate(DATA.fetched) + " · " + DATA.count + " players";
+    el("footerStamp").textContent = DATA.game + " · " + SPORT.source + " checked " + formatDate(DATA.fetched) + " · " + fmtInt(DATA.count) + " players";
     el("moreStamp").textContent = " Last checked " + formatDate(DATA.fetched) + " (" + snap.label + ").";
   }
 
@@ -627,7 +630,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".chip[data-filter]"), function (btn) {
       var key = btn.getAttribute("data-filter"), label = btn.getAttribute("data-label");
       if (!label) { label = btn.textContent.replace(/\s+\d+$/, "").trim(); btn.setAttribute("data-label", label); }
-      clear(btn); btn.appendChild(document.createTextNode(label)); btn.appendChild(textNode("span", "chip-count", String(counts[key] || 0)));
+      clear(btn); btn.appendChild(document.createTextNode(label)); btn.appendChild(textNode("span", "chip-count", fmtInt(counts[key] || 0)));
       btn.className = "chip" + (key === activeFilter ? " active" : "");
     });
   }
@@ -686,8 +689,8 @@
         + (visible.length < res.total ? ", showing the top " + visible.length : "") + ".";
     }
     else if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
-    else if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + res.total + " matches by rating — keep typing to narrow it down."; }
-    else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + res.total + ". Search to find anyone else."; }
+    else if (res.query && res.total > visible.length) { note = "Showing the first " + visible.length + " of " + fmtInt(res.total) + " matches by rating — keep typing to narrow it down."; }
+    else if (tab === "league" && !res.query && activeFilter !== "movers" && res.total > LEAGUE_LIMIT) { note = "The top " + LEAGUE_LIMIT + " of " + fmtInt(res.total) + ". Search to find anyone else."; }
     el("boardNote").textContent = note; el("boardNote").hidden = !note;
     el("searchClear").hidden = !searchTerm;
     var wrap = el("chipsWrap"), chips = el("filterChips");
