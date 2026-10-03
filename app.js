@@ -121,6 +121,8 @@
   var LEAGUE_LIMIT = 100;      // league tab with no search: the top 100
   var SEARCH_LIMIT = 120;      // a search never renders more than this (old iPads froze on 3,000)
   var PAGE = 24;               // cards drawn before "Show more" (portraits are ~120 KB each)
+  var MOVER_TOP = 10;          // each side of the Movers board shows its top 10 (5 on a phone) until "Show all"
+  var moversOpen = { up: false, down: false };   // which side of the Movers board is showing everyone
   var SVG_NS = "http://www.w3.org/2000/svg";
 
   var DATA = null;          // {game, iteration, iterations, fetched, count, players:[...]}
@@ -197,6 +199,12 @@
   }
   // Counts get thousands separators (1,911, not 1911) and changes a true minus sign (−3, not -3) — UI library R10.
   function fmtInt(n) { try { return Number(n).toLocaleString("en-US"); } catch (e) { return String(n); } }
+  // "Harrison", not "Jr": the surname a kid would say, for the header pills.
+  function shortName(name) {
+    var w = String(name || "").split(/\s+/).filter(Boolean);
+    while (w.length > 1 && /^(jr|sr|i{2,3}|iv|v)\.?$/i.test(w[w.length - 1])) { w.pop(); }
+    return w[w.length - 1] || "";
+  }
   function fmtSigned(n) { return n > 0 ? "+" + fmtInt(n) : n < 0 ? "\u2212" + fmtInt(-n) : "0"; }
   function slugify(name) { return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
   function formatDate(value) {
@@ -566,22 +574,123 @@
     return row;
   }
 
+  /* ---------- the Movers board: who went up, who went down, biggest move first ----------
+     The week is the one picked in "Viewing", compared with the week before it. Team and search narrow it;
+     the tab decides whose moves (my players, or the league). A free agent is never here: getChange is null. */
+  function moversOf(pool) {
+    var query = searchTerm.toLowerCase().replace(/^\s+|\s+$/g, ""), up = [], down = [];
+    pool.forEach(function (p) {
+      if (!matchesTeam(p) || !matchesSearch(p, query)) { return; }
+      var c = getChange(p.id);
+      if (c === null || c === 0) { return; }
+      (c > 0 ? up : down).push({ p: p, c: c, now: snapRating(p.id), before: snapRating(p.id, selectedSnapshot - 1) });
+    });
+    // Biggest move first; a tie goes to the better player, so the names a kid knows lead the ±1s.
+    var bySize = function (a, b) { return Math.abs(b.c) - Math.abs(a.c) || b.now - a.now || a.p.name.localeCompare(b.p.name); };
+    up.sort(bySize); down.sort(bySize);
+    return { up: up, down: down };
+  }
+  function buildMoverRow(m, rank) {
+    var p = m.p, row = document.createElement("button"), body = document.createElement("div"), meta = document.createElement("div"), right = document.createElement("div");
+    var up = m.c > 0, watched = isWatched(p.id);
+    row.type = "button";
+    row.className = "mover-row" + (watched ? " is-watched" : "");
+    row.setAttribute("aria-label", p.name + ", " + p.pos + ", " + teamText(p) + (up ? ", up " : ", down ") + Math.abs(m.c) + ", from " + m.before + " to " + m.now);
+    row.appendChild(textNode("span", "mover-rank", String(rank)));
+    row.appendChild(buildPortrait(p));
+    body.className = "pcard-body";
+    body.appendChild(textNode("h3", "pcard-name", p.name + (watched ? " ★" : "")));
+    meta.className = "pcard-meta";
+    meta.appendChild(textNode("span", "pos-pill", p.pos));
+    var logo = buildLogo(p); if (logo) { meta.appendChild(logo); }
+    meta.appendChild(textNode("span", "pcard-team", p.team));
+    body.appendChild(meta);
+    row.appendChild(body);
+    right.className = "mover-right";
+    right.appendChild(textNode("span", "mover-delta " + (up ? "change-up" : "change-down"), (up ? "▲ " : "▼ ") + Math.abs(m.c)));
+    right.appendChild(textNode("span", "mover-from", m.before + " → " + m.now));
+    row.appendChild(right);
+    row.addEventListener("click", function () { openPlayer(p, row); });
+    return row;
+  }
+  function buildMoverColumn(side, list) {
+    var up = side === "up", col = document.createElement("section"), head = document.createElement("div"), body = document.createElement("div");
+    // On a phone the columns stack, so each side keeps to five: the drops must be one short scroll away, not ten.
+    var top = window.innerWidth <= 600 ? 5 : MOVER_TOP, open = moversOpen[side], drawn = open ? list : list.slice(0, top);
+    col.className = "movers-col movers-" + side;
+    col.setAttribute("aria-label", up ? "Going up" : "Going down");
+    head.className = "movers-head";
+    head.appendChild(textNode("span", "movers-arrow", up ? "▲" : "▼"));
+    head.appendChild(textNode("h2", "movers-title", up ? "Going up" : "Going down"));
+    head.appendChild(textNode("span", "movers-count", fmtInt(list.length)));
+    col.appendChild(head);
+    body.className = "movers-list";
+    if (!list.length) { body.appendChild(textNode("p", "movers-none", up ? "Nobody went up." : "Nobody went down.")); }
+    drawn.forEach(function (m, i) { body.appendChild(buildMoverRow(m, i + 1)); });
+    col.appendChild(body);
+    if (list.length > top) {
+      var more = textNode("button", "button button-quiet movers-more", open ? "Show top " + top : "Show all " + fmtInt(list.length));
+      more.type = "button";
+      more.addEventListener("click", function () { moversOpen[side] = !open; redraw(); if (open) { col.scrollIntoView && col.scrollIntoView(); } });
+      col.appendChild(more);
+    }
+    return col;
+  }
+  // Returns how many moved, so redraw() knows whether the board stands alone.
+  function renderMovers() {
+    var box = el("moversBoard"), moves, snap = state.snapshots[selectedSnapshot], prev = state.snapshots[selectedSnapshot - 1];
+    clear(box);
+    if (!hasHistory() || !prev) {
+      var why = !hasHistory()
+        ? SPORT.source + " has given us one ratings week so far (" + snap.label + "). Moves show up here once the next one is in."
+        : "This is the first week — there is nothing earlier to compare it with. Pick a later week in “Viewing”.";
+      box.appendChild(textNode("div", "empty-icon", "📈"));
+      box.appendChild(textNode("strong", "empty-title", "No moves to show yet"));
+      box.appendChild(textNode("p", "empty-hint", why));
+      box.className = "movers-board empty-state";
+      return 0;
+    }
+    moves = moversOf(poolForTab());
+    box.className = "movers-board";
+    var lede = document.createElement("p");
+    lede.className = "movers-lede";
+    lede.appendChild(textNode("b", "", snap.label));
+    lede.appendChild(document.createTextNode(" vs " + prev.label + " · " + fmtInt(moves.up.length + moves.down.length) + " " + (tab === "watch" ? "of my players" : "players") + " moved"));
+    box.appendChild(lede);
+    var cols = document.createElement("div");
+    cols.className = "movers-cols";
+    cols.appendChild(buildMoverColumn("up", moves.up));
+    cols.appendChild(buildMoverColumn("down", moves.down));
+    box.appendChild(cols);
+    return moves.up.length + moves.down.length;
+  }
+  // The header stats count the tab on screen, so tapping one keeps that tab; the Playbook asks for the league.
+  function openMovers(side, league) {
+    if (league) { selectTab("league", false); }
+    activeFilter = "movers"; resetAndRedraw();
+    var col = document.querySelector(".movers-" + side);
+    if (col && col.scrollIntoView) { col.scrollIntoView(); }
+  }
+
   /* ---------- the one-line stat strip ---------- */
   function renderSummary() {
     var pool = poolForTab();
     var club = pool.filter(function (p) { return isClub(rating(p.id)); });
-    var movers = pool.map(function (p) { return { p: p, c: getChange(p.id) }; }).filter(function (m) { return m.c !== null && m.c !== 0; });
-    movers.sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
+    var moves = moversOf(pool);
     el("clubCount").textContent = fmtInt(club.length); el("clubLabel").textContent = SPORT.club.label;
     // On the watch tab, count what is actually on the board: an id no source carries any more is kept
     // in storage (it costs nothing, and comes back if he does) but it is not a player anyone can see.
     var mine = tab === "watch" ? pool.length : DATA.count;
     el("trackedCount").textContent = fmtInt(mine);
     el("trackedLabel").textContent = tab === "watch" ? (mine === 1 ? "player on my list" : "players on my list") : "players rated";
-    el("moverStat").hidden = !movers.length;
-    if (movers.length) {
-      el("moverValue").textContent = fmtSigned(movers[0].c);
-      el("moverName").textContent = movers[0].p.name.split(" ").pop() + " · biggest mover";
+    el("riserStat").hidden = !moves.up.length; el("fallerStat").hidden = !moves.down.length;
+    if (moves.up.length) {
+      el("riserValue").textContent = "▲ " + moves.up[0].c;
+      el("riserName").textContent = shortName(moves.up[0].p.name) + " · biggest riser";
+    }
+    if (moves.down.length) {
+      el("fallerValue").textContent = "▼ " + Math.abs(moves.down[0].c);
+      el("fallerName").textContent = shortName(moves.down[0].p.name) + " · biggest drop";
     }
     // "Updated" is when the feed was last pulled — never a snapshot date dressed up as the feed date.
     var snap = state.snapshots[selectedSnapshot];
@@ -600,7 +709,8 @@
       select.appendChild(opt);
     });
     el("weekRow").hidden = !hasHistory();      // one option is not a choice
-    el("moversChip").hidden = !hasHistory();   // nothing can have moved before week two
+    // The Movers chip is always there, both sports: before a second week its board says when moves will show
+    // up, instead of the button vanishing and leaving a kid to wonder where it went.
     el("thChange").hidden = !hasHistory(); el("thTrend").hidden = !hasHistory();
   }
 
@@ -673,6 +783,15 @@
     renderTabs(); renderSummary(); renderFilterCounts(); renderInvite();
     var grid = el("playerCards"), body = el("playerRows"), useCards = effectiveView() === "cards";
     clear(grid); clear(body);
+    var board = activeFilter === "movers";
+    el("moversBoard").hidden = !board;
+    if (board) {
+      // The Movers board is its own layout: two ranked columns, not the rating-sorted grid.
+      renderMovers();
+      grid.hidden = true; el("tableWrap").hidden = true; el("emptyState").hidden = true; el("moreRow").hidden = true;
+      el("boardNote").hidden = true; el("searchClear").hidden = !searchTerm;
+      return;
+    }
     drawn.forEach(function (p, i) { if (useCards) { grid.appendChild(buildCard(p, i + 1)); } else { body.appendChild(buildRow(p, i + 1)); } });
     grid.hidden = !useCards; el("tableWrap").hidden = useCards;
     Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function (btn) {
@@ -796,7 +915,7 @@
     el("invite").hidden = !!(state.watchlist.length || seen || tab === "watch");
   }
   function render() { renderWeekSelect(); renderTeamChip(); redraw(); }
-  function resetAndRedraw() { shownLimit = PAGE; redraw(); }
+  function resetAndRedraw() { shownLimit = PAGE; moversOpen = { up: false, down: false }; redraw(); }
 
   // attribute labels and the ones a kid does not need to see live in SPORTS[...].statLabels / hideStats
 
@@ -1121,7 +1240,7 @@
   function endTour(how) { setTourState(how); closeModal("tourModal"); if (how === "done") { showToast("You're all set — go find a player"); } }
   function renderHelpState() {
     el("helpChangesCopy").textContent = hasHistory()
-      ? "On a card, ▲ means his rating went up since last week; ▼ means down. Movers lists everyone who moved."
+      ? "On a card, ▲ means his rating went up since last week; ▼ means down. ▲▼ Movers puts the biggest jumps up and the biggest drops side by side."
       : "On a card, ▲ means his rating went up since last week; ▼ means down. We only have one week so far, so no arrows yet.";
     el("helpMoversGo").hidden = !hasHistory();
   }
@@ -1137,7 +1256,7 @@
     if (what === "add") { openAdd(); }
     else if (what === "mine") { selectTab("watch", false); }
     else if (what === "team") { selectTab("league", false); openTeams(); }
-    else if (what === "movers") { if (hasHistory()) { selectTab("league", false); activeFilter = "movers"; resetAndRedraw(); } }
+    else if (what === "movers") { openMovers("up", true); }
     else if (what === "reset") { activeFilter = "all"; searchTerm = ""; el("searchInput").value = ""; setTeam(""); showToast("Filters, team and search cleared"); }
     else if (what === "refresh") { checkRatings(); }
     else if (what === "backup") { showModal("moreModal", el("moreButton")); }
@@ -1206,6 +1325,8 @@
       button.addEventListener("click", function () { activeFilter = this.getAttribute("data-filter"); resetAndRedraw(); });
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
+    el("riserStat").addEventListener("click", function () { openMovers("up"); });
+    el("fallerStat").addEventListener("click", function () { openMovers("down"); });
     el("teamChip").addEventListener("click", openTeams);
     Array.prototype.forEach.call(document.querySelectorAll(".sport-btn"), function (b) {
       b.addEventListener("click", function () { switchSport(b.getAttribute("data-sport-pick")); });
