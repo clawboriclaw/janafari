@@ -741,7 +741,7 @@
       var key = btn.getAttribute("data-filter"), label = btn.getAttribute("data-label");
       if (!label) { label = btn.textContent.replace(/\s+\d+$/, "").trim(); btn.setAttribute("data-label", label); }
       clear(btn); btn.appendChild(document.createTextNode(label)); btn.appendChild(textNode("span", "chip-count", fmtInt(counts[key] || 0)));
-      btn.className = "chip" + (key === activeFilter ? " active" : "");
+      btn.className = (btn.getAttribute("data-base") || "chip") + (key === activeFilter ? " active" : "");
     });
   }
 
@@ -1322,7 +1322,8 @@
     });
     el("searchClear").addEventListener("click", function () { el("searchInput").value = ""; searchTerm = ""; resetAndRedraw(); el("searchInput").focus(); });
     Array.prototype.forEach.call(document.querySelectorAll(".chip[data-filter]"), function (button) {
-      button.addEventListener("click", function () { activeFilter = this.getAttribute("data-filter"); resetAndRedraw(); });
+      // Movers sits on its own by the "updated" line: a second tap takes the board back to everyone.
+      button.addEventListener("click", function () { var f = this.getAttribute("data-filter"); activeFilter = f === "movers" && activeFilter === "movers" ? "all" : f; resetAndRedraw(); });
     });
     el("moreButtonList").addEventListener("click", function () { shownLimit += PAGE; redraw(); });
     el("riserStat").addEventListener("click", function () { openMovers("up"); });

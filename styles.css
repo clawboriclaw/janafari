@@ -190,6 +190,12 @@ html[data-sport="nba"] [data-sport="nfl"], html[data-sport="nfl"] [data-sport="n
 .statline .stat-btn { font: inherit; color: inherit; border: 0; min-height: 32px; cursor: pointer; }
 .statline .stat-btn:hover { background: rgba(255,255,255,.16); }
 .statline .stat-up b { color: #4cc77f; }
+/* "Week 3 Ratings · updated …" with the Movers button on its own beside it */
+.source-row { display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; min-width: 0; }
+.chip.movers-btn { -webkit-flex: 0 0 auto; flex: 0 0 auto; min-height: 34px; margin: 0 4px; padding: 0 12px; border-color: rgba(253,187,48,.6); background: rgba(253,187,48,.12); color: #fdbb30; color: var(--gold); }
+.chip.movers-btn:hover { background: rgba(253,187,48,.22); }
+.chip.movers-btn.active { background: #fdbb30; background: var(--gold); border-color: #fdbb30; border-color: var(--gold); color: #0b1f3a; color: var(--gold-ink); }
+.chip.movers-btn.active .chip-count { color: #0b1f3a; color: var(--gold-ink); }
 .statline .stat-down b { color: #ff7b6e; }
 
 
@@ -696,13 +702,14 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
      header is the same height before and after the numbers arrive (it used to grow 1 → 3 lines: CLS 0.84, R36).
      Grid, not flex, so the stamp can own row 2 while row 1 scrolls. */
   .statline {
-    display: grid; grid-auto-flow: column; grid-auto-columns: max-content; grid-template-rows: 40px 20px;
+    display: grid; grid-auto-flow: column; grid-auto-columns: max-content; grid-template-rows: 40px 38px;   /* row 2: the stamp + Movers button, same height loaded or not */
     -webkit-box-align: initial; align-items: center;
     margin: 0 -12px; padding: 0 8px 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .statline::-webkit-scrollbar { display: none; }
   .statline .stat { justify-self: start; }
-  .statline .stat-source { grid-row: 2; grid-column: 1 / span 3; margin: 0 4px; overflow: hidden; text-overflow: ellipsis; }
+  .statline .source-row { grid-row: 2; grid-column: 1 / span 3; position: -webkit-sticky; position: sticky; left: 0; max-width: calc(100vw - 16px); }   /* pinned: the pills scroll, the stamp + Movers never leave the screen */
+  .statline .stat-source { margin: 0 4px; overflow: hidden; text-overflow: ellipsis; }
   .board { padding-top: 2px; }
   .tabs {
     position: fixed; z-index: 10; left: 0; right: 0; bottom: 0;
