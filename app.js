@@ -139,6 +139,8 @@
   var shownLimit = PAGE;    // grows with "Show more"; resets on any filter/search/tab change
   var toastTimer, searchTimer;
   var openRequest = 0;      // openPlayer() token: a slow stats request must never paint another player's card
+  var flashWeek = null;     // id of a week this device had not shown before; its movers flash once (noteFreshWeek)
+  var flashedAt = {};       // player id -> when his flash started, so a redraw continues it instead of restarting it
   var lastFocus = null;     // element to return focus to when a modal closes
 
   var playerBio = {
@@ -407,6 +409,64 @@
     return now - before;
   }
   function hasHistory() { return state.snapshots.length > 1; }
+  function reducedMotion() { try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } }
+
+  /* ---------- motion: a new week flashes its movers, a card counts up to its rating ----------
+     Both are one-shot and short, and both are skipped under reduced motion (the ▲/▼ pills and the number say the same). */
+  // Called once the newest week is known. A week this device has not shown yet makes each player who moved in it
+  // flash green or red once, the first time his card or row is drawn; the week is then remembered per sport.
+  function noteFreshWeek() {
+    var last = state.snapshots[state.snapshots.length - 1], key = "janafari-seen-week-" + sport, seen = null;
+    flashWeek = null; flashedAt = {};
+    if (flashObserver) { flashObserver.disconnect(); }
+    if (!last || !hasHistory()) { return; }
+    try { seen = localStorage.getItem(key); localStorage.setItem(key, String(last.id)); } catch (e) {}
+    if (seen !== String(last.id)) { flashWeek = last.id; }
+  }
+  // Adds the flash to a freshly built card or row. It starts when the card first scrolls into view (a mover far down
+  // the list still gets his moment), and a redraw inside the 1.6 s rebuilds the node, so the new node starts its
+  // animation that far in (negative delay) and the flash carries on rather than firing twice.
+  var flashObserver = null;
+  function startFlash(node, p, c) {
+    var now = Date.now();
+    if (!flashedAt[p.id]) { flashedAt[p.id] = now; }
+    if (now - flashedAt[p.id] >= 1600) { return; }
+    node.className += c > 0 ? " flash-up" : " flash-down";
+    node.style.setProperty("--flash-delay", "-" + (now - flashedAt[p.id]) + "ms");
+  }
+  function applyFlash(node, p) {
+    var c;
+    if (flashWeek === null || selectedSnapshot !== state.snapshots.length - 1 || reducedMotion()) { return; }
+    c = getChange(p.id);
+    if (!c) { return; }
+    if (flashedAt[p.id] || !window.IntersectionObserver) { startFlash(node, p, c); return; }
+    if (!flashObserver) {
+      flashObserver = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) { return; }
+          flashObserver.unobserve(en.target);
+          if (en.target._flash) { startFlash(en.target, en.target._flash.p, en.target._flash.c); en.target._flash = null; }
+        });
+      }, { threshold: 0.6 });
+    }
+    node._flash = { p: p, c: c };
+    flashObserver.observe(node);
+  }
+  // Count-up reveal: the overall rolls up from 20 below to the real number (ease-out cubic, 600 ms) when a card opens.
+  // The real number is in the screen-reader text from the start; only the visible digits move.
+  function countUp(node, target) {
+    var from = Math.max(0, target - 20), start = null, token = openRequest;
+    if (reducedMotion() || !window.requestAnimationFrame) { return; }
+    node.nodeValue = String(from);
+    function step(t) {
+      if (token !== openRequest) { node.nodeValue = String(target); return; }
+      if (start === null) { start = t; }
+      var k = Math.min(1, (t - start) / 600), e = 1 - Math.pow(1 - k, 3);
+      node.nodeValue = String(Math.round(from + (target - from) * e));
+      if (k < 1) { window.requestAnimationFrame(step); }
+    }
+    window.requestAnimationFrame(step);
+  }
   function changeFor(p) { return p.gone ? { text: "FA", cls: "change-fa" } : changeParts(getChange(p.id)); }
   function changeParts(change) {
     if (change === null && !hasHistory()) { return { text: "", cls: "change-none" }; }
@@ -547,6 +607,7 @@
     if (parts.text) { right.appendChild(textNode("span", "change " + parts.cls, parts.text)); }
     card.appendChild(right);
     card.addEventListener("click", function () { openPlayer(p, card); });
+    applyFlash(card, p);
     return card;
   }
 
@@ -571,6 +632,7 @@
     }
     row.addEventListener("click", function () { openPlayer(p, row); });
     row.addEventListener("keydown", function (e) { if (e.keyCode === 13 || e.keyCode === 32) { e.preventDefault(); openPlayer(p, row); } });
+    applyFlash(row, p);
     return row;
   }
 
@@ -957,7 +1019,11 @@
       head.appendChild(textNode("span", "change change-fa", lastRatedIn(p) ? "Last rated " + lastRatedIn(p) : "Free agent"));
     }
     hero.appendChild(head);
-    var big = textNode("div", "bio-ovr", r === null ? "—" : String(r)); big.appendChild(textNode("small", "", "Overall rating")); hero.appendChild(big);
+    var big = document.createElement("div"), digits = textNode("span", "", r === null ? "—" : String(r));
+    big.className = "bio-ovr"; digits.setAttribute("aria-hidden", "true"); big.appendChild(digits);
+    big.appendChild(textNode("span", "sr-only", r === null ? "unknown" : String(r)));
+    big.appendChild(textNode("small", "", "Overall rating")); hero.appendChild(big);
+    if (r !== null) { countUp(digits.firstChild, r); }
 
     clear(list);
     list.appendChild(infoRow("Age", dd(p.age ? String(p.age) : "—")));
@@ -1092,7 +1158,7 @@
       if (!validFeed(doc)) { showToast("Could not read the ratings file"); return; }
       useData(doc);
       var outcome = ensureSnapshot();
-      if (outcome === "new") { selectedSnapshot = state.snapshots.length - 1; saveState(); render(); showToast("New ratings week: " + doc.iteration.label); }
+      if (outcome === "new") { selectedSnapshot = state.snapshots.length - 1; saveState(); noteFreshWeek(); render(); showToast("New ratings week: " + doc.iteration.label); }
       else if (outcome === "updated") { saveState(); render(); showToast("Ratings updated — " + doc.iteration.label + ", " + formatDate(doc.fetched)); }
       else { redraw(); showToast("Already up to date — " + SPORT.source + " checked " + formatDate(doc.fetched)); }
     }, function () { btn.disabled = false; if (gen === loadGen) { showToast("Could not reach the ratings file. Check the internet."); } });
@@ -1431,6 +1497,7 @@
         if (ensureSnapshot() !== "same") { dirty = true; }
         if (dirty) { saveState(); }
         selectedSnapshot = state.snapshots.length - 1;
+        noteFreshWeek();
         if (!state.watchlist.length && tab === "watch") { tab = "league"; }
         if (!booted) { bindEvents(); booted = true; }
         render();

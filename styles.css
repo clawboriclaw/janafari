@@ -773,3 +773,32 @@ html[data-theme="dark"] .stat-bar { background: #22344d; }
   .portrait .portrait-mono { line-height: 60px; }
   .modal-sheet { max-width: 720px; }
 }
+
+/* ---------- motion: rating-change flash + change-pill pop (app.js applyFlash) ----------
+   A week this device has not shown yet: each mover's card or row glows green (up) or red (down) once and
+   fades back over 1.6 s, and his ▲/▼ pill pops in with an ease-out-back overshoot. One-shot, never looping;
+   --flash-delay lets a redraw continue the same flash. Reduced motion: none of it (the pills still say it). */
+@-webkit-keyframes jf-flash-up { from { background-color: rgba(27,143,74,.26); box-shadow: 0 0 0 2px rgba(27,143,74,.55); } }
+@keyframes jf-flash-up { from { background-color: rgba(27,143,74,.26); box-shadow: 0 0 0 2px rgba(27,143,74,.55); } }
+@-webkit-keyframes jf-flash-down { from { background-color: rgba(192,57,43,.24); box-shadow: 0 0 0 2px rgba(192,57,43,.5); } }
+@keyframes jf-flash-down { from { background-color: rgba(192,57,43,.24); box-shadow: 0 0 0 2px rgba(192,57,43,.5); } }
+@-webkit-keyframes jf-pop { from { -webkit-transform: scale(.4); transform: scale(.4); opacity: 0; } }
+@keyframes jf-pop { from { -webkit-transform: scale(.4); transform: scale(.4); opacity: 0; } }
+/* rows tint their cells only: a ring on each <td> would draw seams between the cells */
+@-webkit-keyframes jf-tint-up { from { background-color: rgba(27,143,74,.26); } }
+@keyframes jf-tint-up { from { background-color: rgba(27,143,74,.26); } }
+@-webkit-keyframes jf-tint-down { from { background-color: rgba(192,57,43,.24); } }
+@keyframes jf-tint-down { from { background-color: rgba(192,57,43,.24); } }
+.pcard.flash-up { -webkit-animation: jf-flash-up 1.6s ease-out both; animation: jf-flash-up 1.6s ease-out both; }
+.pcard.flash-down { -webkit-animation: jf-flash-down 1.6s ease-out both; animation: jf-flash-down 1.6s ease-out both; }
+tr.prow.flash-up td { -webkit-animation: jf-tint-up 1.6s ease-out both; animation: jf-tint-up 1.6s ease-out both; }
+tr.prow.flash-down td { -webkit-animation: jf-tint-down 1.6s ease-out both; animation: jf-tint-down 1.6s ease-out both; }
+.pcard.flash-up, tr.prow.flash-up td, .pcard.flash-down, tr.prow.flash-down td { -webkit-animation-delay: var(--flash-delay, 0ms); animation-delay: var(--flash-delay, 0ms); }
+.flash-up .change, .flash-down .change {
+  display: inline-block;
+  -webkit-animation: jf-pop .45s cubic-bezier(.34,1.56,.64,1) both; animation: jf-pop .45s cubic-bezier(.34,1.56,.64,1) both;
+  -webkit-animation-delay: var(--flash-delay, 0ms); animation-delay: var(--flash-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pcard.flash-up, .pcard.flash-down, tr.prow.flash-up td, tr.prow.flash-down td, .flash-up .change, .flash-down .change { -webkit-animation: none; animation: none; }
+}

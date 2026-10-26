@@ -36,6 +36,11 @@ the football side, **Janafari Jam** on the basketball side (below). In the code,
 - Phone (≤600 px): one column, a bottom tab bar (My players · League · Add), sticky search, full-screen
   sheets. Tablet (601–1024 px): 2–3 columns, search on its own row. Desktop: 4 columns, one toolbar row.
 - Every control is at least 44 px tall; the search field uses 16 px text so iOS does not zoom.
+- **Motion (2026-10-26).** A ratings week this device has not shown yet makes each player who moved in it glow green
+  (up) or red (down) once, fading over 1.6 s, the first time his card or row scrolls into view. His ▲/▼ pill pops in
+  at the same moment. The week is remembered per sport (`janafari-seen-week-nfl` / `-nba`), so a reload does not
+  flash again. Opening a player card rolls his overall up from 20 below (600 ms, ease-out); screen readers get
+  the real number straight away. Both are one-shot, and reduced motion turns both off; the ▲/▼ pills still say it.
 - **End Zone Run** — an endless Tecmo/Retro-Bowl-style football runner with modern backgrounds (🏈 in the
   footer, More → Play, the Playbook, or catch the tiny runner who sprints across the top bar). You're Jonathan
   Taylor #28 in pixel art; the big button starts a run and then jumps (a tap on the field or Space does the same).
