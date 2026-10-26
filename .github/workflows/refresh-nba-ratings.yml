@@ -1,13 +1,15 @@
 name: Refresh NBA 2K ratings
 
-# The basketball twin of refresh-ratings.yml. 2K Ratings posts roster updates every two weeks or so
-# in season (the dates are on every player's season chart); we check daily. A normal day opens the
-# 30 team pages and only the player pages whose overall moved; Sundays open every player page so an
-# attribute or badge that changed without moving the overall is caught too. The fetcher exits 3 on a
-# quiet day (nothing committed), 0 when it wrote files, 2 when the site or a sanity check broke.
+# The basketball twin of refresh-ratings.yml. 2K Ratings publishes its update calendar on every player's
+# season chart (data/nba/movement.json "labels": every other Thursday — Nov. 5, Nov. 19, Dec. 3 ...).
+# Owner 2026-10-26: only call the site on the day it actually refreshes. The cron fires daily but the
+# gate reads the committed calendar (tools/nba_update_due.py, no request to 2K Ratings) and lets the run
+# through only on an update day, retrying daily until that update lands. An update-day run opens every
+# player page (attributes and badges). The fetcher exits 3 on a quiet day (nothing committed), 0 when it
+# wrote files, 2 when the site or a sanity check broke. Roster moves between update days wait for the next one.
 on:
   schedule:
-    - cron: "41 15 * * *"      # every day 15:41 UTC (11:41 ET), after the Madden run
+    - cron: "41 15 * * *"      # 15:41 UTC (GitHub starts it ~3-5 h late); the gate decides whether it does anything
   workflow_dispatch:
     inputs:
       full:
@@ -35,13 +37,18 @@ jobs:
     outputs:
       run: ${{ steps.check.outputs.run }}
     steps:
+      - uses: actions/checkout@v4
       - id: check
         run: |
-          if [ "${{ github.event_name }}" != "schedule" ] || [ "$(date -u +%F)" \> "$(date -u -d "$SEASON_START - 1 day" +%F)" ]; then
+          if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$(date -u +%F)" \< "$SEASON_START" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Off-season: scheduled 2K refresh skipped until $SEASON_START"
+          else
+            WHY=$(python3 tools/nba_update_due.py)
+            echo "::notice::$WHY"
+            case "$WHY" in due:*) echo "run=true" >> "$GITHUB_OUTPUT" ;; *) echo "run=false" >> "$GITHUB_OUTPUT" ;; esac
           fi
 
   refresh:
@@ -74,7 +81,8 @@ jobs:
         run: |
           set +e
           FULL=""
-          if [ "${{ inputs.full }}" = "true" ] || [ "$(date -u +%u)" = "7" ]; then FULL="--full"; fi
+          # A scheduled run only gets past the gate on an update day, so it opens every player page.
+          if [ "${{ inputs.full }}" = "true" ] || [ "${{ github.event_name }}" = "schedule" ]; then FULL="--full"; fi
           python3 tools/fetch_nba_ratings.py $FULL 2> >(tee fetch.err >&2)
           rc=$?
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
