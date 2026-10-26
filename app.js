@@ -844,6 +844,7 @@
     var res = filteredPlayers(), visible = res.list, drawn = visible.slice(0, shownLimit), note = "";
     renderTabs(); renderSummary(); renderFilterCounts(); renderInvite();
     var grid = el("playerCards"), body = el("playerRows"), useCards = effectiveView() === "cards";
+    if (flashObserver) { flashObserver.disconnect(); }   // the old cards go; only the ones built below are watched (flashedAt is kept)
     clear(grid); clear(body);
     var board = activeFilter === "movers";
     el("moversBoard").hidden = !board;
