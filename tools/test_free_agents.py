@@ -12,7 +12,7 @@ Needs Playwright's chromium and serves the working tree itself:
 
 The data files it reads are the committed ones, so it also fails if a fetch ever publishes a
 free-agents.json the page cannot use."""
-import json, os, sys, threading, functools, http.server, socketserver
+import json, os, re, sys, threading, functools, http.server, socketserver
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PORT = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else 0   # 0 = any free port
@@ -140,11 +140,13 @@ with sync_playwright() as pw:
     ck("NBA free agents render", len(names)>=24, len(names))   # 24 = the first page of cards
     ck("Jonas Valanciunas there", any("Valan" in n for n in names), names[:3])
     pg.locator(".pcard").first.click(); pg.wait_for_selector("#playerModal:not([hidden])"); pg.wait_for_timeout(600)
-    ck("NBA free agent sheet has attributes", "Close shot" in pg.inner_text("#bioStats") or "Strength" in pg.inner_text("#bioStats"), pg.inner_text("#bioStats")[:80])
+    bio=pg.inner_text("#bioStats")   # top attributes differ per player, so look for any rated row, not a named one
+    ck("NBA free agent sheet has attributes", "ATTRIBUTES" in bio.upper() and len(re.findall(r"\n\d{2}\b", bio)) >= 3, bio[:80])
     pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
     nbanote=pg.inner_text("#boardNote")
-    # 2K rates its own free agency page, so the NBA note must NOT claim these numbers are stale
-    ck("NBA note says the numbers are current", "current" in nbanote and "last had" not in nbanote, nbanote[:130])
+    # 2K rates its own free agency page, so the NBA note must NOT claim all of them are stale;
+    # anyone a roster dropped since is frozen, and the note may say so for those only
+    ck("NBA note says the numbers are current", "current" in nbanote and "has stopped rating them" not in nbanote, nbanote[:130])
     ck("no 'last rated' on a currently-rated free agent", "Last rated" not in pg.inner_text("#bioHero"))
 
     print("G. searching finds a free agent")

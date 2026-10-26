@@ -383,10 +383,11 @@
   function lastRatedIn(p) { return (p.gone && p.lastSeen && p.lastSeen.label) || ""; }
   // Madden's free agents are frozen at the week EA last rated them; 2K rates its own free agency page,
   // so those numbers are today's. Saying "these are old numbers" about the second kind would be untrue.
-  function frozen(list) {
-    var i; for (i = 0; i < list.length; i += 1) { if (lastRatedIn(list[i])) { return true; } }
-    return false;
+  function frozenCount(list) {
+    var i, n = 0; for (i = 0; i < list.length; i += 1) { if (lastRatedIn(list[i])) { n += 1; } }
+    return n;
   }
+  function frozen(list) { return frozenCount(list) > 0; }
 
   /* ---------- ratings & changes ---------- */
   function snapRating(id, snapIndex) {
@@ -841,7 +842,7 @@
 
   // Only the visible layout is built, and only `shownLimit` of it — the rest waits for "Show more".
   function redraw() {
-    var res = filteredPlayers(), visible = res.list, drawn = visible.slice(0, shownLimit), note = "";
+    var res = filteredPlayers(), visible = res.list, drawn = visible.slice(0, shownLimit), note = "", stale;
     renderTabs(); renderSummary(); renderFilterCounts(); renderInvite();
     var grid = el("playerCards"), body = el("playerRows"), useCards = effectiveView() === "cards";
     if (flashObserver) { flashObserver.disconnect(); }   // the old cards go; only the ones built below are watched (flashedAt is kept)
@@ -865,9 +866,12 @@
     el("moreRow").hidden = drawn.length >= visible.length;
     el("moreButtonList").textContent = "Show " + Math.min(PAGE, visible.length - drawn.length) + " more";
     if (activeTeam === "FA" && !res.query) {
+      // 2K mixes both kinds: its free agency page (rated today) plus anyone a roster dropped (frozen).
+      stale = frozenCount(FREE || []);
       note = res.total + " free agents — nobody has them on a roster"
-        + (frozen(FREE || []) ? ", so " + SPORT.source + " has stopped rating them. These are the numbers each of them last had"
-                              : ". " + SPORT.source + " still rates them, so these numbers are current")
+        + (!stale ? ". " + SPORT.source + " still rates them, so these numbers are current"
+          : stale >= (FREE || []).length ? ", so " + SPORT.source + " has stopped rating them. These are the numbers each of them last had"
+          : ". " + SPORT.source + " still rates some of them, so those numbers are current; " + stale + " dropped off a roster and keep the numbers they last had")
         + (visible.length < res.total ? ", showing the top " + visible.length : "") + ".";
     }
     else if (activeTeam && !res.query) { note = teamLabel(activeTeam) + " — " + res.total + " player" + (res.total === 1 ? "" : "s") + (visible.length < res.total ? ", showing the top " + visible.length : "") + "."; }
