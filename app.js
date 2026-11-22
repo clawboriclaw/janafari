@@ -221,6 +221,11 @@
   }
   // Only the clubs have a badge; free agents ("FA") get a neutral monogram, never a 404.
   function logoUrl(abbr) { return knownTeam[abbr] ? SPORT.logo(abbr) : null; }
+  // The day a snapshot was taken, as the reader's own calendar day. The current week uses the fetch time
+  // itself (a Friday-night pull is after midnight UTC); older weeks only kept the day.
+  function snapDay(s) { return formatDate(s && DATA && s.id === DATA.iteration.id ? DATA.fetched : (s && s.date)); }
+  // 2K names its updates by date ("Nov. 19, 2026"): repeating that date beside it says nothing.
+  function sameDay(label, day) { return String(label || "").replace(/\./g, "") === String(day || "").replace(/\./g, ""); }
   function teamText(p) { return p.team === "FA" ? "Free agent" : p.team + " · " + p.teamName; }
   // The top tier of an ability/badge: "x" for the headline kind, "star" for the next, "" for none.
   //   Madden: X-Factor → "x", Superstar → "star".   2K: Legend or Hall of Fame → "x", everything else "" (Gold is too common).
@@ -594,7 +599,9 @@
     meta.appendChild(textNode("span", "pos-pill", p.pos));
     var bdg = badgeNode(p); if (bdg) { meta.appendChild(bdg); }
     var logo = buildLogo(p); if (logo) { meta.appendChild(logo); }
-    meta.appendChild(textNode("span", "pcard-team", teamText(p)));
+    var teamEl = textNode("span", "pcard-team", p.team === "FA" ? "Free agent" : p.team);
+    if (p.team !== "FA") { teamEl.appendChild(textNode("span", "pcard-team-name", " · " + p.teamName)); }
+    meta.appendChild(teamEl);
     body.appendChild(meta);
     card.appendChild(body);
     right.className = "pcard-right";
@@ -757,7 +764,8 @@
     }
     // "Updated" is when the feed was last pulled — never a snapshot date dressed up as the feed date.
     var snap = state.snapshots[selectedSnapshot];
-    el("sourceStamp").textContent = snap.label + " · updated " + formatDate(DATA.fetched);
+    var upd = formatDate(DATA.fetched);
+    el("sourceStamp").textContent = sameDay(snap.label, upd) ? "Updated " + upd : snap.label + " · updated " + upd;
     el("footerStamp").textContent = DATA.game + " · " + SPORT.source + " checked " + formatDate(DATA.fetched) + " · " + fmtInt(DATA.count) + " players";
     el("moreStamp").textContent = " Last checked " + formatDate(DATA.fetched) + " (" + snap.label + ").";
   }
@@ -767,7 +775,8 @@
     clear(select);
     state.snapshots.forEach(function (s, i) {
       var opt = document.createElement("option");
-      opt.value = String(i); opt.text = s.label + " · " + formatDate(s.date);
+      var day = snapDay(s);
+      opt.value = String(i); opt.text = sameDay(s.label, day) ? s.label : s.label + " · " + day;
       if (i === selectedSnapshot) { opt.selected = true; }
       select.appendChild(opt);
     });
