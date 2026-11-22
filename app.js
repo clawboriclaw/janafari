@@ -1161,7 +1161,9 @@
       btn.disabled = false;
       if (gen !== loadGen) { return; }   // the sport changed while this was in flight: not our file any more
       if (!validFeed(doc)) { showToast("Could not read the ratings file"); return; }
+      var keepFree = FREE;   // same sport, same free-agent file: useData() drops it, so carry it over (else watched free agents vanish)
       useData(doc);
+      if (keepFree) { FREE = keepFree; FREE.forEach(function (p) { if (!byId[p.id]) { byId[p.id] = p; } }); }
       var outcome = ensureSnapshot();
       if (outcome === "new") { selectedSnapshot = state.snapshots.length - 1; saveState(); noteFreshWeek(); render(); showToast("New ratings week: " + doc.iteration.label); }
       else if (outcome === "updated") { saveState(); render(); showToast("Ratings updated — " + doc.iteration.label + ", " + formatDate(doc.fetched)); }
@@ -1442,8 +1444,10 @@
     el("exportButton").addEventListener("click", exportBackup);
     el("importInput").addEventListener("change", function () { importBackup(this.files[0]); });
     el("resetButton").addEventListener("click", function () {
-      if (window.confirm("Clear your players and saved weeks on this device?")) {
-        state = makeDefaultState(); ensureSnapshot(); selectedSnapshot = 0; saveState(); closeModal("moreModal"); render(); showToast("Your players were cleared");
+      if (window.confirm("Clear your players on this device?")) {
+        // the ratings weeks are EA's/2K's history, not the user's: keep them, or trends and Movers go blank until a reload
+        var weeks = state.snapshots;
+        state = makeDefaultState(); state.snapshots = weeks; ensureSnapshot(); saveState(); closeModal("moreModal"); render(); showToast("Your players were cleared");
       }
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-close]"), function (button) {

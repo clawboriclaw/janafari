@@ -68,7 +68,7 @@ jobs:
         run: |
           git config user.name "ratings-bot"
           git config user.email "ratings-bot@users.noreply.github.com"
-          git add data/ratings.json data/stats data/history.json data/free-agents.json
+          git add data/ratings.json data/stats data/history.json data/free-agents.json data/abilities.json
           git commit -m "Ratings snapshot: $(python3 -c "import json;d=json.load(open('data/ratings.json'));print(d['iteration']['label'],'·',d['count'],'players')")"
           # autostash for the same reason the NBA workflow has it (2026-09-21): a stray working-tree file
           # made `git pull --rebase` refuse and paged the owner although the fetch itself was fine.
